@@ -25,6 +25,7 @@ export default function Reminders() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [editingReminder, setEditingReminder] = useState(null);
+  const [activeDueAlert, setActiveDueAlert] = useState(null);
   const notifiedIdsRef = useRef(new Set());
 
   const fetchReminders = async () => {
@@ -37,7 +38,7 @@ export default function Reminders() {
       const list = res.data.data || [];
       setReminders(list);
 
-      // Check for in-app desktop notifications (while website is open)
+      // Check for in-app and desktop notifications
       checkDuePopups(list);
     } catch (err) {
       console.error('Failed to fetch reminders:', err);
@@ -48,26 +49,33 @@ export default function Reminders() {
 
   useEffect(() => {
     fetchReminders();
-    const interval = setInterval(fetchReminders, 30000); // 30s polling
+    const interval = setInterval(fetchReminders, 15000); // Poll every 15s for timely alerts
     return () => clearInterval(interval);
   }, [filter, search]);
 
   const checkDuePopups = (list) => {
-    if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
     const now = new Date();
     list.forEach((r) => {
       const isDueNow = r.status === 'pending' && new Date(r.dueAt) <= now;
       if (isDueNow && !notifiedIdsRef.current.has(r._id)) {
         notifiedIdsRef.current.add(r._id);
+
+        // 1. Audio alert (plays regardless of browser OS permission)
         playChimeSound();
-        try {
-          const tz = r.timezone || 'Australia/Sydney';
-          new Notification(`📞 Call Due: ${r.name}`, {
-            body: `Phone: ${r.phone} | Due: ${formatInAustralianTime(r.dueAt, tz)}\nNote: ${r.note || 'None'}`,
-            icon: '/vite.svg',
-          });
-        } catch (e) {}
+
+        // 2. In-App Call Alert Banner
+        setActiveDueAlert(r);
+
+        // 3. Desktop OS Notification (if browser permission granted)
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            const tz = r.timezone || 'Australia/Sydney';
+            new Notification(`📞 Call Due: ${r.name}`, {
+              body: `Phone: ${r.phone} | Due: ${formatInAustralianTime(r.dueAt, tz)}\nNote: ${r.note || 'None'}`,
+              icon: '/favicon.svg',
+            });
+          } catch (e) {}
+        }
       }
     });
   };
@@ -122,6 +130,56 @@ export default function Reminders() {
 
   return (
     <div className="max-w-6xl mx-auto py-4 sm:py-8 space-y-6">
+      {/* Real-time In-App Due Call Notification Banner */}
+      {activeDueAlert && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-600/20 via-rose-500/10 to-amber-500/10 border-2 border-rose-500/50 shadow-2xl animate-fade-in flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-rose-600 flex items-center justify-center text-white flex-shrink-0 animate-bounce shadow-lg shadow-rose-600/30">
+              <Phone className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-md border border-rose-500/30">
+                  Call Due Now
+                </span>
+                <span className="text-sm font-bold text-white">{activeDueAlert.name}</span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1 font-mono">
+                Phone: <span className="font-semibold text-rose-300">{activeDueAlert.phone}</span> | Scheduled: {formatInAustralianTime(activeDueAlert.dueAt, activeDueAlert.timezone || 'Australia/Sydney')}
+              </p>
+              {activeDueAlert.note && (
+                <p className="text-[11px] text-slate-400 italic mt-0.5">"{activeDueAlert.note}"</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <a
+              href={`tel:${activeDueAlert.phone}`}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/30"
+            >
+              <Phone className="w-3.5 h-3.5" />
+              <span>Call Now</span>
+            </a>
+            <button
+              onClick={() => {
+                handleToggleCompleted(activeDueAlert);
+                setActiveDueAlert(null);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition cursor-pointer"
+            >
+              Complete
+            </button>
+            <button
+              onClick={() => setActiveDueAlert(null)}
+              className="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 text-xs font-medium transition cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header and Add button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
