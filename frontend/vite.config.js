@@ -10,10 +10,18 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    host: true, // Listen on all local IPs (127.0.0.1 and localhost)
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.error('[Vite Proxy Error]:', err.message);
+          });
+        },
       },
     },
   },
