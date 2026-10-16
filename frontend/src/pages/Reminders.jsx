@@ -12,6 +12,7 @@ import {
   Trash2,
   Plus,
   Globe,
+  RefreshCw,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
@@ -28,6 +29,12 @@ export default function Reminders() {
   const [activeDueAlert, setActiveDueAlert] = useState(null);
   const [alertSecondsLeft, setAlertSecondsLeft] = useState(60);
   const notifiedIdsRef = useRef(new Set());
+
+  // Auto-refresh state (every 2 minutes = 120 seconds)
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
+  const [refreshSecondsLeft, setRefreshSecondsLeft] = useState(120);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 60-Second Countdown Timer for due reminder banner
   useEffect(() => {
@@ -46,7 +53,8 @@ export default function Reminders() {
     return () => clearInterval(timer);
   }, [activeDueAlert]);
 
-  const fetchReminders = async () => {
+  const fetchReminders = async (showSpinner = false) => {
+    if (showSpinner) setIsRefreshing(true);
     try {
       const params = {};
       if (filter !== 'all') params.status = filter;
@@ -55,6 +63,7 @@ export default function Reminders() {
       const res = await api.get('/reminders', { params });
       const list = res.data.data || [];
       setReminders(list);
+      setLastRefreshedAt(new Date());
 
       // Check for in-app and desktop notifications
       checkDuePopups(list);
@@ -62,14 +71,53 @@ export default function Reminders() {
       console.error('Failed to fetch reminders:', err);
     } finally {
       setLoading(false);
+      if (showSpinner) {
+        setTimeout(() => setIsRefreshing(false), 400);
+      }
     }
   };
 
+  // Immediate fetch on filter or search change + reset 2-minute timer
   useEffect(() => {
     fetchReminders();
-    const interval = setInterval(fetchReminders, 15000); // Poll every 15s for timely alerts
-    return () => clearInterval(interval);
+    setRefreshSecondsLeft(120);
   }, [filter, search]);
+
+  // 2-Minute (120 seconds) Auto-Refresh Countdown & Execution
+  useEffect(() => {
+    if (!autoRefreshEnabled) return;
+
+    const timer = setInterval(() => {
+      setRefreshSecondsLeft((prev) => {
+        if (prev <= 1) {
+          fetchReminders(true);
+          return 120; // reset to 2 minutes
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [autoRefreshEnabled, filter, search]);
+
+  // Secondary 15s in-memory check so due alerts fire on the exact minute
+  useEffect(() => {
+    const localTimer = setInterval(() => {
+      checkDuePopups(reminders);
+    }, 15000);
+    return () => clearInterval(localTimer);
+  }, [reminders]);
+
+  const handleManualRefresh = () => {
+    fetchReminders(true);
+    setRefreshSecondsLeft(120);
+  };
+
+  const formatSecondsLeft = (secs) => {
+    const mins = Math.floor(secs / 60);
+    const rem = secs % 60;
+    return `${mins}:${rem < 10 ? '0' : ''}${rem}`;
+  };
 
   const checkDuePopups = (list) => {
     const now = new Date();
@@ -211,21 +259,56 @@ export default function Reminders() {
         </div>
       )}
 
-      {/* Header and Add button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header, Auto-refresh indicator, and Add button */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">All Reminders</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-bold text-white tracking-tight">All Reminders</h1>
+            {/* Auto-Refresh Badge with 2-Minute Live Countdown */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-xs shadow-inner">
+              <span className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+              <span className="text-slate-300 font-medium">
+                Auto-refresh (2m):
+              </span>
+              <span className="font-mono font-bold text-emerald-400">
+                {autoRefreshEnabled ? formatSecondsLeft(refreshSecondsLeft) : 'Paused'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setAutoRefreshEnabled((prev) => !prev)}
+                title={autoRefreshEnabled ? 'Pause auto-refresh' : 'Resume auto-refresh'}
+                className="text-[11px] text-slate-400 hover:text-slate-200 underline ml-1 cursor-pointer"
+              >
+                {autoRefreshEnabled ? 'Pause' : 'Resume'}
+              </button>
+            </div>
+          </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Times formatted in customer's Australian regional timezone. Desktop alerts check every 30s.
+            Times formatted in Australian regional timezones. Auto-refreshes every 2 minutes. Last synced at {lastRefreshedAt.toLocaleTimeString()}.
           </p>
         </div>
-        <Link
-          to="/add"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition shadow-lg shadow-indigo-600/25 self-start sm:self-auto cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Reminder</span>
-        </Link>
+
+        <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+          {/* Manual Instant Refresh Button */}
+          <button
+            type="button"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold transition border border-slate-700/80 shadow-sm cursor-pointer disabled:opacity-60"
+            title="Refresh reminders now"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-indigo-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </button>
+
+          <Link
+            to="/add"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition shadow-lg shadow-indigo-600/25 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Reminder</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filter Tabs and Search Bar */}
