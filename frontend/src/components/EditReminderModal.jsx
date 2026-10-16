@@ -95,17 +95,22 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
   const previewDueUTC = date && time ? combineDateAndTimeToUTC(date, time, timezone) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-2xl bg-[#0f172a] border border-slate-800 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-2xl bg-slate-900/95 border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] backdrop-blur-2xl">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-white/[0.08] bg-slate-950/60 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-semibold text-white">Edit Reminder</h3>
-            <p className="text-xs text-slate-400">Update customer details, date/time, and timezone.</p>
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <span>Edit Reminder</span>
+              <span className="text-[10px] font-mono font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">
+                AUSTRALIA
+              </span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">Update customer details, date/time, and timezone.</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.08] transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -114,7 +119,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400">
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300">
               {error}
             </div>
           )}
@@ -128,7 +133,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
             />
           </div>
 
@@ -141,7 +146,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
               required
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition font-mono"
+              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
             />
           </div>
 
@@ -152,7 +157,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
               />
             </div>
             <div>
@@ -161,7 +166,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
               />
             </div>
           </div>
@@ -175,7 +180,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+              className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-white/[0.08] rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 transition cursor-pointer"
             >
               {AUSTRALIAN_TIMEZONES.map((tz) => (
                 <option key={tz.value} value={tz.value}>
@@ -205,8 +210,8 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
 
           {/* Real-time Preview */}
           {previewDueUTC && (
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs flex items-center justify-between">
-              <span className="text-slate-400">Scheduled:</span>
+            <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-950/60 to-purple-950/40 border border-indigo-500/30 text-xs flex items-center justify-between">
+              <span className="text-slate-400">Scheduled In Zone:</span>
               <span className="font-mono text-indigo-300 font-semibold">
                 {formatInAustralianTime(previewDueUTC, timezone)}
               </span>
@@ -218,7 +223,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition"
+              className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-white/[0.08] rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-400 transition cursor-pointer"
             >
               <option value="pending">Pending (Call Pending)</option>
               <option value="completed">Completed</option>
@@ -231,22 +236,22 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition resize-none"
+              className="w-full p-3 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition resize-none shadow-inner"
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-white/[0.08] flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200"
+              className="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition flex items-center gap-1.5"
+              className="btn-shimmer px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:brightness-110 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30 cursor-pointer active:scale-95"
             >
               <Check className="w-4 h-4" />
               <span>{loading ? 'Saving...' : 'Update Reminder'}</span>

@@ -123,8 +123,8 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
         onClick={() => setIsOpen(true)}
         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm text-left transition cursor-pointer ${
           isOpen
-            ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-slate-900 text-white'
-            : 'border-slate-800 bg-slate-950 text-slate-200 hover:border-slate-700 hover:bg-slate-900'
+            ? 'border-indigo-400 ring-2 ring-indigo-500/20 bg-slate-900/90 text-white shadow-inner'
+            : 'border-white/[0.08] bg-slate-950/70 text-slate-200 hover:border-white/[0.15] hover:bg-slate-900/60 shadow-inner'
         }`}
       >
         <div className="flex items-center gap-2.5">
@@ -133,7 +133,7 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
             {value ? formatDisplayDate(value) : 'Click to select date from calendar...'}
           </span>
         </div>
-        <span className="text-xs text-indigo-400/80 font-mono bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+        <span className="text-xs text-indigo-400 font-mono bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
           📅 Calendar
         </span>
       </button>
@@ -142,11 +142,11 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
       {isOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-fade-in"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
             onClick={() => setIsOpen(false)}
           >
             <div
-              className="w-full max-w-sm bg-[#0f172a] border border-slate-700 rounded-2xl shadow-2xl p-5 space-y-3"
+              className="w-full max-w-sm bg-slate-900/95 border border-white/[0.1] rounded-2xl shadow-2xl p-5 space-y-3 backdrop-blur-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}

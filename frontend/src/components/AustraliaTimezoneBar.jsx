@@ -62,14 +62,16 @@ export default function AustraliaTimezoneBar() {
   }, []);
 
   return (
-    <div className="bg-[#070b14]/95 backdrop-blur-md border-b border-slate-800/80 px-3 py-1.5 overflow-x-auto text-[11px] select-none scrollbar-thin shadow-inner">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 min-w-[760px]">
+    <div className="bg-[#070b14]/90 backdrop-blur-xl border-b border-white/[0.06] px-3 sm:px-6 py-2 overflow-x-auto text-[11px] select-none scrollbar-none shadow-sm">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 min-w-[760px]">
         {/* Label Header */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-base">🇦🇺</span>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/25 px-2 py-0.5 rounded-md flex items-center gap-1">
-            <Globe className="w-3 h-3" />
-            <span>Australia Live Clocks</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="w-5 h-5 rounded-md bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs">
+            🇦🇺
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
+            <Globe className="w-3 h-3 text-indigo-400" />
+            <span>Australia Live Regional Clocks</span>
           </span>
         </div>
 
@@ -84,30 +86,30 @@ export default function AustraliaTimezoneBar() {
                 key={zone.id}
                 type="button"
                 onClick={() => setTimezone(zone.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-left transition cursor-pointer group ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-left transition-all duration-200 cursor-pointer group ${
                   isSelected
-                    ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-sm ring-1 ring-indigo-500/40'
-                    : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:border-slate-700 hover:bg-slate-800/50'
+                    ? 'bg-gradient-to-r from-indigo-950/90 to-slate-900 border-indigo-500/80 text-white shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/50'
+                    : 'bg-slate-900/50 border-white/[0.06] text-slate-300 hover:border-slate-700 hover:bg-slate-800/60'
                 }`}
                 title={`Click to set ${zone.city} (${zone.id}) as your active reminder timezone`}
               >
                 <div className="flex flex-col">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-slate-300 group-hover:text-white transition">
                       {zone.city}
                     </span>
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-indigo-300 font-mono">
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800/90 text-indigo-300/90 font-mono border border-white/[0.05]">
                       {zone.state}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 font-mono text-[11px] font-semibold text-slate-100">
                     <span>{data.time}</span>
-                    <span className="text-[9px] text-indigo-400/90 uppercase">{data.code}</span>
+                    <span className="text-[9px] font-bold text-indigo-400 uppercase">{data.code}</span>
                   </div>
                 </div>
 
                 {isSelected && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" title="Active selection" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5 shadow-sm shadow-emerald-400/50" title="Active selection" />
                 )}
               </button>
             );

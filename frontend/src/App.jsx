@@ -12,11 +12,18 @@ import { registerServiceWorker } from './utils/pushManager';
 
 function Layout({ children }) {
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* Ambient Background Grid & Glow (Magic UI style) */}
+      <div className="fixed inset-0 pointer-events-none bg-grid-pattern opacity-30 z-0" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] bg-radial-ambient pointer-events-none z-0" />
+
       {/* 🇦🇺 Live Australian Timezones Bar pinned across the top */}
-      <AustraliaTimezoneBar />
-      <Navbar />
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+      <div className="relative z-20">
+        <AustraliaTimezoneBar />
+        <Navbar />
+      </div>
+
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto relative z-10">
         {children}
       </main>
     </div>
