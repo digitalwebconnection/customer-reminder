@@ -2,69 +2,54 @@ import mongoose from 'mongoose';
 
 const reminderSchema = new mongoose.Schema(
   {
-    ownerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-      index: true,
-    },
-    customerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Customer',
-      required: true,
-      index: true,
-    },
-    title: {
+    name: {
       type: String,
       required: true,
       trim: true,
-      default: 'Follow-up call',
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: '',
+    },
+    address: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    note: {
+      type: String,
+      default: '',
     },
     dueAt: {
       type: Date,
       required: true,
       index: true,
     },
-    timezone: {
-      type: String,
-      default: 'Australia/Sydney',
-    },
     status: {
       type: String,
-      enum: ['pending', 'completed', 'cancelled'],
+      enum: ['pending', 'completed'],
       default: 'pending',
       index: true,
     },
-    priority: {
-      type: String,
-      enum: ['low', 'normal', 'high'],
-      default: 'normal',
-    },
-    notes: {
-      type: String,
-      default: '',
-    },
-    completedAt: {
+    emailSentAt: {
       type: Date,
       default: null,
     },
-    completedOutcome: {
-      type: String,
+    notifiedAt: {
+      type: Date,
       default: null,
     },
-    notification: {
-      emailSentAt: {
-        type: Date,
-        default: null,
-      },
-      browserEventCreatedAt: {
-        type: Date,
-        default: null,
-      },
-      lastError: {
-        type: String,
-        default: null,
-      },
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
     },
   },
   {
@@ -74,14 +59,13 @@ const reminderSchema = new mongoose.Schema(
   }
 );
 
-// Virtual property to dynamically calculate whether reminder is overdue
+// Virtual isOverdue: true if pending and dueAt in past
 reminderSchema.virtual('isOverdue').get(function () {
   return this.status === 'pending' && this.dueAt && new Date(this.dueAt) < new Date();
 });
 
-// Compound indexes for querying pending, due, and date range reminders
-reminderSchema.index({ ownerId: 1, status: 1, dueAt: 1 });
-reminderSchema.index({ customerId: 1, dueAt: -1 });
+reminderSchema.index({ status: 1, dueAt: 1 });
+reminderSchema.index({ name: 'text', phone: 'text' });
 
 export const Reminder = mongoose.model('Reminder', reminderSchema);
 export default Reminder;

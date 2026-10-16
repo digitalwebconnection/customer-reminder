@@ -3,19 +3,29 @@ dotenv.config();
 
 import app from './app.js';
 import { connectDB } from './config/db.js';
+import { startReminderWorker } from './jobs/reminderWorker.js';
+import { ensureOwnerExists } from './routes/authRoutes.js';
 
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Server] Running on http://localhost:${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-    console.log(`[Server] Health check available at: http://localhost:${PORT}/api/v1/health`);
+    console.log(`[Server] Health check: http://localhost:${PORT}/api/v1/health`);
+    console.log(`[Server] Timezone: ${process.env.APP_TIMEZONE || 'Asia/Kolkata'}`);
   });
 
-  // Attempt DB connection without blocking the HTTP server from responding
-  connectDB().catch((err) => {
-    console.warn(`[Database] Background connection error: ${err.message}`);
-  });
+  // Connect to DB in background
+  connectDB()
+    .then(async () => {
+      await ensureOwnerExists();
+    })
+    .catch((err) => {
+      console.warn(`[Database] Connection warning: ${err.message}`);
+    });
+
+  // Start the 1-minute cron worker for email & push reminders
+  startReminderWorker();
 
   return server;
 };

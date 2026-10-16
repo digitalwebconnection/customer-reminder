@@ -1,278 +1,395 @@
-import React, { useState, useEffect } from 'react';
-import { BellRing, Plus, Calendar, Clock, Filter, Phone, CheckCircle2, AlertTriangle, ArrowRight, User } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Search,
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Calendar,
+  CheckCircle,
+  AlertTriangle,
+  Edit2,
+  Trash2,
+  Plus,
+  RotateCcw,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
-import StatusBadge from '../components/StatusBadge';
-import ReminderModal from '../components/ReminderModal';
-import CompleteCallModal from '../components/CompleteCallModal';
-import SnoozeModal from '../components/SnoozeModal';
-import { useTimezone } from '../context/TimezoneContext';
-import { formatInAustralianTz, formatTimeRelative } from '../utils/timezones';
+import { formatKolkataTime } from '../utils/dateUtils';
+import EditReminderModal from '../components/EditReminderModal';
+import { playChimeSound } from '../utils/audioAlert';
 
 export default function Reminders() {
-  const { timezone } = useTimezone();
   const [reminders, setReminders] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('all'); // all | pending | completed | overdue
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [reminderModalOpen, setReminderModalOpen] = useState(false);
-  const [activeReminderForCompletion, setActiveReminderForCompletion] = useState(null);
-  const [activeReminderForSnooze, setActiveReminderForSnooze] = useState(null);
+  const [editingReminder, setEditingReminder] = useState(null);
+  const notifiedIdsRef = useRef(new Set());
 
-  const fetchReminders = async (selectedFilter = filter) => {
+  const fetchReminders = async () => {
     try {
-      setLoading(true);
-      const res = await api.get(`/reminders?due=${selectedFilter}&timezone=${timezone}`);
-      setReminders(res.data.data || []);
+      const params = {};
+      if (filter !== 'all') params.status = filter;
+      if (search.trim()) params.search = search.trim();
+
+      const res = await api.get('/reminders', { params });
+      const list = res.data.data || [];
+      setReminders(list);
+
+      // Check for in-app desktop notifications (while website is open)
+      checkDuePopups(list);
     } catch (err) {
-      console.error('Failed to load reminders:', err);
+      console.error('Failed to fetch reminders:', err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Poll every 30 seconds as specified in prompt
   useEffect(() => {
-    fetchReminders(filter);
-  }, [filter, timezone]);
+    fetchReminders();
+    const interval = setInterval(fetchReminders, 30000);
+    return () => clearInterval(interval);
+  }, [filter, search]);
 
-  const handleCancelReminder = async (id, title) => {
-    if (!window.confirm(`Cancel reminder "${title}"?`)) return;
+  const checkDuePopups = (list) => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const now = new Date();
+    list.forEach((r) => {
+      const isDueNow = r.status === 'pending' && new Date(r.dueAt) <= now;
+      if (isDueNow && !notifiedIdsRef.current.has(r._id)) {
+        notifiedIdsRef.current.add(r._id);
+        playChimeSound();
+        try {
+          new Notification(`📞 Call Due: ${r.name}`, {
+            body: `Phone: ${r.phone} | Note: ${r.note || 'None'}\nDue: ${formatKolkataTime(r.dueAt)}`,
+            icon: '/vite.svg',
+          });
+        } catch (e) {}
+      }
+    });
+  };
+
+  const handleToggleCompleted = async (reminder) => {
+    const newStatus = reminder.status === 'completed' ? 'pending' : 'completed';
     try {
-      await api.post(`/reminders/${id}/cancel`);
-      fetchReminders(filter);
+      await api.patch(`/reminders/${reminder._id}`, { status: newStatus });
+      fetchReminders();
     } catch (err) {
-      alert('Failed to cancel reminder');
+      alert('Failed to update reminder status');
     }
   };
 
-  const getPriorityStyle = (priority) => {
-    switch (priority) {
-      case 'high':
-        return 'text-rose-400 bg-rose-500/10 border-rose-500/30';
-      case 'low':
-        return 'text-slate-400 bg-slate-500/10 border-slate-500/30';
-      default:
-        return 'text-indigo-400 bg-indigo-500/10 border-indigo-500/30';
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete the reminder for ${name}?`)) return;
+    try {
+      await api.delete(`/reminders/${id}`);
+      fetchReminders();
+    } catch (err) {
+      alert('Failed to delete reminder');
     }
+  };
+
+  const getStatusBadge = (r) => {
+    if (r.status === 'completed') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+          <CheckCircle className="w-3.5 h-3.5" />
+          <span>Completed</span>
+        </span>
+      );
+    }
+
+    const isOverdue = r.isOverdue || (r.status === 'pending' && new Date(r.dueAt) < new Date());
+    if (isOverdue) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">
+          <AlertTriangle className="w-3.5 h-3.5" />
+          <span>Overdue</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+        <Clock className="w-3.5 h-3.5" />
+        <span>Pending</span>
+      </span>
+    );
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="max-w-6xl mx-auto py-4 sm:py-8 space-y-6">
+      {/* Header and Add button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Call Reminders</h2>
-          <p className="text-sm text-slate-400">
-            Calls scheduled in <span className="text-indigo-300 font-medium">{timezone}</span>. Background worker tracks due tasks every minute.
+          <h1 className="text-2xl font-bold text-white tracking-tight">All Reminders</h1>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            Times displayed in <span className="text-indigo-400 font-medium">Asia/Kolkata</span>. Desktop alerts check every 30s.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setReminderModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition shadow-lg shadow-indigo-600/25 self-start sm:self-auto cursor-pointer"
+        <Link
+          to="/add"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition shadow-lg shadow-indigo-600/25 self-start sm:self-auto cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>Schedule Reminder</span>
-        </button>
+          <span>Add Reminder</span>
+        </Link>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
-        {[
-          { key: 'all', label: 'All Reminders' },
-          { key: 'today', label: 'Due Today' },
-          { key: 'overdue', label: 'Overdue' },
-          { key: 'upcoming', label: 'Upcoming' },
-          { key: 'completed', label: 'Completed' },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium capitalize transition whitespace-nowrap ${
-              filter === tab.key
-                ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Filter Tabs and Search Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-xl border border-slate-800 self-start">
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'pending', label: 'Pending' },
+            { key: 'completed', label: 'Completed' },
+            { key: 'overdue', label: 'Overdue' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filter === tab.key
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search */}
+        <div className="relative w-full md:w-72">
+          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name or phone..."
+            className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+          />
+        </div>
       </div>
 
-      {/* Reminder List */}
+      {/* Content: Table on Desktop / Cards on Mobile */}
       {loading ? (
-        <div className="p-12 text-center text-sm text-slate-400">Loading call reminders...</div>
+        <div className="p-12 text-center text-xs text-slate-400">Loading reminders...</div>
       ) : reminders.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-slate-800/80 flex items-center justify-center mx-auto text-slate-400 mb-3">
-            <BellRing className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-semibold text-slate-200">No {filter !== 'all' ? filter : ''} reminders found</h3>
-          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto mb-4">
-            Schedule a follow-up call with any Australian contact to keep leads warm.
+        <div className="p-12 text-center bg-slate-900/40 border border-slate-800 rounded-2xl space-y-3">
+          <Clock className="w-8 h-8 text-slate-600 mx-auto" />
+          <p className="text-sm font-semibold text-slate-300">No reminders found</p>
+          <p className="text-xs text-slate-500">
+            {search ? 'No reminders match your search.' : 'Add your first call reminder to get started.'}
           </p>
-          <button
-            onClick={() => setReminderModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition"
+          <Link
+            to="/add"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold"
           >
             <Plus className="w-4 h-4" />
-            <span>Schedule Reminder</span>
-          </button>
+            <span>Add Reminder</span>
+          </Link>
         </div>
       ) : (
-        <div className="space-y-3">
-          {reminders.map((r) => {
-            const customer = r.customer || {};
-            const isCompleted = r.status === 'completed';
-            const isOverdue = r.isOverdue;
+        <>
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50 shadow-xl">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-4">Customer</th>
+                  <th className="py-3 px-4">Contact</th>
+                  <th className="py-3 px-4">Address</th>
+                  <th className="py-3 px-4">Note</th>
+                  <th className="py-3 px-4">Due Date & Time</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 text-xs">
+                {reminders.map((r) => (
+                  <tr key={r._id} className="hover:bg-slate-800/30 transition">
+                    {/* Customer Name & Phone */}
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-white">{r.name}</div>
+                      <a
+                        href={`tel:${r.phone}`}
+                        className="text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 mt-0.5"
+                      >
+                        <Phone className="w-3 h-3" />
+                        <span>{r.phone}</span>
+                      </a>
+                    </td>
 
-            return (
+                    {/* Email */}
+                    <td className="py-3.5 px-4 text-slate-300">
+                      {r.email ? (
+                        <a href={`mailto:${r.email}`} className="hover:underline text-slate-400 truncate block max-w-[150px]">
+                          {r.email}
+                        </a>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </td>
+
+                    {/* Address */}
+                    <td className="py-3.5 px-4 text-slate-300 max-w-[140px] truncate">
+                      {r.address || <span className="text-slate-600">—</span>}
+                    </td>
+
+                    {/* Note */}
+                    <td className="py-3.5 px-4 text-slate-300 max-w-[180px]">
+                      {r.note ? (
+                        <p className="truncate italic text-slate-400" title={r.note}>{r.note}</p>
+                      ) : (
+                        <span className="text-slate-600">—</span>
+                      )}
+                    </td>
+
+                    {/* Due Date/Time */}
+                    <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-200">
+                      <div className="font-medium">{formatKolkataTime(r.dueAt)}</div>
+                    </td>
+
+                    {/* Status Badge */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {getStatusBadge(r)}
+                    </td>
+
+                    {/* Actions per row */}
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handleToggleCompleted(r)}
+                          className={`p-1.5 rounded-lg text-xs transition ${
+                            r.status === 'completed'
+                              ? 'text-amber-400 hover:bg-amber-500/10'
+                              : 'text-emerald-400 hover:bg-emerald-500/10'
+                          }`}
+                          title={r.status === 'completed' ? 'Mark as Pending' : 'Mark Completed'}
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => setEditingReminder(r)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition"
+                          title="Edit Reminder"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(r._id, r.name)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                          title="Delete Reminder"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards View */}
+          <div className="md:hidden space-y-3">
+            {reminders.map((r) => (
               <div
                 key={r._id}
-                className={`rounded-2xl border p-5 backdrop-blur-sm transition-all ${
-                  isOverdue
-                    ? 'border-rose-500/30 bg-rose-500/5 hover:border-rose-500/50'
-                    : isCompleted
-                    ? 'border-slate-800 bg-slate-900/30 opacity-75'
-                    : 'border-slate-800/80 bg-slate-900/60 hover:border-indigo-500/30'
-                }`}
+                className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg"
               >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Left: Info */}
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${getPriorityStyle(r.priority)}`}>
-                        {r.priority} Priority
-                      </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-base font-bold text-white">{r.name}</h3>
+                    <a
+                      href={`tel:${r.phone}`}
+                      className="text-xs text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 mt-0.5"
+                    >
+                      <Phone className="w-3 h-3" />
+                      <span>{r.phone}</span>
+                    </a>
+                  </div>
+                  <div>{getStatusBadge(r)}</div>
+                </div>
 
-                      {isOverdue && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          <span>Overdue</span>
-                        </span>
-                      )}
-
-                      <span className="text-xs font-semibold text-white">{r.title}</span>
-                    </div>
-
-                    {/* Customer link & phone */}
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 pt-1">
-                      <Link
-                        to={`/customers/${customer._id || ''}`}
-                        className="font-medium text-slate-200 hover:text-indigo-400 transition flex items-center gap-1"
-                      >
-                        <User className="w-3.5 h-3.5 text-slate-500" />
-                        <span>{customer.name || 'Unknown Contact'}</span>
-                      </Link>
-
-                      {customer.phone && (
-                        <div className="flex items-center gap-1 font-mono text-indigo-300">
-                          <Phone className="w-3 h-3 text-slate-500" />
-                          <span>{customer.phone}</span>
-                        </div>
-                      )}
-
-                      {customer.company && (
-                        <span className="text-slate-500">&bull; {customer.company}</span>
-                      )}
-                    </div>
-
-                    {r.notes && (
-                      <p className="text-xs text-slate-400 pt-1 italic">
-                        "{r.notes}"
-                      </p>
-                    )}
-
-                    {isCompleted && r.completedOutcome && (
-                      <div className="pt-1 text-xs text-emerald-400 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Call Outcome: <strong>{r.completedOutcome}</strong></span>
-                      </div>
-                    )}
+                <div className="text-xs text-slate-300 space-y-1 pt-1 border-t border-slate-800/60">
+                  <div className="flex items-center gap-1.5 text-indigo-300 font-mono">
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{formatKolkataTime(r.dueAt)}</span>
                   </div>
 
-                  {/* Right: Date and Action Buttons */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-800/80">
-                    <div className="text-left sm:text-right">
-                      <div className="text-xs font-semibold text-slate-200 flex items-center lg:justify-end gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>{formatInAustralianTz(r.dueAt, timezone)}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        {isCompleted
-                          ? `Completed on ${formatInAustralianTz(r.completedAt, timezone)}`
-                          : formatTimeRelative(r.dueAt)}
-                      </div>
+                  {r.address && (
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                      <span>{r.address}</span>
                     </div>
+                  )}
 
-                    {/* Actions */}
-                    {!isCompleted && (
-                      <div className="flex items-center gap-2">
-                        {customer.phone && (
-                          <a
-                            href={`tel:${customer.phone}`}
-                            className="px-3 py-1.5 rounded-xl bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 text-xs font-medium transition flex items-center gap-1.5"
-                            title="Call customer via phone dialer"
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                            <span>Call</span>
-                          </a>
-                        )}
+                  {r.email && (
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Mail className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                      <a href={`mailto:${r.email}`}>{r.email}</a>
+                    </div>
+                  )}
 
-                        <button
-                          onClick={() => setActiveReminderForCompletion(r)}
-                          className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Complete</span>
-                        </button>
+                  {r.note && (
+                    <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60 text-slate-400 text-[11px] italic mt-2">
+                      "{r.note}"
+                    </div>
+                  )}
+                </div>
 
-                        <button
-                          onClick={() => setActiveReminderForSnooze(r)}
-                          className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
-                          title="Snooze or reschedule"
-                        >
-                          <Clock className="w-3.5 h-3.5" />
-                        </button>
+                {/* Mobile Actions */}
+                <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between gap-2">
+                  <a
+                    href={`tel:${r.phone}`}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 text-xs font-semibold transition flex items-center gap-1"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>Call</span>
+                  </a>
 
-                        <button
-                          onClick={() => handleCancelReminder(r._id, r.title)}
-                          className="px-2 py-1.5 rounded-xl text-slate-500 hover:text-rose-400 text-xs transition"
-                          title="Cancel reminder"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleToggleCompleted(r)}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white transition"
+                    >
+                      {r.status === 'completed' ? 'Mark Pending' : 'Complete'}
+                    </button>
+                    <button
+                      onClick={() => setEditingReminder(r)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 bg-slate-800"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(r._id, r.name)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 bg-slate-800"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
-      {/* Modals */}
-      <ReminderModal
-        isOpen={reminderModalOpen}
-        onClose={() => setReminderModalOpen(false)}
-        onSaved={() => fetchReminders(filter)}
-      />
-
-      {activeReminderForCompletion && (
-        <CompleteCallModal
-          isOpen={!!activeReminderForCompletion}
-          reminder={activeReminderForCompletion}
-          onClose={() => setActiveReminderForCompletion(null)}
-          onCompleted={() => fetchReminders(filter)}
-        />
-      )}
-
-      {activeReminderForSnooze && (
-        <SnoozeModal
-          isOpen={!!activeReminderForSnooze}
-          reminder={activeReminderForSnooze}
-          onClose={() => setActiveReminderForSnooze(null)}
-          onSnoozed={() => fetchReminders(filter)}
+      {/* Edit Reminder Modal */}
+      {editingReminder && (
+        <EditReminderModal
+          isOpen={!!editingReminder}
+          reminder={editingReminder}
+          onClose={() => setEditingReminder(null)}
+          onSaved={fetchReminders}
         />
       )}
     </div>

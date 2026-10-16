@@ -8,7 +8,6 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     passwordHash: {
       type: String,
@@ -17,19 +16,6 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       default: 'owner',
-      immutable: true,
-    },
-    timezone: {
-      type: String,
-      default: 'Australia/Sydney',
-    },
-    browserNotificationsEnabled: {
-      type: Boolean,
-      default: true,
-    },
-    emailNotificationsEnabled: {
-      type: Boolean,
-      default: true,
     },
     pushSubscription: {
       type: Object,

@@ -1,0 +1,60 @@
+import cron from 'node-cron';
+import { dataService } from '../services/dataService.js';
+import { sendReminderEmail, formatInKolkata } from '../services/emailService.js';
+import { pushService } from '../services/pushService.js';
+
+let isRunning = false;
+
+export async function processDueReminders() {
+  if (isRunning) return;
+  isRunning = true;
+
+  try {
+    const dueReminders = await dataService.getDuePendingReminders();
+
+    if (dueReminders.length > 0) {
+      console.log(`[Worker] Found ${dueReminders.length} due reminder(s) to process.`);
+    }
+
+    for (const reminder of dueReminders) {
+      try {
+        console.log(`[Worker] Processing reminder: "${reminder.name}" (${reminder.phone}) due at ${formatInKolkata(reminder.dueAt)}`);
+
+        // 1. Send Email Notification
+        await sendReminderEmail(reminder);
+        await dataService.markEmailSent(reminder._id);
+        console.log(`[Worker] Email sent successfully for reminder ${reminder._id}`);
+
+        // 2. Send Web Push Notification to PC
+        const pushPayload = {
+          title: `Call Reminder: ${reminder.name}`,
+          body: `Time to call ${reminder.phone}. Due: ${formatInKolkata(reminder.dueAt)}`,
+          phone: reminder.phone,
+          url: '/reminders',
+        };
+        await pushService.sendPushToAll(pushPayload);
+        await dataService.markNotified(reminder._id);
+      } catch (err) {
+        console.error(`[Worker Error] Failed to process reminder ${reminder._id}:`, err.message);
+        // Will retry automatically on next minute cycle because emailSentAt remains null
+      }
+    }
+  } catch (err) {
+    console.error('[Worker Error] Unexpected error in reminder loop:', err);
+  } finally {
+    isRunning = false;
+  }
+}
+
+export function startReminderWorker() {
+  // Catch up immediately on server startup
+  console.log('[Worker] Checking for due/missed reminders on startup...');
+  processDueReminders();
+
+  // Run every minute: * * * * *
+  cron.schedule('* * * * *', () => {
+    processDueReminders();
+  });
+
+  console.log('[Worker] Reminder cron worker scheduled (running every minute)');
+}

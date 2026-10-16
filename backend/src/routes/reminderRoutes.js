@@ -1,43 +1,54 @@
 import express from 'express';
 import { dataService } from '../services/dataService.js';
-import { DEFAULT_AUSTRALIAN_TIMEZONE } from '../utils/timezones.js';
+import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// List reminders with status/date filters
+// Apply auth to all reminder endpoints
+router.use(auth);
+
+// GET /reminders - List reminders with filters (all, pending, completed, overdue) and search
 router.get('/', async (req, res, next) => {
   try {
-    const { status, due, timezone = DEFAULT_AUSTRALIAN_TIMEZONE } = req.query;
-    const filter = due || status || 'all';
-    const reminders = await dataService.getReminders(filter, timezone);
+    const { status, search } = req.query;
+    const reminders = await dataService.getReminders({ status, search });
     res.json({ success: true, data: reminders });
   } catch (err) {
     next(err);
   }
 });
 
-// Create reminder
+// POST /reminders - Create a new reminder
 router.post('/', async (req, res, next) => {
   try {
-    const { customerId, title, dueAt, timezone, priority, notes } = req.body;
-    if (!customerId || !dueAt) {
-      return res.status(400).json({ success: false, message: 'Customer and Due Date are required' });
+    const { name, phone, email, address, note, dueAt } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Name is required' });
     }
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+    if (!dueAt) {
+      return res.status(400).json({ success: false, message: 'Due date and time are required' });
+    }
+
     const reminder = await dataService.createReminder({
-      customerId,
-      title: title || 'Follow-up call',
+      name: name.trim(),
+      phone: phone.trim(),
+      email: email ? email.trim() : '',
+      address: address ? address.trim() : '',
+      note: note ? note.trim() : '',
       dueAt,
-      timezone: timezone || DEFAULT_AUSTRALIAN_TIMEZONE,
-      priority: priority || 'normal',
-      notes: notes || '',
     });
-    res.status(201).json({ success: true, data: reminder });
+
+    res.status(201).json({ success: true, message: 'Reminder created successfully', data: reminder });
   } catch (err) {
     next(err);
   }
 });
 
-// Get single reminder
+// GET /reminders/:id - Get single reminder
 router.get('/:id', async (req, res, next) => {
   try {
     const reminder = await dataService.getReminderById(req.params.id);
@@ -50,52 +61,27 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// Complete reminder with outcome and optional next follow-up
-router.post('/:id/complete', async (req, res, next) => {
+// PATCH /reminders/:id - Update reminder or mark completed
+router.patch('/:id', async (req, res, next) => {
   try {
-    const { outcome, notes, nextReminderDueAt, nextReminderTitle, nextReminderNotes } = req.body;
-    const result = await dataService.completeReminder(req.params.id, {
-      outcome,
-      notes,
-      nextReminderDueAt,
-      nextReminderTitle,
-      nextReminderNotes,
-    });
-    if (!result) {
+    const updated = await dataService.updateReminder(req.params.id, req.body);
+    if (!updated) {
       return res.status(404).json({ success: false, message: 'Reminder not found' });
     }
-    res.json({
-      success: true,
-      message: 'Reminder completed and call history logged',
-      data: result,
-    });
+    res.json({ success: true, message: 'Reminder updated successfully', data: updated });
   } catch (err) {
     next(err);
   }
 });
 
-// Snooze reminder
-router.post('/:id/snooze', async (req, res, next) => {
+// DELETE /reminders/:id - Delete reminder
+router.delete('/:id', async (req, res, next) => {
   try {
-    const { minutes, dueAt } = req.body;
-    const updated = await dataService.snoozeReminder(req.params.id, minutes || dueAt || 15);
-    if (!updated) {
+    const deleted = await dataService.deleteReminder(req.params.id);
+    if (!deleted) {
       return res.status(404).json({ success: false, message: 'Reminder not found' });
     }
-    res.json({ success: true, message: 'Reminder rescheduled', data: updated });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Cancel reminder
-router.post('/:id/cancel', async (req, res, next) => {
-  try {
-    const updated = await dataService.cancelReminder(req.params.id);
-    if (!updated) {
-      return res.status(404).json({ success: false, message: 'Reminder not found' });
-    }
-    res.json({ success: true, message: 'Reminder cancelled', data: updated });
+    res.json({ success: true, message: 'Reminder deleted successfully' });
   } catch (err) {
     next(err);
   }
