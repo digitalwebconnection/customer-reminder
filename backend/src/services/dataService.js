@@ -145,7 +145,7 @@ export const dataService = {
     }
 
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
-      return await Reminder.findByIdAndUpdate(id, updates, { new: true });
+      return await Reminder.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
     }
 
     const store = readStore();
@@ -189,7 +189,7 @@ export const dataService = {
   markEmailSent: async (id) => {
     const now = new Date();
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
-      return await Reminder.findByIdAndUpdate(id, { emailSentAt: now }, { new: true });
+      return await Reminder.findByIdAndUpdate(id, { emailSentAt: now }, { returnDocument: 'after' });
     }
     const store = readStore();
     const idx = store.findIndex((r) => r._id === id);
@@ -202,7 +202,7 @@ export const dataService = {
   markNotified: async (id) => {
     const now = new Date();
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
-      return await Reminder.findByIdAndUpdate(id, { notifiedAt: now }, { new: true });
+      return await Reminder.findByIdAndUpdate(id, { notifiedAt: now }, { returnDocument: 'after' });
     }
     const store = readStore();
     const idx = store.findIndex((r) => r._id === id);

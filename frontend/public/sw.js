@@ -12,8 +12,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || '🔔 Customer Call Reminder';
   const options = {
     body: data.body || 'You have a customer follow-up call due now.',
-    icon: '/vite.svg',
-    badge: '/vite.svg',
+    icon: '/app-icon.png',
+    badge: '/favicon.svg',
     vibrate: [200, 100, 200],
     data: {
       url: data.url || '/reminders',

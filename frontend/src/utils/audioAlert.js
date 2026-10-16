@@ -46,7 +46,7 @@ export function triggerDesktopNotification(title, body) {
     try {
       new Notification(title, {
         body,
-        icon: '/vite.svg',
+        icon: '/app-icon.png',
       });
     } catch (e) {
       console.warn('Notification error:', e);
