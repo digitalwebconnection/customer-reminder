@@ -97,7 +97,13 @@ export default function AddReminder() {
       setDate('');
       setTime('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save reminder. Please try again.');
+      if (!err.response) {
+        setError('Cannot connect to the server (Port 5000). Please check that the backend is running.');
+      } else if (err.response.status === 401) {
+        setError('Your session has expired. Please log in again.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to save reminder. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
