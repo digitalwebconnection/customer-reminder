@@ -1,0 +1,12 @@
+{
+  "name": "customer-reminder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Private Customer Follow-up & Call Reminder System",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend start"
+  }
+}
