@@ -1,27 +1,46 @@
 import notifier from 'node-notifier';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const APP_ICON_PATH = path.resolve(__dirname, '../../assets/app-icon.png');
 
 /**
  * Native Windows PC Desktop Notification Service
- * Sends native Windows Action Center Toast Notifications directly to the user's PC
+ * Sends styled 60-second Windows Action Center Toast Notifications with custom branding
  */
 export const desktopNotificationService = {
   sendReminderToast(reminder, formattedTime) {
     const title = `📞 Call Reminder: ${reminder.name}`;
-    const message = `Time to call ${reminder.phone}\nDue: ${formattedTime}${reminder.note ? `\n"${reminder.note}"` : ''}`;
+    const cleanPhone = reminder.phone || '';
+    const message = `📱 ${cleanPhone}\n⏰ Due: ${formattedTime}${reminder.note ? `\n📝 "${reminder.note}"` : ''}`;
 
     notifier.notify(
       {
         title,
         message,
         appID: 'RemindIQ',
+        icon: APP_ICON_PATH,
         sound: true,
-        wait: false,
+        wait: true,
+        timeout: 60, // Keep notification visible for 60 seconds (1 minute)
+        actions: ['📞 Call Now', 'View in App'],
       },
-      (err, response) => {
+      (err, response, metadata) => {
         if (err) {
           console.warn('[Desktop Notification] Error sending Windows toast:', err.message);
         } else {
-          console.log(`[Desktop Notification] Windows Action Center notification sent for "${reminder.name}"`);
+          console.log(`[Desktop Notification] Windows 1-min reminder toast active for "${reminder.name}"`);
+          
+          // If user clicked notification or action button, open direct link
+          const action = metadata?.activationType || response;
+          if (action === 'click' || action === 'View in App') {
+            exec('start http://localhost:5173/reminders');
+          } else if (action === '📞 Call Now' && cleanPhone) {
+            exec(`start tel:${cleanPhone.replace(/\s+/g, '')}`);
+          }
         }
       }
     );
@@ -30,17 +49,24 @@ export const desktopNotificationService = {
   sendTestToast() {
     notifier.notify(
       {
-        title: 'RemindIQ Customer Reminder',
-        message: '🔔 Success! Native Windows PC notifications are active on this computer.',
+        title: '🔔 RemindIQ Call Reminder Test',
+        message: 'Active for 1 minute on your PC!\nAll scheduled customer calls will appear here.',
         appID: 'RemindIQ',
+        icon: APP_ICON_PATH,
         sound: true,
         wait: false,
+        timeout: 60, // 60 seconds duration
+        actions: ['Open RemindIQ', 'Dismiss'],
       },
-      (err, response) => {
+      (err, response, metadata) => {
         if (err) {
           console.warn('[Desktop Notification] Test error:', err.message);
         } else {
-          console.log('[Desktop Notification] Test Windows toast notification sent successfully!');
+          console.log('[Desktop Notification] 60-second Windows test toast sent successfully!');
+          const action = metadata?.activationType || response;
+          if (action === 'click' || action === 'Open RemindIQ') {
+            exec('start http://localhost:5173/reminders');
+          }
         }
       }
     );

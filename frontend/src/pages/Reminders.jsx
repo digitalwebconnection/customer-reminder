@@ -26,7 +26,25 @@ export default function Reminders() {
   const [loading, setLoading] = useState(true);
   const [editingReminder, setEditingReminder] = useState(null);
   const [activeDueAlert, setActiveDueAlert] = useState(null);
+  const [alertSecondsLeft, setAlertSecondsLeft] = useState(60);
   const notifiedIdsRef = useRef(new Set());
+
+  // 60-Second Countdown Timer for due reminder banner
+  useEffect(() => {
+    if (!activeDueAlert) return;
+    setAlertSecondsLeft(60);
+    const timer = setInterval(() => {
+      setAlertSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setActiveDueAlert(null); // Keep banner open for exactly 1 minute (60 seconds)
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [activeDueAlert]);
 
   const fetchReminders = async () => {
     try {
@@ -63,7 +81,7 @@ export default function Reminders() {
         // 1. Audio alert (plays regardless of browser OS permission)
         playChimeSound();
 
-        // 2. In-App Call Alert Banner
+        // 2. In-App Call Alert Banner (Displays for 1 minute)
         setActiveDueAlert(r);
 
         // 3. Desktop OS Notification (if browser permission granted)
@@ -130,52 +148,65 @@ export default function Reminders() {
 
   return (
     <div className="max-w-6xl mx-auto py-4 sm:py-8 space-y-6">
-      {/* Real-time In-App Due Call Notification Banner */}
+      {/* Real-time In-App Due Call Notification Banner (Displays for 1 minute) */}
       {activeDueAlert && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-600/20 via-rose-500/10 to-amber-500/10 border-2 border-rose-500/50 shadow-2xl animate-fade-in flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-rose-600 flex items-center justify-center text-white flex-shrink-0 animate-bounce shadow-lg shadow-rose-600/30">
-              <Phone className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-md border border-rose-500/30">
-                  Call Due Now
-                </span>
-                <span className="text-sm font-bold text-white">{activeDueAlert.name}</span>
-              </div>
-              <p className="text-xs text-slate-300 mt-1 font-mono">
-                Phone: <span className="font-semibold text-rose-300">{activeDueAlert.phone}</span> | Scheduled: {formatInAustralianTime(activeDueAlert.dueAt, activeDueAlert.timezone || 'Australia/Sydney')}
-              </p>
-              {activeDueAlert.note && (
-                <p className="text-[11px] text-slate-400 italic mt-0.5">"{activeDueAlert.note}"</p>
-              )}
-            </div>
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-950/80 via-slate-900/90 to-slate-950 border-2 border-rose-500/60 shadow-2xl animate-fade-in flex flex-col gap-3 relative overflow-hidden backdrop-blur-xl">
+          {/* 60-Second Animated Progress Bar */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-slate-800/80">
+            <div
+              className="h-full bg-gradient-to-r from-rose-500 to-amber-400 transition-all duration-1000 ease-linear"
+              style={{ width: `${(alertSecondsLeft / 60) * 100}%` }}
+            />
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <a
-              href={`tel:${activeDueAlert.phone}`}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/30"
-            >
-              <Phone className="w-3.5 h-3.5" />
-              <span>Call Now</span>
-            </a>
-            <button
-              onClick={() => {
-                handleToggleCompleted(activeDueAlert);
-                setActiveDueAlert(null);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition cursor-pointer"
-            >
-              Complete
-            </button>
-            <button
-              onClick={() => setActiveDueAlert(null)}
-              className="px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 text-xs font-medium transition cursor-pointer"
-            >
-              Dismiss
-            </button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center text-white flex-shrink-0 animate-bounce shadow-lg shadow-rose-600/30">
+                <Phone className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-md border border-rose-500/30">
+                    🚨 Call Due Now
+                  </span>
+                  <span className="text-base font-bold text-white">{activeDueAlert.name}</span>
+                  <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                    ⏱️ Showing for 1 min: {alertSecondsLeft}s left
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-1 font-mono">
+                  Phone: <span className="font-semibold text-rose-300">{activeDueAlert.phone}</span> | Scheduled: {formatInAustralianTime(activeDueAlert.dueAt, activeDueAlert.timezone || 'Australia/Sydney')}
+                </p>
+                {activeDueAlert.note && (
+                  <p className="text-[11px] text-slate-400 italic mt-0.5">"{activeDueAlert.note}"</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto flex-shrink-0">
+              <a
+                href={`tel:${activeDueAlert.phone}`}
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/30 cursor-pointer"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Call Now</span>
+              </a>
+              <button
+                onClick={() => {
+                  handleToggleCompleted(activeDueAlert);
+                  setActiveDueAlert(null);
+                }}
+                className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition cursor-pointer"
+              >
+                Complete
+              </button>
+              <button
+                onClick={() => setActiveDueAlert(null)}
+                className="px-3 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-medium transition cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         </div>
       )}

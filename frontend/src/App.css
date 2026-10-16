@@ -1,1 +1,54 @@
-/* Custom App utilities */
+/* Custom App utilities & Glassmorphism design tokens */
+
+@layer utilities {
+  .glass-panel {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+  }
+
+  .glass-card {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  }
+
+  .glow-border {
+    position: relative;
+  }
+
+  .glow-border::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(to right, #6366f1, #8b5cf6, #ec4899);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Custom pulse animations */
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px -3px rgba(99, 102, 241, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 25px -1px rgba(99, 102, 241, 0.6);
+  }
+}
+
+.animate-subtle-glow {
+  animation: subtle-glow 3s infinite ease-in-out;
+}
+
+/* Smooth transitions for interactive elements */
+button, input, select, textarea {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
