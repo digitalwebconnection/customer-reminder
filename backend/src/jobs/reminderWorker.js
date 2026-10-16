@@ -3,6 +3,7 @@ import { dataService } from '../services/dataService.js';
 import { sendReminderEmail, formatInTimezone } from '../services/emailService.js';
 import { pushService } from '../services/pushService.js';
 import { oneSignalService } from '../services/oneSignalService.js';
+import { desktopNotificationService } from '../services/desktopNotificationService.js';
 
 let isRunning = false;
 
@@ -28,7 +29,7 @@ export async function processDueReminders() {
         await dataService.markEmailSent(reminder._id);
         console.log(`[Worker] Email sent successfully for reminder ${reminder._id}`);
 
-        // 2. Send Web Push Notification to PC
+        // 2. Send Web Push & OneSignal Notification
         const pushPayload = {
           title: `Call Reminder: ${reminder.name}`,
           body: `Time to call ${reminder.phone}. Due: ${formattedTime}`,
@@ -42,6 +43,14 @@ export async function processDueReminders() {
           url: pushPayload.url,
           phone: pushPayload.phone,
         });
+
+        // 3. Send Native Windows Action Center PC Toast Notification
+        try {
+          desktopNotificationService.sendReminderToast(reminder, formattedTime);
+        } catch (e) {
+          console.warn('[Worker] Native Windows toast warning:', e.message);
+        }
+
         await dataService.markNotified(reminder._id);
       } catch (err) {
         console.error(`[Worker Error] Failed to process reminder ${reminder._id}:`, err.message);

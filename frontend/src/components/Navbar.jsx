@@ -6,6 +6,8 @@ import { requestAndSubscribePush } from '../utils/pushManager';
 import { promptOneSignalPush } from '../utils/oneSignalManager';
 import { playChimeSound } from '../utils/audioAlert';
 
+import api from '../api/axios';
+
 export default function Navbar() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
@@ -51,16 +53,26 @@ export default function Navbar() {
     }
   };
 
-  const handleSendTestAlert = () => {
+  const handleSendTestAlert = async () => {
     playChimeSound();
+
+    // 1. Browser Desktop Notification
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
         new Notification('🔔 RemindIQ Test Alert', {
-          body: 'Desktop notifications are working perfectly on this device!',
+          body: 'Desktop notifications are active on this PC!',
           icon: '/favicon.svg',
         });
       } catch (e) {}
     }
+
+    // 2. Native Windows PC Action Center Toast Notification
+    try {
+      await api.post('/reminders/test-pc-alert');
+    } catch (e) {
+      console.warn('Backend Windows toast error:', e);
+    }
+
     setTestSent(true);
     setTimeout(() => setTestSent(false), 3000);
   };

@@ -1,6 +1,7 @@
 import express from 'express';
 import { dataService } from '../services/dataService.js';
 import { auth } from '../middleware/auth.js';
+import { desktopNotificationService } from '../services/desktopNotificationService.js';
 
 const router = express.Router();
 
@@ -86,6 +87,12 @@ router.delete('/:id', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// POST /reminders/test-pc-alert - Trigger native Windows PC Toast notification
+router.post('/test-pc-alert', (req, res) => {
+  desktopNotificationService.sendTestToast();
+  res.json({ success: true, message: 'Windows toast notification sent' });
 });
 
 export default router;
