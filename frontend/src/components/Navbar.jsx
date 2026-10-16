@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { PlusCircle, ListTodo, Bell, BellRing, LogOut, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { requestAndSubscribePush } from '../utils/pushManager';
+import { promptOneSignalPush } from '../utils/oneSignalManager';
 
 export default function Navbar() {
   const { logout, user } = useAuth();
@@ -18,7 +19,12 @@ export default function Navbar() {
 
   const handleEnableNotifications = async () => {
     setLoadingPush(true);
-    const result = await requestAndSubscribePush();
+    try {
+      await promptOneSignalPush();
+      await requestAndSubscribePush();
+    } catch (e) {
+      console.warn('Push registration error:', e);
+    }
     if ('Notification' in window) {
       setNotificationState(Notification.permission);
     }

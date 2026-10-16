@@ -10,6 +10,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- OneSignal Web Push SDK v16 -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "c211ef15-5ef5-45a5-80ce-e6f36c3fe58a",
+          allowLocalhostAsSecureOrigin: true,
+        });
+      });
+    </script>
   </head>
   <body class="bg-[#0b0f19] text-slate-100 min-h-screen antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
     <div id="root"></div>

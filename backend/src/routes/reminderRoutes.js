@@ -21,7 +21,7 @@ router.get('/', async (req, res, next) => {
 // POST /reminders - Create a new reminder
 router.post('/', async (req, res, next) => {
   try {
-    const { name, phone, email, address, note, dueAt } = req.body;
+    const { name, phone, email, address, note, dueAt, timezone } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Name is required' });
@@ -40,6 +40,7 @@ router.post('/', async (req, res, next) => {
       address: address ? address.trim() : '',
       note: note ? note.trim() : '',
       dueAt,
+      timezone: timezone || 'Australia/Sydney',
     });
 
     res.status(201).json({ success: true, message: 'Reminder created successfully', data: reminder });

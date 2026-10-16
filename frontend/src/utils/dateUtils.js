@@ -1,20 +1,55 @@
 /**
- * Date & Time utility strictly formatted in Asia/Kolkata timezone
+ * Australian Timezone & Date/Time utilities
  */
 
-export const TIMEZONE = 'Asia/Kolkata';
+export const AUSTRALIAN_TIMEZONES = [
+  { value: 'Australia/Sydney', label: 'Sydney, NSW / Canberra, ACT (AEDT/AEST)', state: 'NSW', short: 'Sydney' },
+  { value: 'Australia/Melbourne', label: 'Melbourne, VIC (AEDT/AEST)', state: 'VIC', short: 'Melbourne' },
+  { value: 'Australia/Brisbane', label: 'Brisbane, QLD (AEST — No DST)', state: 'QLD', short: 'Brisbane' },
+  { value: 'Australia/Adelaide', label: 'Adelaide, SA (ACDT/ACST)', state: 'SA', short: 'Adelaide' },
+  { value: 'Australia/Perth', label: 'Perth, WA (AWST — No DST)', state: 'WA', short: 'Perth' },
+  { value: 'Australia/Darwin', label: 'Darwin, NT (ACST — No DST)', state: 'NT', short: 'Darwin' },
+  { value: 'Australia/Hobart', label: 'Hobart, TAS (AEDT/AEST)', state: 'TAS', short: 'Hobart' },
+];
+
+export const DEFAULT_TIMEZONE = 'Australia/Sydney';
 
 /**
- * Format a UTC date string into readable Asia/Kolkata display string
- * e.g. "16 Oct 2026, 02:30 PM"
+ * Convert local date string (YYYY-MM-DD) and time string (HH:mm) in a target Australian timezone to UTC ISO string
  */
-export function formatKolkataTime(dateInput) {
+export function combineDateAndTimeToUTC(dateStr, timeStr, timezone = DEFAULT_TIMEZONE) {
+  if (!dateStr || !timeStr) return null;
+
+  try {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hour, minute] = timeStr.split(':').map(Number);
+
+    const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute));
+    const invdate = new Date(utcDate.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const targetDate = new Date(utcDate.toLocaleString('en-US', { timeZone: timezone }));
+    const diff = targetDate.getTime() - invdate.getTime();
+
+    return new Date(utcDate.getTime() - diff).toISOString();
+  } catch (err) {
+    console.error('Error converting date/time to UTC:', err);
+    return new Date(`${dateStr}T${timeStr}:00`).toISOString();
+  }
+}
+
+/**
+ * Format a UTC Date input into readable Australian format with timezone label
+ * e.g. "17 Oct 2026, 02:30 PM (Sydney)"
+ */
+export function formatInAustralianTime(dateInput, timezone = DEFAULT_TIMEZONE) {
   if (!dateInput) return '';
   const d = new Date(dateInput);
   if (isNaN(d.getTime())) return '';
 
-  return new Intl.DateTimeFormat('en-IN', {
-    timeZone: TIMEZONE,
+  const zoneObj = AUSTRALIAN_TIMEZONES.find((z) => z.value === timezone);
+  const shortCity = zoneObj ? zoneObj.short : 'AU';
+
+  const formatted = new Intl.DateTimeFormat('en-AU', {
+    timeZone: timezone,
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -22,30 +57,20 @@ export function formatKolkataTime(dateInput) {
     minute: '2-digit',
     hour12: true,
   }).format(d);
+
+  return `${formatted} (${shortCity})`;
 }
 
 /**
- * Combine Date string (YYYY-MM-DD) and Time string (HH:mm) into a single UTC ISO string
+ * Extract YYYY-MM-DD and HH:mm from UTC Date for a specific Australian timezone
  */
-export function combineDateAndTimeToUTC(dateStr, timeStr) {
-  if (!dateStr || !timeStr) return null;
-  // Parse in Asia/Kolkata context (+05:30)
-  // Format: "YYYY-MM-DDTHH:mm:00+05:30"
-  const isoStringWithKolkataOffset = `${dateStr}T${timeStr}:00+05:30`;
-  const date = new Date(isoStringWithKolkataOffset);
-  return date.toISOString();
-}
-
-/**
- * Convert UTC ISO date into separate { date: 'YYYY-MM-DD', time: 'HH:mm' } in Asia/Kolkata
- */
-export function getKolkataDateAndTimeParts(dateInput) {
+export function getPartsInAustralianTimezone(dateInput, timezone = DEFAULT_TIMEZONE) {
   if (!dateInput) return { date: '', time: '' };
   const d = new Date(dateInput);
   if (isNaN(d.getTime())) return { date: '', time: '' };
 
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: TIMEZONE,
+    timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

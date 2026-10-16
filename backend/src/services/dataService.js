@@ -45,6 +45,7 @@ export const dataService = {
       address: data.address || '',
       note: data.note || '',
       dueAt: new Date(data.dueAt),
+      timezone: data.timezone || 'Australia/Sydney',
       status: 'pending',
       emailSentAt: null,
       notifiedAt: null,

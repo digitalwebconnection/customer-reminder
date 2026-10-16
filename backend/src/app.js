@@ -46,7 +46,7 @@ app.get('/api/v1/health', (req, res) => {
     status: 'ok',
     database: isDbConnected ? 'connected' : 'disconnected',
     storage: isDbConnected ? 'mongodb' : 'local-json-store',
-    timezone: process.env.APP_TIMEZONE || 'Asia/Kolkata',
+    timezone: process.env.APP_TIMEZONE || 'Australia/Sydney',
     service: 'customer-reminder-api',
     timestamp: new Date().toISOString(),
   });

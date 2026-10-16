@@ -11,11 +11,11 @@ import {
   Edit2,
   Trash2,
   Plus,
-  RotateCcw,
+  Globe,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
-import { formatKolkataTime } from '../utils/dateUtils';
+import { formatInAustralianTime } from '../utils/dateUtils';
 import EditReminderModal from '../components/EditReminderModal';
 import { playChimeSound } from '../utils/audioAlert';
 
@@ -46,10 +46,9 @@ export default function Reminders() {
     }
   };
 
-  // Poll every 30 seconds as specified in prompt
   useEffect(() => {
     fetchReminders();
-    const interval = setInterval(fetchReminders, 30000);
+    const interval = setInterval(fetchReminders, 30000); // 30s polling
     return () => clearInterval(interval);
   }, [filter, search]);
 
@@ -63,8 +62,9 @@ export default function Reminders() {
         notifiedIdsRef.current.add(r._id);
         playChimeSound();
         try {
+          const tz = r.timezone || 'Australia/Sydney';
           new Notification(`📞 Call Due: ${r.name}`, {
-            body: `Phone: ${r.phone} | Note: ${r.note || 'None'}\nDue: ${formatKolkataTime(r.dueAt)}`,
+            body: `Phone: ${r.phone} | Due: ${formatInAustralianTime(r.dueAt, tz)}\nNote: ${r.note || 'None'}`,
             icon: '/vite.svg',
           });
         } catch (e) {}
@@ -127,7 +127,7 @@ export default function Reminders() {
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">All Reminders</h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Times displayed in <span className="text-indigo-400 font-medium">Asia/Kolkata</span>. Desktop alerts check every 30s.
+            Times formatted in customer's Australian regional timezone. Desktop alerts check every 30s.
           </p>
         </div>
         <Link
@@ -170,7 +170,7 @@ export default function Reminders() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name or phone..."
+            placeholder="Search customer name or phone..."
             className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
           />
         </div>
@@ -205,180 +205,186 @@ export default function Reminders() {
                   <th className="py-3 px-4">Contact</th>
                   <th className="py-3 px-4">Address</th>
                   <th className="py-3 px-4">Note</th>
-                  <th className="py-3 px-4">Due Date & Time</th>
+                  <th className="py-3 px-4">Due Date & Time (AU)</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-xs">
-                {reminders.map((r) => (
-                  <tr key={r._id} className="hover:bg-slate-800/30 transition">
-                    {/* Customer Name & Phone */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-white">{r.name}</div>
-                      <a
-                        href={`tel:${r.phone}`}
-                        className="text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 mt-0.5"
-                      >
-                        <Phone className="w-3 h-3" />
-                        <span>{r.phone}</span>
-                      </a>
-                    </td>
-
-                    {/* Email */}
-                    <td className="py-3.5 px-4 text-slate-300">
-                      {r.email ? (
-                        <a href={`mailto:${r.email}`} className="hover:underline text-slate-400 truncate block max-w-[150px]">
-                          {r.email}
+                {reminders.map((r) => {
+                  const tz = r.timezone || 'Australia/Sydney';
+                  return (
+                    <tr key={r._id} className="hover:bg-slate-800/30 transition">
+                      {/* Customer Name & Phone */}
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-white">{r.name}</div>
+                        <a
+                          href={`tel:${r.phone}`}
+                          className="text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 mt-0.5"
+                        >
+                          <Phone className="w-3 h-3" />
+                          <span>{r.phone}</span>
                         </a>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
-                    </td>
+                      </td>
 
-                    {/* Address */}
-                    <td className="py-3.5 px-4 text-slate-300 max-w-[140px] truncate">
-                      {r.address || <span className="text-slate-600">—</span>}
-                    </td>
+                      {/* Email */}
+                      <td className="py-3.5 px-4 text-slate-300">
+                        {r.email ? (
+                          <a href={`mailto:${r.email}`} className="hover:underline text-slate-400 truncate block max-w-[150px]">
+                            {r.email}
+                          </a>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
+                      </td>
 
-                    {/* Note */}
-                    <td className="py-3.5 px-4 text-slate-300 max-w-[180px]">
-                      {r.note ? (
-                        <p className="truncate italic text-slate-400" title={r.note}>{r.note}</p>
-                      ) : (
-                        <span className="text-slate-600">—</span>
-                      )}
-                    </td>
+                      {/* Address */}
+                      <td className="py-3.5 px-4 text-slate-300 max-w-[140px] truncate">
+                        {r.address || <span className="text-slate-600">—</span>}
+                      </td>
 
-                    {/* Due Date/Time */}
-                    <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-200">
-                      <div className="font-medium">{formatKolkataTime(r.dueAt)}</div>
-                    </td>
+                      {/* Note */}
+                      <td className="py-3.5 px-4 text-slate-300 max-w-[180px]">
+                        {r.note ? (
+                          <p className="truncate italic text-slate-400" title={r.note}>{r.note}</p>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
+                      </td>
 
-                    {/* Status Badge */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      {getStatusBadge(r)}
-                    </td>
+                      {/* Due Date/Time in Australia Timezone */}
+                      <td className="py-3.5 px-4 whitespace-nowrap font-mono text-slate-200">
+                        <div className="font-medium text-slate-100">{formatInAustralianTime(r.dueAt, tz)}</div>
+                      </td>
 
-                    {/* Actions per row */}
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => handleToggleCompleted(r)}
-                          className={`p-1.5 rounded-lg text-xs transition ${
-                            r.status === 'completed'
-                              ? 'text-amber-400 hover:bg-amber-500/10'
-                              : 'text-emerald-400 hover:bg-emerald-500/10'
-                          }`}
-                          title={r.status === 'completed' ? 'Mark as Pending' : 'Mark Completed'}
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </button>
+                      {/* Status Badge */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {getStatusBadge(r)}
+                      </td>
 
-                        <button
-                          onClick={() => setEditingReminder(r)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition"
-                          title="Edit Reminder"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                      {/* Actions per row */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleToggleCompleted(r)}
+                            className={`p-1.5 rounded-lg text-xs transition ${
+                              r.status === 'completed'
+                                ? 'text-amber-400 hover:bg-amber-500/10'
+                                : 'text-emerald-400 hover:bg-emerald-500/10'
+                            }`}
+                            title={r.status === 'completed' ? 'Mark as Pending' : 'Mark Completed'}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
 
-                        <button
-                          onClick={() => handleDelete(r._id, r.name)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
-                          title="Delete Reminder"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <button
+                            onClick={() => setEditingReminder(r)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition"
+                            title="Edit Reminder"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(r._id, r.name)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+                            title="Delete Reminder"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Cards View */}
           <div className="md:hidden space-y-3">
-            {reminders.map((r) => (
-              <div
-                key={r._id}
-                className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-base font-bold text-white">{r.name}</h3>
+            {reminders.map((r) => {
+              const tz = r.timezone || 'Australia/Sydney';
+              return (
+                <div
+                  key={r._id}
+                  className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-lg"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-bold text-white">{r.name}</h3>
+                      <a
+                        href={`tel:${r.phone}`}
+                        className="text-xs text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 mt-0.5"
+                      >
+                        <Phone className="w-3 h-3" />
+                        <span>{r.phone}</span>
+                      </a>
+                    </div>
+                    <div>{getStatusBadge(r)}</div>
+                  </div>
+
+                  <div className="text-xs text-slate-300 space-y-1 pt-1 border-t border-slate-800/60">
+                    <div className="flex items-center gap-1.5 text-indigo-300 font-mono">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{formatInAustralianTime(r.dueAt, tz)}</span>
+                    </div>
+
+                    {r.address && (
+                      <div className="flex items-center gap-1.5 text-slate-400">
+                        <MapPin className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                        <span>{r.address}</span>
+                      </div>
+                    )}
+
+                    {r.email && (
+                      <div className="flex items-center gap-1.5 text-slate-400">
+                        <Mail className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                        <a href={`mailto:${r.email}`}>{r.email}</a>
+                      </div>
+                    )}
+
+                    {r.note && (
+                      <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60 text-slate-400 text-[11px] italic mt-2">
+                        "{r.note}"
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mobile Actions */}
+                  <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between gap-2">
                     <a
                       href={`tel:${r.phone}`}
-                      className="text-xs text-indigo-400 hover:text-indigo-300 font-mono inline-flex items-center gap-1 mt-0.5"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 text-xs font-semibold transition flex items-center gap-1"
                     >
-                      <Phone className="w-3 h-3" />
-                      <span>{r.phone}</span>
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>Call</span>
                     </a>
-                  </div>
-                  <div>{getStatusBadge(r)}</div>
-                </div>
 
-                <div className="text-xs text-slate-300 space-y-1 pt-1 border-t border-slate-800/60">
-                  <div className="flex items-center gap-1.5 text-indigo-300 font-mono">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <span>{formatKolkataTime(r.dueAt)}</span>
-                  </div>
-
-                  {r.address && (
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                      <span>{r.address}</span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleToggleCompleted(r)}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white transition"
+                      >
+                        {r.status === 'completed' ? 'Mark Pending' : 'Complete'}
+                      </button>
+                      <button
+                        onClick={() => setEditingReminder(r)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 bg-slate-800"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(r._id, r.name)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 bg-slate-800"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  )}
-
-                  {r.email && (
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <Mail className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                      <a href={`mailto:${r.email}`}>{r.email}</a>
-                    </div>
-                  )}
-
-                  {r.note && (
-                    <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/60 text-slate-400 text-[11px] italic mt-2">
-                      "{r.note}"
-                    </div>
-                  )}
-                </div>
-
-                {/* Mobile Actions */}
-                <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between gap-2">
-                  <a
-                    href={`tel:${r.phone}`}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white border border-emerald-500/30 text-xs font-semibold transition flex items-center gap-1"
-                  >
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>Call</span>
-                  </a>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => handleToggleCompleted(r)}
-                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-xs text-slate-300 hover:text-white transition"
-                    >
-                      {r.status === 'completed' ? 'Mark Pending' : 'Complete'}
-                    </button>
-                    <button
-                      onClick={() => setEditingReminder(r)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 bg-slate-800"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(r._id, r.name)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 bg-slate-800"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

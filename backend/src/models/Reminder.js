@@ -32,6 +32,10 @@ const reminderSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    timezone: {
+      type: String,
+      default: 'Australia/Sydney',
+    },
     status: {
       type: String,
       enum: ['pending', 'completed'],

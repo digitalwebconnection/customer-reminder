@@ -12,7 +12,7 @@ const startServer = async () => {
   const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[Server] Running on http://localhost:${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
     console.log(`[Server] Health check: http://localhost:${PORT}/api/v1/health`);
-    console.log(`[Server] Timezone: ${process.env.APP_TIMEZONE || 'Asia/Kolkata'}`);
+    console.log(`[Server] Timezone: ${process.env.APP_TIMEZONE || 'Australia/Sydney'}`);
   });
 
   // Connect to DB in background

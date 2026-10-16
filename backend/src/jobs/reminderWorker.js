@@ -1,7 +1,8 @@
 import cron from 'node-cron';
 import { dataService } from '../services/dataService.js';
-import { sendReminderEmail, formatInKolkata } from '../services/emailService.js';
+import { sendReminderEmail, formatInTimezone } from '../services/emailService.js';
 import { pushService } from '../services/pushService.js';
+import { oneSignalService } from '../services/oneSignalService.js';
 
 let isRunning = false;
 
@@ -18,7 +19,9 @@ export async function processDueReminders() {
 
     for (const reminder of dueReminders) {
       try {
-        console.log(`[Worker] Processing reminder: "${reminder.name}" (${reminder.phone}) due at ${formatInKolkata(reminder.dueAt)}`);
+        const tz = reminder.timezone || 'Australia/Sydney';
+        const formattedTime = formatInTimezone(reminder.dueAt, tz);
+        console.log(`[Worker] Processing reminder: "${reminder.name}" (${reminder.phone}) due at ${formattedTime}`);
 
         // 1. Send Email Notification
         await sendReminderEmail(reminder);
@@ -28,11 +31,17 @@ export async function processDueReminders() {
         // 2. Send Web Push Notification to PC
         const pushPayload = {
           title: `Call Reminder: ${reminder.name}`,
-          body: `Time to call ${reminder.phone}. Due: ${formatInKolkata(reminder.dueAt)}`,
+          body: `Time to call ${reminder.phone}. Due: ${formattedTime}`,
           phone: reminder.phone,
           url: '/reminders',
         };
         await pushService.sendPushToAll(pushPayload);
+        await oneSignalService.sendPushNotification({
+          title: pushPayload.title,
+          message: pushPayload.body,
+          url: pushPayload.url,
+          phone: pushPayload.phone,
+        });
         await dataService.markNotified(reminder._id);
       } catch (err) {
         console.error(`[Worker Error] Failed to process reminder ${reminder._id}:`, err.message);
