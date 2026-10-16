@@ -11,6 +11,7 @@ import {
   Edit2,
   Trash2,
   Plus,
+  Globe,
   RefreshCw,
   Volume2,
   VolumeX,
@@ -19,7 +20,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { formatInAustralianTime } from '../utils/dateUtils';
 import EditReminderModal from '../components/EditReminderModal';
-import { playChimeSound, startReminderSiren, stopReminderSiren } from '../utils/audioAlert';
+import { playChimeSound, startCallRingtone, stopCallRingtone } from '../utils/audioAlert';
 
 export default function Reminders() {
   const [reminders, setReminders] = useState([]);
@@ -29,7 +30,7 @@ export default function Reminders() {
   const [editingReminder, setEditingReminder] = useState(null);
   const [activeDueAlert, setActiveDueAlert] = useState(null);
   const [alertSecondsLeft, setAlertSecondsLeft] = useState(60);
-  const [isSirenMuted, setIsSirenMuted] = useState(false);
+  const [isRingtoneMuted, setIsRingtoneMuted] = useState(false);
   const notifiedIdsRef = useRef(new Set());
 
   // Auto-refresh state (every 2 minutes = 120 seconds)
@@ -38,22 +39,22 @@ export default function Reminders() {
   const [lastRefreshedAt, setLastRefreshedAt] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Loud Siren & 60-Second Countdown Timer for due reminder banner
+  // Smooth Call Ringtone & 60-Second Countdown Timer for due reminder banner
   useEffect(() => {
     if (!activeDueAlert) {
-      stopReminderSiren();
+      stopCallRingtone();
       return;
     }
 
     setAlertSecondsLeft(60);
-    setIsSirenMuted(false);
-    startReminderSiren(); // Blare loud emergency siren
+    setIsRingtoneMuted(false);
+    startCallRingtone(); // Play smooth, pleasant incoming phone call ring
 
     const timer = setInterval(() => {
       setAlertSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          stopReminderSiren();
+          stopCallRingtone();
           setActiveDueAlert(null); // Keep banner open for exactly 1 minute (60 seconds)
           return 0;
         }
@@ -63,19 +64,9 @@ export default function Reminders() {
 
     return () => {
       clearInterval(timer);
-      stopReminderSiren();
+      stopCallRingtone();
     };
   }, [activeDueAlert]);
-
-  const handleToggleMuteSiren = () => {
-    if (isSirenMuted) {
-      startReminderSiren();
-      setIsSirenMuted(false);
-    } else {
-      stopReminderSiren();
-      setIsSirenMuted(true);
-    }
-  };
 
   const fetchReminders = async (showSpinner = false) => {
     if (showSpinner) setIsRefreshing(true);
@@ -150,7 +141,7 @@ export default function Reminders() {
       if (isDueNow && !notifiedIdsRef.current.has(r._id)) {
         notifiedIdsRef.current.add(r._id);
 
-        // In-App Call Alert Banner (Displays for 1 minute & triggers loud siren)
+        // In-App Call Alert Banner (Displays for 1 minute & rings smoothly)
         setActiveDueAlert(r);
 
         // 3. Desktop OS Notification (if browser permission granted)
@@ -161,7 +152,7 @@ export default function Reminders() {
               body: `Phone: ${r.phone} | Due: ${formatInAustralianTime(r.dueAt, tz)}\nNote: ${r.note || 'None'}`,
               icon: '/favicon.svg',
             });
-          } catch (e) {}
+          } catch (e) { }
         }
       }
     });
@@ -216,7 +207,7 @@ export default function Reminders() {
   };
 
   return (
-      <div className="max-w-7xl mx-auto py-4 sm:py-8 space-y-6">
+    <div className="max-w-7xl mx-auto py-4 sm:py-8 space-y-6">
       {/* Real-time In-App Due Call Notification Banner (Displays for 1 minute) */}
       {activeDueAlert && (
         <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-950/80 via-slate-900/90 to-slate-950 border-2 border-rose-500/60 shadow-2xl animate-fade-in flex flex-col gap-3 relative overflow-hidden backdrop-blur-xl">
@@ -235,9 +226,9 @@ export default function Reminders() {
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-md border border-rose-500/30 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping inline-block" />
-                    🚨 Siren Ringing
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/15 px-2.5 py-0.5 rounded-md border border-emerald-500/30 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+                    📞 Call Due Now
                   </span>
                   <span className="text-base font-bold text-white">{activeDueAlert.name}</span>
                   <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
@@ -254,22 +245,30 @@ export default function Reminders() {
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto flex-shrink-0 flex-wrap">
-              {/* Mute/Unmute Siren Toggle */}
+              {/* Mute/Unmute Smooth Ringtone Toggle */}
               <button
                 type="button"
-                onClick={handleToggleMuteSiren}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition border border-amber-500/40 shadow-sm cursor-pointer"
-                title={isSirenMuted ? 'Resume siren sound' : 'Silence siren sound'}
+                onClick={() => {
+                  if (isRingtoneMuted) {
+                    startCallRingtone();
+                    setIsRingtoneMuted(false);
+                  } else {
+                    stopCallRingtone();
+                    setIsRingtoneMuted(true);
+                  }
+                }}
+                className="px-3.5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition border border-slate-700 shadow-sm cursor-pointer"
+                title={isRingtoneMuted ? 'Turn ringtone back on' : 'Silence ringtone'}
               >
-                {isSirenMuted ? (
+                {isRingtoneMuted ? (
                   <>
                     <VolumeX className="w-3.5 h-3.5 text-rose-400" />
                     <span>Muted</span>
                   </>
                 ) : (
                   <>
-                    <Volume2 className="w-3.5 h-3.5 animate-pulse text-amber-400" />
-                    <span>Mute Siren</span>
+                    <Volume2 className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
+                    <span>Mute Ring</span>
                   </>
                 )}
               </button>
@@ -277,7 +276,7 @@ export default function Reminders() {
               <a
                 href={`tel:${activeDueAlert.phone}`}
                 onClick={() => {
-                  stopReminderSiren();
+                  stopCallRingtone();
                 }}
                 className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/30 cursor-pointer"
               >
@@ -286,7 +285,7 @@ export default function Reminders() {
               </a>
               <button
                 onClick={() => {
-                  stopReminderSiren();
+                  stopCallRingtone();
                   handleToggleCompleted(activeDueAlert);
                   setActiveDueAlert(null);
                 }}
@@ -296,7 +295,7 @@ export default function Reminders() {
               </button>
               <button
                 onClick={() => {
-                  stopReminderSiren();
+                  stopCallRingtone();
                   setActiveDueAlert(null);
                 }}
                 className="px-3 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-medium transition cursor-pointer"
@@ -313,9 +312,9 @@ export default function Reminders() {
         <div>
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-white tracking-tight">All Reminders</h1>
-          
+
           </div>
-         
+
         </div>
 
         <div className="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
@@ -354,11 +353,10 @@ export default function Reminders() {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                filter === tab.key
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${filter === tab.key
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -469,11 +467,10 @@ export default function Reminders() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleToggleCompleted(r)}
-                            className={`p-1.5 rounded-lg text-xs transition ${
-                              r.status === 'completed'
+                            className={`p-1.5 rounded-lg text-xs transition ${r.status === 'completed'
                                 ? 'text-amber-400 hover:bg-amber-500/10'
                                 : 'text-emerald-400 hover:bg-emerald-500/10'
-                            }`}
+                              }`}
                             title={r.status === 'completed' ? 'Mark as Pending' : 'Mark Completed'}
                           >
                             <CheckCircle className="w-4 h-4" />

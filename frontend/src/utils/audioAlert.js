@@ -1,44 +1,44 @@
 /**
- * Audio Alert & Emergency Siren System for Customer Reminders
+ * Smooth, Pleasant Phone Call Ringtone Alert System
  */
 
-let sirenAudioElement = null;
-let sirenWebAudioNodes = null;
+let ringtoneAudioElement = null;
+let ringtoneWebAudioLoop = null;
 
 /**
- * Starts a loud, piercing emergency siren that loops while a reminder is due.
- * Uses both high-fidelity siren.wav and Web Audio API dual-oscillator wail.
+ * Starts a smooth, pleasant phone call ringtone (looping while reminder is due)
  */
-export function startReminderSiren() {
-  stopReminderSiren();
+export function startCallRingtone() {
+  stopCallRingtone();
 
-  // 1. Play HTML5 Audio element with looping siren.wav
+  // 1. Play smooth ringtone.wav via HTML5 Audio element
   try {
-    const audio = new Audio('/siren.wav');
+    const audio = new Audio('/ringtone.wav');
     audio.loop = true;
-    audio.volume = 1.0;
+    audio.volume = 0.65; // Pleasant, normal volume
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
-          sirenAudioElement = audio;
+          ringtoneAudioElement = audio;
         })
         .catch((err) => {
-          console.warn('HTML5 Audio play restricted by browser policy, using Web Audio siren:', err);
-          startWebAudioSiren();
+          console.warn('HTML5 Audio restricted by browser, using Web Audio chime fallback:', err);
+          startWebAudioSmoothRingtone();
         });
     }
   } catch (e) {
-    console.warn('Audio element error:', e);
-    startWebAudioSiren();
+    console.warn('Audio tag error:', e);
+    startWebAudioSmoothRingtone();
   }
-
-  // 2. Also start Web Audio API dual-oscillator wail for maximum presence
-  startWebAudioSiren();
 }
 
-function startWebAudioSiren() {
-  if (sirenWebAudioNodes) return;
+/**
+ * Fallback Web Audio API synthesizer for smooth, pleasant call chime
+ */
+function startWebAudioSmoothRingtone() {
+  if (ringtoneWebAudioLoop) return;
+
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
@@ -48,70 +48,94 @@ function startWebAudioSiren() {
       ctx.resume();
     }
 
-    const now = ctx.currentTime;
+    let isPlaying = true;
 
-    // Siren primary oscillator (sawtooth for rich, penetrating harmonics)
-    const osc = ctx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(820, now);
+    const playChimeSequence = () => {
+      if (!isPlaying || ctx.state === 'closed') return;
 
-    // LFO modulator for classic emergency siren rise and fall (1.1 Hz wail)
-    const lfo = ctx.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.setValueAtTime(1.1, now);
+      const now = ctx.currentTime;
+      // Soft, pleasant phone chime notes: E5 (659Hz), G#5 (830Hz), B5 (987Hz), E6 (1318Hz)
+      const notes = [
+        { time: 0.00, freq: 659.25, dur: 0.30 },
+        { time: 0.22, freq: 830.61, dur: 0.30 },
+        { time: 0.44, freq: 987.77, dur: 0.35 },
+        { time: 0.66, freq: 1318.51, dur: 0.60 },
+      ];
 
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.setValueAtTime(320, now); // Modulates ±320Hz (500Hz to 1140Hz)
+      notes.forEach((n) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
+        osc.type = 'sine'; // Pure smooth sine wave
+        osc.frequency.setValueAtTime(n.freq, now + n.time);
 
-    // High master gain for full loudness
-    const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(0.75, now);
+        // Gentle envelope with smooth exponential decay
+        gain.gain.setValueAtTime(0.001, now + n.time);
+        gain.gain.linearRampToValueAtTime(0.22, now + n.time + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + n.time + n.dur);
 
-    osc.connect(masterGain);
-    masterGain.connect(ctx.destination);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-    osc.start(now);
-    lfo.start(now);
+        osc.start(now + n.time);
+        osc.stop(now + n.time + n.dur);
+      });
+    };
 
-    sirenWebAudioNodes = { ctx, osc, lfo, masterGain };
+    // Play immediately and repeat every 2.6 seconds like a phone ring
+    playChimeSequence();
+    const interval = setInterval(playChimeSequence, 2600);
+
+    ringtoneWebAudioLoop = {
+      ctx,
+      interval,
+      stop: () => {
+        isPlaying = false;
+        clearInterval(interval);
+        try {
+          ctx.close();
+        } catch (e) {}
+      },
+    };
   } catch (err) {
-    console.warn('Web Audio Siren initialization warning:', err);
+    console.warn('Web Audio smooth ringtone warning:', err);
   }
 }
 
 /**
- * Stops all siren playback immediately
+ * Stops ringtone immediately
  */
-export function stopReminderSiren() {
-  if (sirenAudioElement) {
+export function stopCallRingtone() {
+  if (ringtoneAudioElement) {
     try {
-      sirenAudioElement.pause();
-      sirenAudioElement.currentTime = 0;
+      ringtoneAudioElement.pause();
+      ringtoneAudioElement.currentTime = 0;
     } catch (e) {}
-    sirenAudioElement = null;
+    ringtoneAudioElement = null;
   }
 
-  if (sirenWebAudioNodes) {
+  if (ringtoneWebAudioLoop) {
     try {
-      sirenWebAudioNodes.osc.stop();
-      sirenWebAudioNodes.lfo.stop();
-      sirenWebAudioNodes.ctx.close();
+      ringtoneWebAudioLoop.stop();
     } catch (e) {}
-    sirenWebAudioNodes = null;
+    ringtoneWebAudioLoop = null;
   }
 }
 
 /**
- * Siren preview chime for test buttons (plays 3.5s siren test)
+ * Alias helpers for backwards compatibility
+ */
+export const startReminderSiren = startCallRingtone;
+export const stopReminderSiren = stopCallRingtone;
+
+/**
+ * Single chime for test buttons (plays 1 sequence of the smooth ringtone)
  */
 export function playChimeSound() {
-  startReminderSiren();
+  startCallRingtone();
   setTimeout(() => {
-    stopReminderSiren();
-  }, 3500);
+    stopCallRingtone();
+  }, 2500);
 }
 
 /**
