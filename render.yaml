@@ -1,0 +1,46 @@
+# Render Infrastructure Blueprint
+# Allows 1-click or automated deployment of both Backend and Frontend on Render.com
+
+services:
+  # 1. Express Backend Web Service
+  - type: web
+    name: customer-reminder-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: APP_TIMEZONE
+        value: Australia/Sydney
+      - key: MONGODB_URI
+        sync: false
+      - key: OWNER_EMAIL
+        value: vaibhavdigitalwebconnection@gmail.com
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COOKIE_NAME
+        value: customer_session
+
+  # 2. React + Vite Frontend Static Site
+  - type: static
+    name: customer-reminder-frontend
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://customer-reminder-h18e.onrender.com

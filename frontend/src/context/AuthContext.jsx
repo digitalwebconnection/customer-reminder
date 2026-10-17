@@ -19,9 +19,10 @@ export function AuthProvider({ children }) {
         }
       })
       .catch(() => {
-        // If unauthenticated, clear local user
+        // If unauthenticated, clear local user and token
         setUser(null);
         localStorage.removeItem('remindiq_user');
+        localStorage.removeItem('remindiq_token');
       })
       .finally(() => {
         setLoading(false);
@@ -30,6 +31,9 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
+    if (res.data?.token) {
+      localStorage.setItem('remindiq_token', res.data.token);
+    }
     if (res.data?.user) {
       setUser(res.data.user);
       localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
@@ -43,6 +47,7 @@ export function AuthProvider({ children }) {
     } catch (e) {}
     setUser(null);
     localStorage.removeItem('remindiq_user');
+    localStorage.removeItem('remindiq_token');
   };
 
   return (

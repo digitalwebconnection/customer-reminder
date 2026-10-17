@@ -98,7 +98,7 @@ export default function AddReminder() {
       setTime('');
     } catch (err) {
       if (!err.response) {
-        setError('Cannot connect to the server (Port 5000). Please check that the backend is running.');
+        setError('Cannot connect to the backend server. Please check your internet connection or verify the backend is running.');
       } else if (err.response.status === 401) {
         setError('Your session has expired. Please log in again.');
       } else {
