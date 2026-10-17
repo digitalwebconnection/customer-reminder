@@ -4,6 +4,7 @@ dotenv.config();
 import app from './app.js';
 import { connectDB } from './config/db.js';
 import { startReminderWorker } from './jobs/reminderWorker.js';
+import { startKeepAliveWorker } from './jobs/keepAliveWorker.js';
 import { ensureOwnerExists } from './routes/authRoutes.js';
 
 const PORT = process.env.PORT || 5000;
@@ -26,6 +27,9 @@ const startServer = async () => {
 
   // Start the 1-minute cron worker for email & push reminders
   startReminderWorker();
+
+  // Start the 14-minute keep-alive worker to keep Render active 24/7
+  startKeepAliveWorker();
 
   return server;
 };

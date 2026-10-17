@@ -68,7 +68,7 @@ export const dataService = {
     }
   },
 
-  getReminders: async ({ status, search } = {}) => {
+  getReminders: async ({ status, search, sort = 'latest' } = {}) => {
     const now = new Date();
 
     if (isMongoActive()) {
@@ -91,7 +91,15 @@ export const dataService = {
         ];
       }
 
-      const list = await Reminder.find(query).sort({ dueAt: 1 }).lean();
+      // Default: Latest entries on top (newest createdAt first)
+      let sortOptions = { createdAt: -1, _id: -1 };
+      if (sort === 'dueAt_asc' || sort === 'oldest') {
+        sortOptions = { dueAt: 1 };
+      } else if (sort === 'dueAt_desc') {
+        sortOptions = { dueAt: -1 };
+      }
+
+      const list = await Reminder.find(query).sort(sortOptions).lean();
       return list.map((r) => ({
         ...r,
         isOverdue: r.status === 'pending' && new Date(r.dueAt) < now,
@@ -122,7 +130,18 @@ export const dataService = {
         );
       }
 
-      return list.sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt));
+      if (sort === 'dueAt_asc' || sort === 'oldest') {
+        return list.sort((a, b) => new Date(a.dueAt) - new Date(b.dueAt));
+      } else if (sort === 'dueAt_desc') {
+        return list.sort((a, b) => new Date(b.dueAt) - new Date(a.dueAt));
+      } else {
+        // Default: Latest entries on top (newest createdAt first)
+        return list.sort((a, b) => {
+          const timeA = new Date(a.createdAt || a.dueAt || 0).getTime();
+          const timeB = new Date(b.createdAt || b.dueAt || 0).getTime();
+          return timeB - timeA;
+        });
+      }
     }
   },
 

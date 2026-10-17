@@ -9,13 +9,18 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    name: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     passwordHash: {
       type: String,
       required: true,
     },
     role: {
       type: String,
-      default: 'owner',
+      default: 'user',
     },
     pushSubscription: {
       type: Object,

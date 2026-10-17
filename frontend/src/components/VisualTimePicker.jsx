@@ -102,11 +102,11 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm text-left transition cursor-pointer ${
           isOpen
             ? 'border-indigo-400 ring-2 ring-indigo-500/20 bg-slate-900/90 text-white shadow-inner'
-            : 'border-white/[0.08] bg-slate-950/70 text-slate-200 hover:border-white/[0.15] hover:bg-slate-900/60 shadow-inner'
+            : 'border-white/8 bg-slate-950/70 text-slate-200 hover:border-white/15 hover:bg-slate-900/60 shadow-inner'
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <Clock className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+          <Clock className="w-4 h-4 text-indigo-400 shrink-0" />
           <span className={value ? 'font-medium font-mono text-white text-sm' : 'text-slate-500'}>
             {value ? formatDisplayTime(value) : 'Click to select time...'}
           </span>
@@ -126,11 +126,11 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
       {isOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
             onClick={() => setIsOpen(false)}
           >
             <div
-              className="w-full max-w-sm bg-slate-900/95 border border-white/[0.1] rounded-2xl shadow-2xl p-5 space-y-4 backdrop-blur-2xl"
+              className="w-full max-w-sm bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4 backdrop-blur-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}

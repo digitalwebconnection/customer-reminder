@@ -1,22 +1,43 @@
 {
   "short_name": "RemindIQ",
-  "name": "RemindIQ — Customer Follow-up & Call Reminder System",
-  "description": "Customer Follow-up & Call Reminder System with scheduled alerts.",
+  "name": "RemindIQ — Customer Follow-up & Call Reminder",
+  "description": "Customer Follow-up & Call Reminder System with real-time Australian alerts.",
+  "id": "/",
+  "start_url": "/reminders",
+  "scope": "/",
+  "background_color": "#070b14",
+  "theme_color": "#4f46e5",
+  "display": "standalone",
+  "orientation": "portrait",
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
       "src": "/app-icon.png",
       "type": "image/png",
-      "sizes": "192x192 512x512"
+      "sizes": "192x192 512x512 1024x1024",
+      "purpose": "any maskable"
     },
     {
       "src": "/favicon.svg",
       "type": "image/svg+xml",
-      "sizes": "any"
+      "sizes": "any",
+      "purpose": "any"
     }
   ],
-  "start_url": "/reminders",
-  "background_color": "#070b14",
-  "theme_color": "#4f46e5",
-  "display": "standalone",
-  "orientation": "portrait"
+  "shortcuts": [
+    {
+      "name": "Add Reminder",
+      "short_name": "Add",
+      "description": "Schedule a new customer call reminder",
+      "url": "/add",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "All Reminders",
+      "short_name": "Reminders",
+      "description": "View all customer call reminders",
+      "url": "/reminders",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
 }

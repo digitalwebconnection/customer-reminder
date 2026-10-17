@@ -11,8 +11,8 @@ router.use(auth);
 // GET /reminders - List reminders with filters (all, pending, completed, overdue) and search
 router.get('/', async (req, res, next) => {
   try {
-    const { status, search } = req.query;
-    const reminders = await dataService.getReminders({ status, search });
+    const { status, search, sort } = req.query;
+    const reminders = await dataService.getReminders({ status, search, sort });
     res.json({ success: true, data: reminders });
   } catch (err) {
     next(err);

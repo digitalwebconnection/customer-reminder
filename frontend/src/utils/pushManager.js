@@ -12,7 +12,7 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export async function registerServiceWorker() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+  if (!('serviceWorker' in navigator)) {
     return null;
   }
   try {

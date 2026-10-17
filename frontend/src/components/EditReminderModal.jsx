@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, MapPin, Check, Globe } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, User, Phone, Mail, MapPin, Check, Globe, Calendar, Clock, FileText } from 'lucide-react';
 import api from '../api/axios';
 import {
   AUSTRALIAN_TIMEZONES,
@@ -43,6 +44,16 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
     }
   }, [reminder, isOpen]);
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !reminder) return null;
 
   const handleSubmit = async (e) => {
@@ -50,7 +61,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
     setError('');
 
     if (!name.trim()) {
-      setError('Name is required');
+      setError('Customer name is required');
       return;
     }
     if (!phone.trim()) {
@@ -58,7 +69,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
       return;
     }
     if (!date || !time) {
-      setError('Both date and time are required');
+      setError('Both call date and call time are required');
       return;
     }
 
@@ -94,171 +105,220 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
 
   const previewDueUTC = date && time ? combineDateAndTimeToUTC(date, time, timezone) : null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-2xl bg-slate-900/95 border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] backdrop-blur-2xl">
-        {/* Header */}
-        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/[0.08] bg-slate-950/60 flex items-center justify-between">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9998] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl bg-slate-900/98 border border-white/15 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] backdrop-blur-2xl text-slate-100 ring-1 ring-black/70 overflow-hidden my-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Pinned Header */}
+        <div className="shrink-0 px-5 sm:px-6 py-4 border-b border-white/8 bg-slate-950/80 flex items-center justify-between">
           <div>
-            <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-              <span>Edit Reminder</span>
-              <span className="text-[10px] font-mono font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">
+            <div className="flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                Edit Reminder
+              </h3>
+              <span className="text-[10px] font-mono font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-full">
                 AUSTRALIA
               </span>
-            </h3>
-            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Update customer details, date/time, and timezone.</p>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Update customer details, scheduled date/time, and status.
+            </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.08] transition"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition cursor-pointer"
+            title="Close (Esc)"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto">
+        {/* Scrollable Form Body */}
+        <form id="edit-reminder-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300">
+            <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300">
               {error}
             </div>
           )}
 
+          {/* Customer Name */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
               Customer Name <span className="text-rose-400">*</span>
             </label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Phone Number <span className="text-rose-400">*</span>
-            </label>
-            <input
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Address</label>
+            <div className="relative">
+              <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input
                 type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. John Smith"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
               />
             </div>
           </div>
 
-          {/* Australian Timezone Dropdown */}
+          {/* Phone Number */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Australian Timezone</span>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Phone Number <span className="text-rose-400">*</span>
+            </label>
+            <div className="relative">
+              <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+              <input
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="e.g. 0412 345 678"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
+              />
+            </div>
+          </div>
+
+          {/* Email & Address (2-Column Grid) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Address / City
+              </label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="e.g. Sydney, NSW"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Australian Timezone */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <span className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Australian Timezone</span>
+              </span>
             </label>
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-white/[0.08] rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 transition cursor-pointer"
+              className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
             >
               {AUSTRALIAN_TIMEZONES.map((tz) => (
-                <option key={tz.value} value={tz.value}>
-                  {tz.label}
+                <option key={tz.value} value={tz.value} className="bg-slate-900 text-slate-100">
+                  {tz.label} ({tz.offset})
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Visual Date & Time Selectors */}
+          {/* Call Date & Call Time (2-Column Grid) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <VisualDatePicker
-              value={date}
-              onChange={setDate}
-              label="Call Date"
-              required={true}
-            />
-
-            <VisualTimePicker
-              value={time}
-              onChange={setTime}
-              label="Call Time"
-              required={true}
-              timezoneHint={`Zone: ${timezone.split('/')[1]}`}
-            />
+            <div>
+              <VisualDatePicker
+                value={date}
+                onChange={setDate}
+                label="Call Date"
+                required={true}
+              />
+            </div>
+            <div>
+              <VisualTimePicker
+                value={time}
+                onChange={setTime}
+                label="Call Time"
+                timezone={timezone}
+                required={true}
+              />
+            </div>
           </div>
 
           {/* Real-time Preview */}
           {previewDueUTC && (
-            <div className="p-3 rounded-xl bg-gradient-to-r from-indigo-950/60 to-purple-950/40 border border-indigo-500/30 text-xs flex items-center justify-between">
-              <span className="text-slate-400">Scheduled In Zone:</span>
-              <span className="font-mono text-indigo-300 font-semibold">
+            <div className="p-3 rounded-xl bg-linear-to-r from-indigo-950/70 to-purple-950/50 border border-indigo-500/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1 shadow-inner">
+              <span className="text-slate-400 font-medium">Scheduled In Zone:</span>
+              <span className="font-mono text-indigo-300 font-bold">
                 {formatInAustralianTime(previewDueUTC, timezone)}
               </span>
             </div>
           )}
 
+          {/* Status Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Status</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-white/[0.08] rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-400 transition cursor-pointer"
+              className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
             >
-              <option value="pending">Pending (Call Pending)</option>
-              <option value="completed">Completed</option>
+              <option value="pending" className="bg-slate-900 text-slate-100">Pending (Call Pending)</option>
+              <option value="completed" className="bg-slate-900 text-emerald-400">Completed (Finished)</option>
             </select>
           </div>
 
+          {/* Note / Follow-up Details */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Note</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Call Note / Agenda
+            </label>
             <textarea
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full p-3 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition resize-none shadow-inner"
+              placeholder="e.g. Call regarding insurance quotation follow-up"
+              className="w-full p-3 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition resize-none shadow-inner"
             />
           </div>
-
-          <div className="pt-3 border-t border-white/[0.08] flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/[0.05] transition cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-shimmer px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:brightness-110 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-600/30 cursor-pointer active:scale-95"
-            >
-              <Check className="w-4 h-4" />
-              <span>{loading ? 'Saving...' : 'Update Reminder'}</span>
-            </button>
-          </div>
         </form>
+
+        {/* Pinned Footer */}
+        <div className="shrink-0 px-5 sm:px-6 py-3.5 border-t border-white/8 bg-slate-950/90 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/6 transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="edit-reminder-form"
+            disabled={loading}
+            className="btn-shimmer px-5 py-2.5 rounded-xl bg-linear-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:brightness-110 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 cursor-pointer active:scale-95 disabled:opacity-50"
+          >
+            <Check className="w-4 h-4" />
+            <span>{loading ? 'Saving Changes...' : 'Update Reminder'}</span>
+          </button>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

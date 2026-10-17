@@ -7,10 +7,7 @@ export const AUSTRALIAN_TIMEZONES = [
   { value: 'Australia/Melbourne', label: 'Melbourne, VIC (AEDT/AEST)', state: 'VIC', short: 'Melbourne' },
   { value: 'Australia/Brisbane', label: 'Brisbane, QLD (AEST — No DST)', state: 'QLD', short: 'Brisbane' },
   { value: 'Australia/Adelaide', label: 'Adelaide, SA (ACDT/ACST)', state: 'SA', short: 'Adelaide' },
-  { value: 'Australia/Perth', label: 'Perth, WA (AWST — No DST)', state: 'WA', short: 'Perth' },
-  { value: 'Australia/Darwin', label: 'Darwin, NT (ACST — No DST)', state: 'NT', short: 'Darwin' },
-  { value: 'Australia/Hobart', label: 'Hobart, TAS (AEDT/AEST)', state: 'TAS', short: 'Hobart' },
-];
+ ];
 
 export const DEFAULT_TIMEZONE = 'Australia/Sydney';
 
