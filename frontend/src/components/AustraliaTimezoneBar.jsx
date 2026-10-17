@@ -62,21 +62,22 @@ export default function AustraliaTimezoneBar() {
   }, []);
 
   return (
-    <div className="bg-[#070b14]/90 backdrop-blur-xl border-b border-white/[0.06] px-3 sm:px-6 py-2 overflow-x-auto text-[11px] select-none scrollbar-none shadow-sm">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 min-w-[760px]">
+    <div className="bg-[#070b14]/90 backdrop-blur-xl border-b border-white/[0.06] px-2.5 sm:px-6 py-1.5 sm:py-2 overflow-x-auto text-[11px] select-none scrollbar-none shadow-sm touch-pan-x">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 min-w-max">
         {/* Label Header */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <div className="w-5 h-5 rounded-md bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs">
             🇦🇺
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 px-2 sm:px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
             <Globe className="w-3 h-3 text-indigo-400" />
-            <span>Australia Live Regional Clocks</span>
+            <span className="hidden sm:inline">Australia Live Regional Clocks</span>
+            <span className="sm:hidden">Live AU Clocks</span>
           </span>
         </div>
 
         {/* Live Australian Timezone Clocks */}
-        <div className="flex items-center gap-2 flex-1 justify-end">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
           {AUSTRALIAN_ZONES.map((zone) => {
             const isSelected = selectedTimezone === zone.id;
             const data = clockData[zone.id] || { time: 'Loading...', code: '' };
@@ -86,7 +87,7 @@ export default function AustraliaTimezoneBar() {
                 key={zone.id}
                 type="button"
                 onClick={() => setTimezone(zone.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-left transition-all duration-200 cursor-pointer group ${
+                className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border text-left transition-all duration-200 cursor-pointer group ${
                   isSelected
                     ? 'bg-gradient-to-r from-indigo-950/90 to-slate-900 border-indigo-500/80 text-white shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/50'
                     : 'bg-slate-900/50 border-white/[0.06] text-slate-300 hover:border-slate-700 hover:bg-slate-800/60'

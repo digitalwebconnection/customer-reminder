@@ -95,18 +95,18 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
   const previewDueUTC = date && time ? combineDateAndTimeToUTC(date, time, timezone) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-2xl bg-slate-900/95 border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] backdrop-blur-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-2xl bg-slate-900/95 border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh] backdrop-blur-2xl">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-white/[0.08] bg-slate-950/60 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/[0.08] bg-slate-950/60 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
               <span>Edit Reminder</span>
               <span className="text-[10px] font-mono font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">
                 AUSTRALIA
               </span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Update customer details, date/time, and timezone.</p>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Update customer details, date/time, and timezone.</p>
           </div>
           <button
             onClick={onClose}
@@ -117,7 +117,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 overflow-y-auto">
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300">
               {error}
@@ -133,7 +133,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
             />
           </div>
 
@@ -146,7 +146,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
               required
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
+              className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
             />
           </div>
 
@@ -157,7 +157,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
               />
             </div>
             <div>
@@ -166,7 +166,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                className="w-full px-3.5 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
               />
             </div>
           </div>

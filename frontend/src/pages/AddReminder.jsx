@@ -165,11 +165,11 @@ export default function AddReminder() {
       {/* Form Card */}
       <form
         onSubmit={handleSubmit}
-        className="glass-card border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden"
+        className="glass-card border border-white/[0.08] rounded-3xl p-4 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-start">
           {/* Left Column: Customer Details & Notes */}
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             <div className="border-b border-white/[0.08] pb-3 flex items-center justify-between">
               <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
                 <User className="w-4 h-4 text-indigo-400" />
@@ -191,7 +191,7 @@ export default function AddReminder() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Jack Thompson"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
                 />
               </div>
             </div>
@@ -209,7 +209,7 @@ export default function AddReminder() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+61 412 345 678 or 0412 345 678"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
                 />
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
@@ -228,7 +228,7 @@ export default function AddReminder() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="customer@example.com.au"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
                   />
                 </div>
               </div>
@@ -242,7 +242,7 @@ export default function AddReminder() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Suburb, City, or State"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
                   />
                 </div>
               </div>
@@ -259,7 +259,7 @@ export default function AddReminder() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Key discussion points, quotation follow-up, callback details..."
-                className="w-full p-3.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition resize-none shadow-inner"
+                className="w-full p-3.5 bg-slate-950/70 border border-white/[0.08] rounded-xl text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition resize-none shadow-inner"
               />
             </div>
           </div>

@@ -1,0 +1,22 @@
+{
+  "short_name": "RemindIQ",
+  "name": "RemindIQ — Customer Follow-up & Call Reminder System",
+  "description": "Customer Follow-up & Call Reminder System with scheduled alerts.",
+  "icons": [
+    {
+      "src": "/app-icon.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ],
+  "start_url": "/reminders",
+  "background_color": "#070b14",
+  "theme_color": "#4f46e5",
+  "display": "standalone",
+  "orientation": "portrait"
+}
