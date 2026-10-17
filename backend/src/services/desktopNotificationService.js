@@ -35,9 +35,10 @@ export const desktopNotificationService = {
           console.log(`[Desktop Notification] Windows 1-min reminder toast active for "${reminder.name}"`);
           
           // If user clicked notification or action button, open direct link
+          const primaryUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0].trim().replace(/\/+$/, '');
           const action = metadata?.activationType || response;
           if (action === 'click' || action === 'View in App') {
-            exec('start http://localhost:5173/reminders');
+            exec(`start ${primaryUrl}/reminders`);
           } else if (action === '📞 Call Now' && cleanPhone) {
             exec(`start tel:${cleanPhone.replace(/\s+/g, '')}`);
           }
@@ -63,9 +64,10 @@ export const desktopNotificationService = {
           console.warn('[Desktop Notification] Test error:', err.message);
         } else {
           console.log('[Desktop Notification] 60-second Windows test toast sent successfully!');
+          const primaryUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0].trim().replace(/\/+$/, '');
           const action = metadata?.activationType || response;
           if (action === 'click' || action === 'Open RemindIQ') {
-            exec('start http://localhost:5173/reminders');
+            exec(`start ${primaryUrl}/reminders`);
           }
         }
       }

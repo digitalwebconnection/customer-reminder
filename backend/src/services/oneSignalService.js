@@ -21,12 +21,13 @@ export const oneSignalService = {
     }
 
     try {
+      const primaryFrontend = (process.env.FRONTEND_URL || 'https://customer-reminder-wine.vercel.app').split(',')[0].trim().replace(/\/+$/, '');
       const payload = {
         app_id: appId,
         included_segments: ['Subscribed Users', 'Total Subscriptions'],
         headings: { en: title },
         contents: { en: message },
-        url: url.startsWith('http') ? url : `${process.env.FRONTEND_URL || 'http://localhost:5173'}${url}`,
+        url: url.startsWith('http') ? url : `${primaryFrontend}${url}`,
         chrome_web_badge: '/favicon.svg',
         data: { phone, url },
       };

@@ -28,6 +28,8 @@ services:
         generateValue: true
       - key: COOKIE_NAME
         value: customer_session
+      - key: FRONTEND_URL
+        value: https://customer-reminder-wine.vercel.app,http://localhost:5173
 
   # 2. React + Vite Frontend Static Site
   - type: static
