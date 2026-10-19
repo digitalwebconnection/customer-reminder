@@ -470,8 +470,8 @@ router.delete('/reminders/:id', async (req, res, next) => {
 // ACTIVITY LOG
 // ==========================================
 
-// GET /admin/activity - Activity log
-router.get('/activity', async (req, res, next) => {
+// GET /admin/activity or /admin/activity-logs - Activity log
+router.get(['/activity', '/activity-logs'], async (req, res, next) => {
   try {
     const { action, userId, page = 1, limit = 50 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
