@@ -401,7 +401,7 @@ export default function Reminders() {
                     ⏱️ {alertSecondsLeft}s
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 mt-1 font-mono break-words">
+                <p className="text-xs text-slate-300 mt-1 font-mono wrap-break-word">
                   Phone:{" "}
                   <span className="font-semibold text-rose-300">
                     {activeDueAlert.phone}
