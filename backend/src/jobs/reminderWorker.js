@@ -126,10 +126,10 @@ export function startReminderWorker() {
   console.log('[Worker] Checking for due/missed reminders on startup...');
   processDueReminders();
 
-  // Run every minute: * * * * *
-  cron.schedule('* * * * *', () => {
+  // Run every 20 seconds: */20 * * * * * for high-precision mobile alarms
+  cron.schedule('*/20 * * * * *', () => {
     processDueReminders();
   });
 
-  console.log('[Worker] Reminder cron worker scheduled (running every minute)');
+  console.log('[Worker] Reminder cron worker scheduled (running every 20 seconds)');
 }

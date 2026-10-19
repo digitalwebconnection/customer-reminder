@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'app-icon.png', 'ringtone.wav'],
+      includeAssets: ['favicon.svg', 'app-icon.png', 'ringtone.wav', 'icon-192.png', 'icon-512.png', 'badge.png'],
       manifest: {
         short_name: 'RemindIQ',
         name: 'RemindIQ — Customer Follow-up & Call Reminder',
@@ -26,9 +26,21 @@ export default defineConfig({
         categories: ['business', 'productivity', 'utilities'],
         icons: [
           {
+            src: '/icon-192.png',
+            type: 'image/png',
+            sizes: '192x192',
+            purpose: 'any maskable',
+          },
+          {
+            src: '/icon-512.png',
+            type: 'image/png',
+            sizes: '512x512',
+            purpose: 'any maskable',
+          },
+          {
             src: '/app-icon.png',
             type: 'image/png',
-            sizes: '192x192 512x512 1024x1024',
+            sizes: '192x192 512x512',
             purpose: 'any maskable',
           },
           {

@@ -29,10 +29,10 @@ const getKeepAliveUrl = () => {
 export function startKeepAliveWorker() {
   const targetBaseUrl = getKeepAliveUrl();
   const pingUrl = `${targetBaseUrl}/api/v1/health`;
-  const intervalMinutes = parseInt(process.env.KEEP_ALIVE_INTERVAL_MINUTES || '14', 10);
+  const intervalMinutes = parseInt(process.env.KEEP_ALIVE_INTERVAL_MINUTES || '9', 10);
   const intervalMs = intervalMinutes * 60 * 1000;
 
-  console.log(`[KeepAlive] ⚡ Initializing 14-min keep-alive worker for Render`);
+  console.log(`[KeepAlive] ⚡ Initializing ${intervalMinutes}-min keep-alive worker for Render`);
   console.log(`[KeepAlive] 🎯 Target URL: ${pingUrl}`);
   console.log(`[KeepAlive] ⏱️ Interval: Every ${intervalMinutes} minutes (${intervalMs}ms)`);
 

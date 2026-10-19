@@ -28,6 +28,7 @@ import {
   validatePhone,
   sanitizePhoneInput,
 } from "../utils/validationUtils";
+import { requestAndSubscribePush } from "../utils/pushManager";
 
 export default function AddReminder() {
   const toast = useToast();
@@ -105,6 +106,15 @@ export default function AddReminder() {
     setLoading(true);
 
     try {
+      // Ensure mobile push subscription is armed and associated with user on this device
+      try {
+        if (typeof window !== "undefined" && "Notification" in window) {
+          if (Notification.permission === "granted" || Notification.permission === "default") {
+            requestAndSubscribePush().catch(() => {});
+          }
+        }
+      } catch (e) {}
+
       const payload = {
         name: name.trim(),
         phone: phone.trim().replace(/^(\+61\s*)+/, "+61 "),

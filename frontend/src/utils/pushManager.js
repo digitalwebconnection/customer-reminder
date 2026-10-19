@@ -110,6 +110,22 @@ export async function getDetailedPermissions() {
   return result;
 }
 
+function serializeSubscription(sub) {
+  if (!sub) return null;
+  if (typeof sub.toJSON === 'function') {
+    const json = sub.toJSON();
+    if (json && json.endpoint && json.keys) return json;
+  }
+  return {
+    endpoint: sub.endpoint,
+    expirationTime: sub.expirationTime || null,
+    keys: {
+      p256dh: sub.getKey ? btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))) : (sub.keys?.p256dh || ''),
+      auth: sub.getKey ? btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth')))) : (sub.keys?.auth || ''),
+    },
+  };
+}
+
 /**
  * Full 1-Click Permissions & Push Subscription Activator
  */
@@ -152,8 +168,11 @@ export async function requestAndSubscribePush() {
       const existing = await reg.pushManager.getSubscription();
       if (existing) {
         // Send existing to ensure backend has it
-        await api.post('/push/subscribe', existing);
-        return { success: true, permission: 'granted', subscribed: true };
+        const serialized = serializeSubscription(existing);
+        if (serialized && serialized.endpoint && serialized.keys?.p256dh) {
+          await api.post('/push/subscribe', serialized);
+          return { success: true, permission: 'granted', subscribed: true };
+        }
       }
     } catch (e) {}
 
@@ -163,7 +182,8 @@ export async function requestAndSubscribePush() {
     });
 
     // Save subscription in backend
-    await api.post('/push/subscribe', subscription);
+    const serialized = serializeSubscription(subscription);
+    await api.post('/push/subscribe', serialized);
     return { success: true, permission: 'granted', subscribed: true };
   } catch (err) {
     console.warn('[WebPush] Subscription error:', err);

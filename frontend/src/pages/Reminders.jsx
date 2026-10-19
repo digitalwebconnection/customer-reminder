@@ -7,6 +7,8 @@ import {
   Clock,
   Calendar,
   CheckCircle,
+  CheckCircle2,
+  Loader2,
   AlertTriangle,
   Edit2,
   Trash2,
@@ -50,8 +52,44 @@ export default function Reminders() {
   const toast = useToast();
   const { user } = useAuth();
   const { permissions, setShowAlarmModal } = usePwa();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const searchInputRef = useRef(null);
+
+  // Helper to read handled alert IDs from sessionStorage across mobile page reloads
+  const getDismissedAlertIds = () => {
+    try {
+      const raw = sessionStorage.getItem("remindiq_handled_alert_ids");
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch (e) {
+      return new Set();
+    }
+  };
+
+  const markAlertHandled = (id) => {
+    if (!id) return;
+    try {
+      notifiedIdsRef.current.add(id);
+      const existing = getDismissedAlertIds();
+      existing.add(id);
+      sessionStorage.setItem("remindiq_handled_alert_ids", JSON.stringify([...existing]));
+    } catch (e) {}
+  };
+
+  const clearUrlAlertParams = () => {
+    const newParams = new URLSearchParams(searchParams);
+    let changed = false;
+    if (newParams.has("alertId")) {
+      newParams.delete("alertId");
+      changed = true;
+    }
+    if (newParams.has("testAlarm")) {
+      newParams.delete("testAlarm");
+      changed = true;
+    }
+    if (changed) {
+      setSearchParams(newParams, { replace: true });
+    }
+  };
 
   const [reminders, setReminders] = useState([]);
   const [filter, setFilter] = useState("all"); // all | pending | completed | overdue
@@ -64,7 +102,8 @@ export default function Reminders() {
   const [activeDueAlert, setActiveDueAlert] = useState(null);
   const [alertSecondsLeft, setAlertSecondsLeft] = useState(60);
   const [isRingtoneMuted, setIsRingtoneMuted] = useState(false);
-  const notifiedIdsRef = useRef(new Set());
+  const [isCompletingAlert, setIsCompletingAlert] = useState(false);
+  const notifiedIdsRef = useRef(getDismissedAlertIds());
   const [activeSnooze, setActiveSnooze] = useState(null); // { reminder, anchorRect }
   const [copiedId, setCopiedId] = useState(null);
 
@@ -113,6 +152,10 @@ export default function Reminders() {
         if (prev <= 1) {
           clearInterval(timer);
           stopCallRingtone();
+          if (activeDueAlert?._id) {
+            markAlertHandled(activeDueAlert._id);
+          }
+          clearUrlAlertParams();
           setActiveDueAlert(null);
           document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
           return 0;
@@ -133,18 +176,37 @@ export default function Reminders() {
     const alertId = searchParams.get("alertId");
     const testAlarm = searchParams.get("testAlarm");
 
-    if (alertId && reminders.length > 0) {
-      const target = reminders.find((r) => r._id === alertId);
-      if (target) {
-        setActiveDueAlert(target);
+    if (alertId) {
+      // If already handled in this session, do not re-alert! Clean URL query
+      if (notifiedIdsRef.current.has(alertId)) {
+        clearUrlAlertParams();
+        return;
+      }
+
+      if (reminders.length > 0) {
+        const target = reminders.find((r) => r._id === alertId);
+        if (target) {
+          if (target.status === "pending") {
+            markAlertHandled(target._id);
+            setActiveDueAlert(target);
+          } else {
+            // Already completed! Clean URL query immediately so it never rings
+            clearUrlAlertParams();
+          }
+        }
       }
     } else if (testAlarm && !activeDueAlert) {
+      if (notifiedIdsRef.current.has("test-alert")) {
+        clearUrlAlertParams();
+        return;
+      }
       setActiveDueAlert({
         _id: "test-alert",
         name: "Test Customer (John Smith)",
         phone: "+61 400 123 456",
         dueAt: new Date().toISOString(),
         note: "This is a live test of the phone alarm & ringtone system.",
+        status: "pending",
       });
     }
   }, [searchParams, reminders]);
@@ -153,10 +215,35 @@ export default function Reminders() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       const handleSwMessage = (e) => {
+        if (!e.data) return;
+
+        // Background completion from SW notification action
+        if (e.data.type === "REMINDER_COMPLETED_BACKGROUND") {
+          const { reminderId } = e.data.data || {};
+          if (reminderId) {
+            markAlertHandled(reminderId);
+            stopCallRingtone();
+            setActiveDueAlert((curr) => (curr?._id === reminderId ? null : curr));
+            setReminders((prev) =>
+              prev.map((r) => (r._id === reminderId ? { ...r, status: "completed" } : r))
+            );
+            fetchReminders();
+          }
+          return;
+        }
+
+        // Test alarm completion from SW notification action
+        if (e.data.type === "TEST_ALARM_COMPLETED") {
+          markAlertHandled("test-alert");
+          stopCallRingtone();
+          setActiveDueAlert((curr) => (curr?._id?.startsWith("test-") ? null : curr));
+          clearUrlAlertParams();
+          return;
+        }
+
         if (
-          e.data &&
-          (e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK" ||
-            e.data.type === "PUSH_ALARM_RECEIVED")
+          e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK" ||
+          e.data.type === "PUSH_ALARM_RECEIVED"
         ) {
           const { reminderId, name, phone, userId: msgUserId } = e.data.data || {};
 
@@ -166,15 +253,25 @@ export default function Reminders() {
           }
 
           if (reminderId) {
+            // If already handled in this session, do not re-alert!
+            if (notifiedIdsRef.current.has(reminderId)) {
+              return;
+            }
+
             const target = reminders.find((r) => r._id === reminderId);
             if (target) {
-              setActiveDueAlert(target);
+              if (target.status === "pending") {
+                markAlertHandled(target._id);
+                setActiveDueAlert(target);
+              }
             } else if (!msgUserId || (user?._id && String(msgUserId) === String(user._id))) {
+              markAlertHandled(reminderId);
               setActiveDueAlert({
                 _id: reminderId,
                 name: name || "Customer Call Due",
                 phone: phone || "",
                 dueAt: new Date().toISOString(),
+                status: "pending",
               });
             }
           }
@@ -268,7 +365,7 @@ export default function Reminders() {
     list.forEach((r) => {
       const isDueNow = r.status === "pending" && new Date(r.dueAt) <= now;
       if (isDueNow && !notifiedIdsRef.current.has(r._id)) {
-        notifiedIdsRef.current.add(r._id);
+        markAlertHandled(r._id);
 
         setActiveDueAlert(r);
 
@@ -277,7 +374,8 @@ export default function Reminders() {
             const tz = r.timezone || "Australia/Sydney";
             new Notification(`📞 Call Due: ${r.name}`, {
               body: `Phone: ${r.phone} | Due: ${formatInAustralianTime(r.dueAt, tz)}\nNote: ${r.note || "None"}`,
-              icon: "/favicon.svg",
+              icon: "/icon-192.png",
+              badge: "/badge.png",
             });
           } catch (e) {}
         }
@@ -285,10 +383,117 @@ export default function Reminders() {
     });
   };
 
-  const handleToggleCompleted = async (reminder) => {
-    const newStatus = reminder.status === "completed" ? "pending" : "completed";
+  const handleCompleteAlert = async (alertItem) => {
+    if (!alertItem || isCompletingAlert) return;
+    setIsCompletingAlert(true);
+
+    const alertId = alertItem._id;
+    const alertName = alertItem.name || "Customer Call";
+
+    // 1. Immediately stop ringtone audio
+    stopCallRingtone();
+
+    // 2. Hide alarm banner immediately from mobile screen
+    setActiveDueAlert(null);
+
+    // 3. Clear URL query params (alertId, testAlarm)
+    clearUrlAlertParams();
+
+    // 4. Mark handled in session storage so it NEVER re-alerts or re-rings
+    markAlertHandled(alertId);
+
+    // 5. Test alert handler: acknowledge without invalid database request
+    if (!alertId || alertId === "test-alert" || String(alertId).startsWith("test-")) {
+      toast.success("Test Alarm Completed ✅", "Alarm stopped and test notification cleared.");
+      setIsCompletingAlert(false);
+      return;
+    }
+
+    // 6. Optimistic update: mark status 'completed' in local state immediately
+    setReminders((prev) =>
+      prev.map((r) =>
+        r._id === alertId
+          ? { ...r, status: "completed", isOverdue: false }
+          : r
+      )
+    );
+
+    // 7. Explicitly set status: 'completed' in backend database
     try {
-      await api.patch(`/reminders/${reminder._id}`, { status: newStatus });
+      await api.patch(`/reminders/${alertId}`, { status: "completed" });
+      toast.success("Completed ✅", `Marked follow-up with ${alertName} as finished.`);
+      fetchReminders();
+    } catch (err) {
+      console.error("[Reminders] Failed to mark completed:", err);
+      toast.error(
+        "Update Failed",
+        "Could not save completion status to server. Please check your connection."
+      );
+      fetchReminders();
+    } finally {
+      setIsCompletingAlert(false);
+    }
+  };
+
+  const handleDismissAlert = (alertItem) => {
+    if (!alertItem) return;
+    stopCallRingtone();
+    setActiveDueAlert(null);
+    clearUrlAlertParams();
+    markAlertHandled(alertItem._id);
+    toast.info("Alert Dismissed", `Silenced alarm for ${alertItem.name || "call"}.`);
+  };
+
+  const handleToggleCompleted = async (reminder) => {
+    if (!reminder) return;
+    const reminderId = reminder._id;
+
+    // Handle test reminders gracefully
+    if (!reminderId || reminderId === "test-alert" || String(reminderId).startsWith("test-")) {
+      stopCallRingtone();
+      if (activeDueAlert?._id === reminderId) setActiveDueAlert(null);
+      clearUrlAlertParams();
+      markAlertHandled(reminderId);
+      toast.info("Test Cleared", "Test reminder removed from view.");
+      return;
+    }
+
+    const newStatus = reminder.status === "completed" ? "pending" : "completed";
+
+    // If active alert is currently ringing for this reminder, stop ringtone and dismiss banner
+    if (activeDueAlert?._id === reminderId) {
+      stopCallRingtone();
+      setActiveDueAlert(null);
+      clearUrlAlertParams();
+    }
+
+    if (newStatus === "completed") {
+      markAlertHandled(reminderId);
+    } else {
+      // Reopened as pending - allow it to notify if re-scheduled
+      notifiedIdsRef.current.delete(reminderId);
+      try {
+        const existing = getDismissedAlertIds();
+        existing.delete(reminderId);
+        sessionStorage.setItem("remindiq_handled_alert_ids", JSON.stringify([...existing]));
+      } catch (e) {}
+    }
+
+    // Optimistic UI update
+    setReminders((prev) =>
+      prev.map((r) =>
+        r._id === reminderId
+          ? {
+              ...r,
+              status: newStatus,
+              isOverdue: newStatus === "completed" ? false : r.isOverdue,
+            }
+          : r
+      )
+    );
+
+    try {
+      await api.patch(`/reminders/${reminderId}`, { status: newStatus });
       if (newStatus === "completed") {
         toast.success("Completed ✅", `Marked follow-up with ${reminder.name} as finished.`);
       } else {
@@ -296,7 +501,9 @@ export default function Reminders() {
       }
       fetchReminders();
     } catch (err) {
+      console.error("[Reminders] Toggle status error:", err);
       toast.error("Update Failed", "Could not change status. Please check connection.");
+      fetchReminders();
     }
   };
 
@@ -323,10 +530,32 @@ export default function Reminders() {
 
   const handleQuickSnooze = async (reminder, hoursToAdd, label) => {
     setActiveSnooze(null);
+    if (activeDueAlert?._id === reminder._id) {
+      stopCallRingtone();
+      setActiveDueAlert(null);
+      clearUrlAlertParams();
+    }
+    // Remove from handled so it alerts again at new due time
+    notifiedIdsRef.current.delete(reminder._id);
+    try {
+      const existing = getDismissedAlertIds();
+      existing.delete(reminder._id);
+      sessionStorage.setItem("remindiq_handled_alert_ids", JSON.stringify([...existing]));
+    } catch (e) {}
+
     try {
       const currentDue = new Date(reminder.dueAt);
       const baseDate = currentDue < new Date() ? new Date() : currentDue;
       const newDue = new Date(baseDate.getTime() + hoursToAdd * 60 * 60 * 1000);
+
+      // Optimistic update
+      setReminders((prev) =>
+        prev.map((r) =>
+          r._id === reminder._id
+            ? { ...r, dueAt: newDue.toISOString(), status: "pending", isOverdue: false }
+            : r
+        )
+      );
 
       await api.patch(`/reminders/${reminder._id}`, {
         dueAt: newDue.toISOString(),
@@ -343,6 +572,7 @@ export default function Reminders() {
       fetchReminders();
     } catch (err) {
       toast.error("Reschedule Failed", "Could not update call schedule.");
+      fetchReminders();
     }
   };
 
@@ -471,7 +701,7 @@ export default function Reminders() {
               <a
                 href={`tel:${activeDueAlert.phone}`}
                 onClick={() => stopCallRingtone()}
-                className="col-span-2 sm:col-span-1 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-zinc-950 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+                className="col-span-2 sm:col-span-1 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-zinc-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-500/20 min-h-[44px]"
               >
                 <Phone className="w-4 h-4" />
                 <span>Call Now ({activeDueAlert.phone})</span>
@@ -488,7 +718,7 @@ export default function Reminders() {
                     setIsRingtoneMuted(true);
                   }
                 }}
-                className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition border border-zinc-800 cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition border border-zinc-800 cursor-pointer min-h-[44px]"
               >
                 {isRingtoneMuted ? (
                   <>
@@ -504,22 +734,28 @@ export default function Reminders() {
               </button>
 
               <button
-                onClick={() => {
-                  stopCallRingtone();
-                  handleToggleCompleted(activeDueAlert);
-                  setActiveDueAlert(null);
-                }}
-                className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-medium flex items-center justify-center transition border border-zinc-800 cursor-pointer"
+                type="button"
+                disabled={isCompletingAlert}
+                onClick={() => handleCompleteAlert(activeDueAlert)}
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition border border-emerald-500/40 cursor-pointer shadow-md shadow-emerald-600/30 min-h-[44px] disabled:opacity-50"
               >
-                Complete
+                {isCompletingAlert ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                    <span>Complete</span>
+                  </>
+                )}
               </button>
 
               <button
-                onClick={() => {
-                  stopCallRingtone();
-                  setActiveDueAlert(null);
-                }}
-                className="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium flex items-center justify-center transition border border-zinc-800 cursor-pointer"
+                type="button"
+                onClick={() => handleDismissAlert(activeDueAlert)}
+                className="col-span-2 sm:col-span-1 px-3.5 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium flex items-center justify-center transition border border-zinc-800 cursor-pointer min-h-[38px]"
               >
                 Dismiss
               </button>

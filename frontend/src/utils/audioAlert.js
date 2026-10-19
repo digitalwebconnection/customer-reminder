@@ -5,6 +5,7 @@
 
 let ringtoneAudioElement = null;
 let ringtoneWebAudioLoop = null;
+let isRingtoneActive = false;
 
 /**
  * Starts a loud, realistic incoming telephone double-ring
@@ -12,6 +13,7 @@ let ringtoneWebAudioLoop = null;
  */
 export function startCallRingtone() {
   stopCallRingtone();
+  isRingtoneActive = true;
 
   // 1. Play HTML5 ringtone.wav at maximum 1.0 volume
   try {
@@ -22,6 +24,14 @@ export function startCallRingtone() {
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
+          if (!isRingtoneActive) {
+            // Stop was called while play() was pending
+            try {
+              audio.pause();
+              audio.currentTime = 0;
+            } catch (e) {}
+            return;
+          }
           ringtoneAudioElement = audio;
         })
         .catch((err) => {
@@ -149,6 +159,8 @@ function startLoudWebAudioPhoneRing() {
  * Stops ringtone immediately
  */
 export function stopCallRingtone() {
+  isRingtoneActive = false;
+
   if (ringtoneAudioElement) {
     try {
       ringtoneAudioElement.pause();
