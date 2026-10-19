@@ -41,12 +41,14 @@ import {
 } from "../utils/audioAlert";
 import { useToast } from "../context/ToastContext";
 import { usePwa } from "../context/PwaContext";
+import { useAuth } from "../context/AuthContext";
 import NumberTicker from "../components/ui/NumberTicker";
 
 import QuickSnoozePortal from "../components/QuickSnoozePortal";
 
 export default function Reminders() {
   const toast = useToast();
+  const { user } = useAuth();
   const { permissions, setShowAlarmModal } = usePwa();
   const [searchParams] = useSearchParams();
   const searchInputRef = useRef(null);
@@ -147,7 +149,7 @@ export default function Reminders() {
     }
   }, [searchParams, reminders]);
 
-  // Listen for Service Worker postMessage notification clicks
+  // Listen for Service Worker postMessage notification clicks (strictly for current user)
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       const handleSwMessage = (e) => {
@@ -156,12 +158,18 @@ export default function Reminders() {
           (e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK" ||
             e.data.type === "PUSH_ALARM_RECEIVED")
         ) {
-          const { reminderId, name, phone } = e.data.data || {};
+          const { reminderId, name, phone, userId: msgUserId } = e.data.data || {};
+
+          // User isolation guard: if alert is for another user, never display it here
+          if (msgUserId && user?._id && String(msgUserId) !== String(user._id)) {
+            return;
+          }
+
           if (reminderId) {
             const target = reminders.find((r) => r._id === reminderId);
             if (target) {
               setActiveDueAlert(target);
-            } else {
+            } else if (!msgUserId || (user?._id && String(msgUserId) === String(user._id))) {
               setActiveDueAlert({
                 _id: reminderId,
                 name: name || "Customer Call Due",
@@ -175,7 +183,7 @@ export default function Reminders() {
       navigator.serviceWorker.addEventListener("message", handleSwMessage);
       return () => navigator.serviceWorker.removeEventListener("message", handleSwMessage);
     }
-  }, [reminders]);
+  }, [reminders, user]);
 
   const fetchReminders = async (showSpinner = false) => {
     if (showSpinner) setIsRefreshing(true);

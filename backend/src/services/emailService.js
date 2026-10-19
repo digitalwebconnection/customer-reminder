@@ -34,13 +34,12 @@ export const createTransporter = () => {
  * @param {string|null} recipientEmail - The specific user's email (multi-user). Falls back to env defaults.
  */
 export async function sendReminderEmail(reminder, recipientEmail = null) {
-  const recipient =
-    recipientEmail ||
-    process.env.NOTIFICATION_EMAIL ||
-    process.env.OWNER_EMAIL ||
-    process.env.SMTP_USER ||
-    'vaibhavdigitalwebconnection@gmail.com';
+  if (!recipientEmail) {
+    console.log(`[Email] Skipping reminder email for ${reminder._id}: no owner email specified. Leaking to other users prevented.`);
+    return false;
+  }
 
+  const recipient = recipientEmail;
   const tz = reminder.timezone || 'Asia/Kolkata';
   const displayTime = formatInTimezone(reminder.dueAt, tz);
   const from = process.env.EMAIL_FROM || `"Customer Reminder" <${recipient}>`;

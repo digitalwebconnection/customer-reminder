@@ -36,6 +36,14 @@ router.post('/subscribe', optionalAuth, async (req, res) => {
 router.post('/test', optionalAuth, async (req, res) => {
   try {
     const delaySeconds = Math.max(0, parseInt(req.body?.delaySeconds, 10) || 0);
+    const userId = req.user?.id || null;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Please log in to test mobile alarms on your account.',
+      });
+    }
 
     const payload = {
       title: '🚨 RemindIQ Mobile Alarm: Call Due!',
@@ -44,22 +52,15 @@ router.post('/test', optionalAuth, async (req, res) => {
       url: '/reminders?testAlarm=1',
       reminderId: 'test-alarm-' + Date.now(),
       name: 'John Smith',
+      userId: userId,
       isAlarm: true,
       isTest: true,
       timestamp: Date.now(),
     };
 
     const sendPush = async () => {
-      let pushResult;
-      if (req.user?.id) {
-        pushResult = await pushService.sendPushToUser(req.user.id, payload);
-        if (pushResult.sent === 0) {
-          pushResult = await pushService.sendPushToAll(payload);
-        }
-      } else {
-        pushResult = await pushService.sendPushToAll(payload);
-      }
-      return pushResult;
+      // ONLY send to the requesting user's registered devices!
+      return await pushService.sendPushToUser(userId, payload);
     };
 
     if (delaySeconds > 0) {
@@ -80,11 +81,33 @@ router.post('/test', optionalAuth, async (req, res) => {
     }
 
     const result = await sendPush();
+    if (result.sent === 0) {
+      return res.json({
+        success: false,
+        sent: 0,
+        message: 'No registered push devices found for your account. Please enable notifications on this device first.',
+        result,
+      });
+    }
+
     res.json({
       success: true,
-      message: `Alarm notification dispatched with high urgency to ${result.sent || 0} mobile device(s).`,
+      message: `Alarm notification dispatched with high urgency to ${result.sent} of your mobile device(s).`,
       result,
     });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /unsubscribe - Deactivates push subscription on logout or permission revoke
+router.post('/unsubscribe', optionalAuth, async (req, res) => {
+  try {
+    const { endpoint } = req.body || {};
+    if (endpoint) {
+      await pushService.deactivateSubscription(endpoint, req.user?.id);
+    }
+    res.json({ success: true, message: 'Push subscription deactivated' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

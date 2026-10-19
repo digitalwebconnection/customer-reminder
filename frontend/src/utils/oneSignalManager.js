@@ -74,3 +74,33 @@ export function isOneSignalSubscribed() {
   } catch (e) {}
   return false;
 }
+
+/**
+ * Associates OneSignal push token with authenticated user's ID
+ * On logout, unbinds the external ID so other users on this device won't receive alerts
+ */
+export function setOneSignalUser(userId) {
+  if (typeof window === 'undefined' || !isProdDomain()) return;
+  try {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function (OneSignal) {
+      try {
+        if (userId) {
+          if (typeof OneSignal.login === 'function') {
+            await OneSignal.login(String(userId));
+          }
+          if (OneSignal.User && typeof OneSignal.User.addTag === 'function') {
+            OneSignal.User.addTag('userId', String(userId));
+          }
+        } else {
+          if (typeof OneSignal.logout === 'function') {
+            await OneSignal.logout();
+          }
+        }
+      } catch (err) {
+        console.warn('[OneSignal] User identity update notice:', err?.message || err);
+      }
+    });
+  } catch (e) {}
+}
+

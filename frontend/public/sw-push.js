@@ -36,6 +36,7 @@ self.addEventListener('push', (event) => {
       phone: phone,
       reminderId: reminderId,
       name: data.name || '',
+      userId: data.userId || '',
       isAlarm: true,
     },
     actions: [
@@ -55,7 +56,14 @@ self.addEventListener('push', (event) => {
         try {
           client.postMessage({
             type: 'PUSH_ALARM_RECEIVED',
-            data: { reminderId, name: data.name, phone: data.phone, title, body: data.body },
+            data: {
+              reminderId,
+              name: data.name,
+              phone: data.phone,
+              title,
+              body: data.body,
+              userId: data.userId || '',
+            },
           });
         } catch (e) {}
       }

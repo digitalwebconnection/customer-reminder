@@ -42,7 +42,7 @@ export async function processDueReminders() {
           }
         }
 
-        // 1. High-Urgency Web Push Notification (Wakes mobile phone even when app is closed)
+        // 1. High-Urgency Web Push Notification (ONLY to reminder owner's registered devices)
         const pushPayload = {
           title: `🚨 Call Reminder Alarm: ${reminder.name}`,
           body: `📞 Due Now: Call ${reminder.phone} (${formattedTime})${reminder.note ? `\nNote: ${reminder.note}` : ''}`,
@@ -50,55 +50,61 @@ export async function processDueReminders() {
           url: `/reminders?alertId=${reminder._id}`,
           reminderId: reminder._id.toString(),
           name: reminder.name,
+          userId: ownerUserId || null,
           dueAt: reminder.dueAt,
           isAlarm: true,
           timestamp: Date.now(),
         };
 
-        try {
-          let pushDispatched = false;
-
-          if (ownerUserId) {
+        if (ownerUserId) {
+          try {
             const userPushResult = await pushService.sendPushToUser(ownerUserId, pushPayload);
             if (userPushResult.sent > 0) {
-              pushDispatched = true;
-              console.log(`[Worker] ✅ Mobile push alarm delivered to ${userPushResult.sent} device(s) of user ${ownerUserId}`);
+              console.log(`[Worker] ✅ Mobile push alarm delivered to ${userPushResult.sent} device(s) of owner user ${ownerUserId}`);
+            } else {
+              console.log(`[Worker] Notice: Owner user ${ownerUserId} has no active push device subscriptions. Alert skipped for other users (privacy preserved).`);
             }
+          } catch (pushErr) {
+            console.error('[Worker Error] Push notification failure:', pushErr.message);
           }
+        } else {
+          console.log(`[Worker] Notice: Reminder ${reminder._id} has no owner user ID. Alert skipped for other users (privacy preserved).`);
+        }
 
-          // Fallback if user had no registered device yet: send to all active subscriptions
-          if (!pushDispatched) {
-            const broadcastResult = await pushService.sendPushToAll(pushPayload);
-            console.log(`[Worker] Broadcast push alarm sent to ${broadcastResult.sent} device(s)`);
+        // 2. OneSignal Push Notification (ONLY to reminder owner, NEVER broadcast to other users)
+        if (ownerUserId) {
+          try {
+            await oneSignalService.sendPushNotification({
+              title: pushPayload.title,
+              message: pushPayload.body,
+              url: pushPayload.url,
+              phone: pushPayload.phone,
+              userId: ownerUserId,
+            });
+          } catch (oneSignalErr) {
+            console.warn('[Worker] OneSignal push notice:', oneSignalErr.message);
           }
-        } catch (pushErr) {
-          console.error('[Worker Error] Push notification failure:', pushErr.message);
         }
 
-        // 2. OneSignal SDK Push Notification
-        try {
-          await oneSignalService.sendPushNotification({
-            title: pushPayload.title,
-            message: pushPayload.body,
-            url: pushPayload.url,
-            phone: pushPayload.phone,
-          });
-        } catch (oneSignalErr) {
-          console.warn('[Worker] OneSignal push notice:', oneSignalErr.message);
+        // 3. Email Notification to reminder owner (ONLY to reminder owner's email)
+        if (ownerEmail) {
+          try {
+            await sendReminderEmail(reminder, ownerEmail);
+            console.log(`[Worker] Email sent to owner (${ownerEmail}) for reminder ${reminder._id}`);
+          } catch (emailErr) {
+            console.error('[Worker Error] Email sending failure:', emailErr.message);
+          }
+        } else {
+          console.log(`[Worker] Notice: No owner email for reminder ${reminder._id}. Skipping email to prevent sending to other users.`);
         }
+        await dataService.markEmailSent(reminder._id);
 
-        // 3. Email Notification to reminder owner
+        // 4. Native Windows Action Center PC Toast Notification (only for local admin's own reminders)
         try {
-          await sendReminderEmail(reminder, ownerEmail);
-          await dataService.markEmailSent(reminder._id);
-          console.log(`[Worker] Email sent to ${ownerEmail || 'default'} for reminder ${reminder._id}`);
-        } catch (emailErr) {
-          console.error('[Worker Error] Email sending failure:', emailErr.message);
-        }
-
-        // 4. Native Windows Action Center PC Toast Notification
-        try {
-          desktopNotificationService.sendReminderToast(reminder, formattedTime);
+          const superAdminEmail = (process.env.SUPERADMIN_EMAIL || 'vaibhavdigitalwebconnection@gmail.com').toLowerCase();
+          if (ownerEmail && ownerEmail.toLowerCase() === superAdminEmail) {
+            desktopNotificationService.sendReminderToast(reminder, formattedTime);
+          }
         } catch (toastErr) {
           console.warn('[Worker] Native Windows toast warning:', toastErr.message);
         }

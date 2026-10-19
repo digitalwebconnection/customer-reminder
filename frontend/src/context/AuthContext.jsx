@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
+import { requestAndSubscribePush } from '../utils/pushManager';
+import { setOneSignalUser } from '../utils/oneSignalManager';
 
 const AuthContext = createContext();
 
@@ -20,6 +22,11 @@ export function AuthProvider({ children }) {
       if (res.data?.user) {
         setUser(res.data.user);
         localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
+        // Link push notifications and OneSignal to current active user
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          requestAndSubscribePush().catch(() => {});
+        }
+        setOneSignalUser(res.data.user._id);
         return res.data.user;
       }
     } catch (err) {
@@ -27,6 +34,7 @@ export function AuthProvider({ children }) {
         setUser(null);
         localStorage.removeItem('remindiq_user');
         localStorage.removeItem('remindiq_token');
+        setOneSignalUser(null);
       }
     }
     return null;
@@ -52,6 +60,11 @@ export function AuthProvider({ children }) {
     if (res.data?.user) {
       setUser(res.data.user);
       localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
+      // Immediately bind push subscription to this user
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        requestAndSubscribePush().catch(() => {});
+      }
+      setOneSignalUser(res.data.user._id);
     }
     return res.data;
   };
@@ -78,6 +91,10 @@ export function AuthProvider({ children }) {
     if (res.data?.user) {
       setUser(res.data.user);
       localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        requestAndSubscribePush().catch(() => {});
+      }
+      setOneSignalUser(res.data.user._id);
     }
     return res.data;
   };
@@ -93,8 +110,16 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager?.getSubscription();
+        if (sub?.endpoint) {
+          await api.post('/push/unsubscribe', { endpoint: sub.endpoint }).catch(() => {});
+        }
+      }
       await api.post('/auth/logout');
     } catch (e) {}
+    setOneSignalUser(null);
     setUser(null);
     localStorage.removeItem('remindiq_user');
     localStorage.removeItem('remindiq_token');

@@ -74,8 +74,8 @@ export const pushService = {
   addSubscription: async (sub, userId = null, userAgent = '') => {
     if (!sub || !sub.endpoint || !sub.keys) return null;
 
-    // 1. File fallback save
-    saveFileSubscription(sub);
+    // 1. File fallback save with userId
+    saveFileSubscription({ ...sub, userId: userId ? String(userId) : null });
 
     // 2. MongoDB persistent save
     if (isMongoActive()) {
@@ -92,7 +92,7 @@ export const pushService = {
         };
 
         if (userId && mongoose.isValidObjectId(userId)) {
-          update.userId = userId;
+          update.userId = new mongoose.Types.ObjectId(userId);
         }
 
         const savedSub = await PushSubscription.findOneAndUpdate(query, update, {
@@ -100,8 +100,13 @@ export const pushService = {
           returnDocument: 'after',
         });
 
-        // Also update User document for fast single-lookup
+        // Ensure this device endpoint is ONLY bound to this user (remove from any previous accounts)
         if (userId && mongoose.isValidObjectId(userId)) {
+          await User.updateMany(
+            { _id: { $ne: userId }, 'pushSubscriptions.endpoint': sub.endpoint },
+            { $pull: { pushSubscriptions: { endpoint: sub.endpoint } } }
+          );
+
           const user = await User.findById(userId);
           if (user) {
             user.pushSubscription = sub;
@@ -125,6 +130,29 @@ export const pushService = {
     }
 
     return sub;
+  },
+
+  /**
+   * Deactivate a push subscription (e.g. on logout or revoke)
+   */
+  deactivateSubscription: async (endpoint, userId = null) => {
+    if (!endpoint) return false;
+
+    if (isMongoActive()) {
+      try {
+        await PushSubscription.updateOne({ endpoint }, { isActive: false });
+        if (userId && mongoose.isValidObjectId(userId)) {
+          await User.updateOne(
+            { _id: userId },
+            { $pull: { pushSubscriptions: { endpoint } } }
+          );
+        }
+      } catch (e) {
+        console.warn('[WebPush] Error deactivating subscription:', e.message);
+      }
+    }
+    removeFileSubscription(endpoint);
+    return true;
   },
 
   /**
@@ -195,8 +223,13 @@ export const pushService = {
     }
 
     let sent = 0;
+    const payloadWithUser =
+      typeof payload === 'object' && payload !== null
+        ? { ...payload, userId: String(userId) }
+        : payload;
+
     for (const sub of userSubs) {
-      const res = await pushService.sendPushToSubscription(sub, payload);
+      const res = await pushService.sendPushToSubscription(sub, payloadWithUser);
       if (res.success) sent++;
     }
 
@@ -206,8 +239,10 @@ export const pushService = {
 
   /**
    * Broadcast high-urgency alarm Web Push to all devices in the system
+   * NOTE: NEVER use for private user reminders! Only for system-wide alerts.
    */
   sendPushToAll: async (payload) => {
+    console.warn('[WebPush] Notice: sendPushToAll invoked. Ensure this is a system-wide broadcast, not a private reminder.');
     const allSubs = [];
     const seenEndpoints = new Set();
 
