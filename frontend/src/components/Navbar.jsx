@@ -136,8 +136,8 @@ export default function Navbar() {
             </span>
           </NavLink>
 
-          {/* Navigation Items: Segmented Glass Capsule */}
-          <nav className="flex items-center p-1 bg-slate-900/80 rounded-2xl border border-white/8 shadow-inner shrink-0">
+          {/* Navigation Items: Segmented Glass Capsule (Visible on desktop, mobile uses bottom nav) */}
+          <nav className="hidden md:flex items-center p-1 bg-slate-900/80 rounded-2xl border border-white/8 shadow-inner shrink-0">
             <NavLink
               to="/add"
               className={({ isActive }) =>
@@ -172,12 +172,12 @@ export default function Navbar() {
 
         {/* Right side: 14m Keep-Alive indicator, Download App, User Badge, Notifications & Logout */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Download Mobile App Button */}
+          {/* Download Mobile App Button (Desktop/Tablet only, mobile has it in bottom nav) */}
           <button
             type="button"
             onClick={() => promptInstall()}
             title={isInstalled ? "RemindIQ App is installed on this device" : "Download & Install Mobile Web App"}
-            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 transition cursor-pointer shadow-sm active:scale-95"
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 transition cursor-pointer shadow-sm active:scale-95"
           >
             <Smartphone className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
             <span className="hidden sm:inline">
@@ -198,7 +198,7 @@ export default function Navbar() {
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               <span className="hidden sm:inline">Alarms Active</span>
-              <span className="sm:hidden text-[11px]">Alarms</span>
+              <span className="sm:hidden text-xs">Alarms</span>
             </button>
           ) : notificationState === "denied" ? (
             <button
@@ -209,7 +209,7 @@ export default function Navbar() {
             >
               <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
               <span className="hidden sm:inline">Alarms Blocked</span>
-              <span className="sm:hidden text-[11px]">Blocked</span>
+              <span className="sm:hidden text-xs">Blocked</span>
             </button>
           ) : (
             <button
@@ -221,7 +221,7 @@ export default function Navbar() {
             >
               <BellRing className="w-3.5 h-3.5 shrink-0" />
               <span className="hidden sm:inline">Set Alarms</span>
-              <span className="sm:hidden text-[11px]">Alarms</span>
+              <span className="sm:hidden text-xs">Alarms</span>
             </button>
           )}
 

@@ -88,10 +88,12 @@ export default function Reminders() {
   // Smooth Call Ringtone & 60-Second Countdown Timer for due reminder banner
   useEffect(() => {
     if (!activeDueAlert) {
+      document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
       stopCallRingtone();
       return;
     }
 
+    document.title = `🔔 CALL DUE: ${activeDueAlert.name} (${activeDueAlert.phone || ""}) — RemindIQ`;
     setAlertSecondsLeft(60);
     setIsRingtoneMuted(false);
     startCallRingtone();
@@ -102,6 +104,7 @@ export default function Reminders() {
           clearInterval(timer);
           stopCallRingtone();
           setActiveDueAlert(null);
+          document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
           return 0;
         }
         return prev - 1;
@@ -111,6 +114,7 @@ export default function Reminders() {
     return () => {
       clearInterval(timer);
       stopCallRingtone();
+      document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
     };
   }, [activeDueAlert]);
 
