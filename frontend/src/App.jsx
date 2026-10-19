@@ -12,9 +12,12 @@ import { ToastProvider } from './context/ToastContext';
 import { PwaProvider } from './context/PwaContext';
 import InstallPwaBanner from './components/InstallPwaBanner';
 import InstallPwaModal from './components/InstallPwaModal';
+import MobileAlarmPermissionModal from './components/MobileAlarmPermissionModal';
 import MobileBottomNav from './components/MobileBottomNav';
 import { registerServiceWorker } from './utils/pushManager';
 import { initRenderKeepAlive } from './utils/renderKeepAlive';
+import { ReactLenis } from 'lenis/react';
+import 'lenis/dist/lenis.css';
 
 function Layout({ children }) {
   return (
@@ -33,9 +36,10 @@ function Layout({ children }) {
         {children}
       </main>
 
-      {/* Mobile Experience: Floating Install Banner, Install Modal & Native Bottom Navigation */}
+      {/* Mobile Experience: Floating Install Banner, Install Modal, Alarm Permissions Hub & Native Bottom Navigation */}
       <InstallPwaBanner />
       <InstallPwaModal />
+      <MobileAlarmPermissionModal />
       <MobileBottomNav />
     </div>
   );
@@ -49,47 +53,49 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <PwaProvider>
-        <TimezoneProvider>
-          <ToastProvider>
-            <BrowserRouter>
-              <Routes>
-                {/* Public Login Route */}
-                <Route path="/login" element={<Login />} />
+    <ReactLenis root options={{ lerp: 0.08, duration: 1.2, smoothWheel: true }}>
+      <AuthProvider>
+        <PwaProvider>
+          <TimezoneProvider>
+            <ToastProvider>
+              <BrowserRouter>
+                <Routes>
+                  {/* Public Login Route */}
+                  <Route path="/login" element={<Login />} />
 
-                {/* 1. Add Reminder (/add) */}
-                <Route
-                  path="/add"
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <AddReminder />
-                      </Layout>
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* 1. Add Reminder (/add) */}
+                  <Route
+                    path="/add"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <AddReminder />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* 2. All Reminders (/reminders) */}
-                <Route
-                  path="/reminders"
-                  element={
-                    <ProtectedRoute>
-                      <Layout>
-                        <Reminders />
-                      </Layout>
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* 2. All Reminders (/reminders) */}
+                  <Route
+                    path="/reminders"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Reminders />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Default Redirection */}
-                <Route path="/" element={<Navigate to="/reminders" replace />} />
-                <Route path="*" element={<Navigate to="/reminders" replace />} />
-              </Routes>
-            </BrowserRouter>
-          </ToastProvider>
-        </TimezoneProvider>
-      </PwaProvider>
-    </AuthProvider>
+                  {/* Default Redirection */}
+                  <Route path="/" element={<Navigate to="/reminders" replace />} />
+                  <Route path="*" element={<Navigate to="/reminders" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </ToastProvider>
+          </TimezoneProvider>
+        </PwaProvider>
+      </AuthProvider>
+    </ReactLenis>
   );
 }

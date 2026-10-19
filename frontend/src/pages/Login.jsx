@@ -104,14 +104,12 @@ export default function Login() {
                 IQ
               </span>
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Customer Call Reminder & Alert Automation
-            </p>
+           
           </div>
         </div>
 
         {/* Mode Switch Tabs: Sign In / Create Account */}
-        <div className="grid grid-cols-2 p-1 bg-slate-950/80 rounded-2xl border border-white/8 mb-6 shadow-inner">
+        <div className="grid grid-cols-1 p-1 bg-slate-950/80 rounded-xl border border-white/8 mb-6 shadow-inner">
           <button
             type="button"
             onClick={() => {
@@ -126,20 +124,7 @@ export default function Login() {
           >
             Sign In
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode("register");
-              setError("");
-            }}
-            className={`py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer ${
-              mode === "register"
-                ? "bg-linear-to-r from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-600/30"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            Create Account
-          </button>
+          
         </div>
 
         {/* Error Alert */}
@@ -194,11 +179,6 @@ export default function Login() {
               <label className="block text-xs font-semibold text-slate-300">
                 Password
               </label>
-              {mode === "login" && (
-                <span className="text-[11px] text-indigo-400 font-medium">
-                  30-Day JWT Session
-                </span>
-              )}
             </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
@@ -264,47 +244,8 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Quick Demo Credentials Helper */}
-        {mode === "login" && (
-          <div className="mt-5 pt-4 border-t border-white/8 space-y-2">
-            <div className="flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center gap-1 font-medium">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                Quick Login Autofill:
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleFillDemoOwner}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-white/6 text-[11px] text-slate-300 font-medium transition cursor-pointer text-left truncate"
-                title="Fill vaibhavdigitalwebconnection@gmail.com"
-              >
-                👤 Owner 1 (Vaibhav)
-              </button>
-              <button
-                type="button"
-                onClick={handleFillAltOwner}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-white/6 text-[11px] text-slate-300 font-medium transition cursor-pointer text-left truncate"
-                title="Fill admin@reminder.com"
-              >
-                🛡️ Admin (System)
-              </button>
-            </div>
-          </div>
-        )}
+     
 
-        {/* Security & Render Keep-Alive Info Footer */}
-        <div className="mt-5 pt-3 border-t border-white/6 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
-          <div className="flex items-center gap-1.5 text-emerald-400">
-            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-            <span>JWT Bearer + Secure Cookie</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-indigo-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>14-Min Render Active Ping</span>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -29,12 +29,17 @@ export async function processDueReminders() {
         await dataService.markEmailSent(reminder._id);
         console.log(`[Worker] Email sent successfully for reminder ${reminder._id}`);
 
-        // 2. Send Web Push & OneSignal Notification
+        // 2. Send High-Urgency Web Push & OneSignal Notification
         const pushPayload = {
-          title: `Call Reminder: ${reminder.name}`,
-          body: `Time to call ${reminder.phone}. Due: ${formattedTime}`,
+          title: `🚨 Call Reminder Alarm: ${reminder.name}`,
+          body: `📞 Due Now: Call ${reminder.phone} (${formattedTime})${reminder.note ? `\nNote: ${reminder.note}` : ''}`,
           phone: reminder.phone,
-          url: '/reminders',
+          url: `/reminders?alertId=${reminder._id}`,
+          reminderId: reminder._id,
+          name: reminder.name,
+          dueAt: reminder.dueAt,
+          isAlarm: true,
+          timestamp: Date.now(),
         };
         await pushService.sendPushToAll(pushPayload);
         await oneSignalService.sendPushNotification({

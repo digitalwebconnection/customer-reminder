@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import {
+  getDetailedPermissions,
+  requestAndSubscribePush,
+  sendTestMobileAlarmPush,
+} from "../utils/pushManager";
+import { promptOneSignalPush } from "../utils/oneSignalManager";
 
 const PwaContext = createContext();
 
@@ -8,9 +14,57 @@ export function PwaProvider({ children }) {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [showIosModal, setShowIosModal] = useState(false);
+  const [showAlarmModal, setShowAlarmModal] = useState(false);
+  const autoArmedRef = useRef(false);
+
+  // Permission Diagnostics State
+  const [permissions, setPermissions] = useState({
+    isSupported: true,
+    notification: 'default',
+    serviceWorkerActive: false,
+    pushSubscribed: false,
+    storagePersisted: false,
+    isStandalone: false,
+  });
+  const [loadingPermissions, setLoadingPermissions] = useState(false);
+
+  const refreshPermissions = useCallback(async () => {
+    try {
+      const details = await getDetailedPermissions();
+      setPermissions(details);
+      if (details.isStandalone) {
+        setIsInstalled(true);
+      }
+      return details;
+    } catch (e) {
+      console.warn('[PWA] Error checking permissions:', e);
+    }
+  }, []);
+
+  /**
+   * 1-Click Master Enabler for all mobile alarms & background permissions
+   */
+  const enableAllAlarmPermissions = useCallback(async () => {
+    setLoadingPermissions(true);
+    try {
+      // 1. Web Push & Notification & Persistent Storage
+      const pushResult = await requestAndSubscribePush();
+
+      // 2. OneSignal SDK fallback prompt
+      try {
+        await promptOneSignalPush();
+      } catch (e) {}
+
+      // 3. Refresh live status
+      const updated = await refreshPermissions();
+      return { success: pushResult.success, permissions: updated };
+    } finally {
+      setLoadingPermissions(false);
+    }
+  }, [refreshPermissions]);
 
   useEffect(() => {
-    // 1. Detect if already installed in standalone mode (home screen app)
+    // 1. Detect standalone mode
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true ||
@@ -20,7 +74,7 @@ export function PwaProvider({ children }) {
       setIsInstalled(true);
     }
 
-    // 2. Detect iOS device (iPhone, iPad, iPod)
+    // 2. Detect iOS device
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isAppleDevice = /iphone|ipad|ipod/.test(userAgent) && !window.MSStream;
     setIsIos(isAppleDevice);
@@ -38,25 +92,70 @@ export function PwaProvider({ children }) {
       setIsInstallable(false);
       setDeferredPrompt(null);
       console.log("[PWA] 🎉 RemindIQ successfully installed on device!");
+      refreshPermissions();
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleAppInstalled);
 
+    // Initial permissions check
+    refreshPermissions();
+
+    // 4. Set mobile permissions automatically by default:
+    // Prompt immediately if allowed by browser, and fallback to first tap/touch gesture
+    const autoSetPermissions = async () => {
+      if (autoArmedRef.current) return;
+      if (typeof window === "undefined" || !("Notification" in window)) return;
+
+      if (Notification.permission === "granted") {
+        autoArmedRef.current = true;
+        try {
+          await requestAndSubscribePush();
+        } catch (e) {}
+      } else if (Notification.permission === "default") {
+        try {
+          const res = await enableAllAlarmPermissions();
+          if (res?.success) {
+            autoArmedRef.current = true;
+          }
+        } catch (e) {}
+      }
+    };
+
+    autoSetPermissions();
+
+    const handleFirstGesture = async () => {
+      if (typeof window !== "undefined" && "Notification" in window) {
+        if (Notification.permission === "default" && !autoArmedRef.current) {
+          try {
+            await enableAllAlarmPermissions();
+            autoArmedRef.current = true;
+          } catch (e) {}
+        } else if (Notification.permission === "granted") {
+          try {
+            await requestAndSubscribePush();
+          } catch (e) {}
+        }
+      }
+    };
+
+    window.addEventListener("touchstart", handleFirstGesture, { once: true });
+    window.addEventListener("click", handleFirstGesture, { once: true });
+
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("touchstart", handleFirstGesture);
+      window.removeEventListener("click", handleFirstGesture);
     };
-  }, []);
+  }, [refreshPermissions, enableAllAlarmPermissions]);
 
   const promptInstall = async () => {
-    // If iOS, show step-by-step Apple install guide
     if (isIos && !isInstalled) {
       setShowIosModal(true);
       return { success: true, platform: "ios" };
     }
 
-    // If native prompt is available (Android / Chrome / Edge)
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
@@ -64,14 +163,21 @@ export function PwaProvider({ children }) {
         setIsInstalled(true);
         setIsInstallable(false);
         setDeferredPrompt(null);
+        refreshPermissions();
         return { success: true, outcome: "accepted" };
       }
       return { success: false, outcome: "dismissed" };
     }
 
-    // Fallback: show instructions modal
     setShowIosModal(true);
     return { success: false, reason: "manual_instructions" };
+  };
+
+  /**
+   * Dispatches high-urgency test alarm to verify background phone ringing
+   */
+  const testMobileAlarm = async () => {
+    return await sendTestMobileAlarmPush();
   };
 
   return (
@@ -82,6 +188,13 @@ export function PwaProvider({ children }) {
         isIos,
         showIosModal,
         setShowIosModal,
+        showAlarmModal,
+        setShowAlarmModal,
+        permissions,
+        loadingPermissions,
+        refreshPermissions,
+        enableAllAlarmPermissions,
+        testMobileAlarm,
         promptInstall,
       }}
     >

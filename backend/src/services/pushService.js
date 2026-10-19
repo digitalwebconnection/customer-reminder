@@ -48,28 +48,45 @@ function saveSubscription(sub) {
 export const pushService = {
   getPublicKey: () => publicKey,
 
+  getSubscriptions: () => getSubscriptions(),
+
   addSubscription: (sub) => {
     saveSubscription(sub);
   },
 
   sendPushToAll: async (payload) => {
     const subs = getSubscriptions();
-    if (subs.length === 0) return;
+    if (subs.length === 0) {
+      console.log('[WebPush] No active push subscriptions found.');
+      return { total: 0, sent: 0 };
+    }
 
     const payloadString = JSON.stringify(payload);
     const validSubs = [];
+    let sentCount = 0;
+
+    // High Urgency and 24h TTL ensures Android Google FCM wakes mobile device from Doze/standby immediately
+    const pushOptions = {
+      TTL: 86400, // 24 hours Time To Live
+      urgency: 'high', // 'very-low' | 'low' | 'normal' | 'high'
+      topic: 'reminders',
+      headers: {
+        Urgency: 'high',
+      },
+    };
 
     for (const sub of subs) {
       try {
-        await webpush.sendNotification(sub, payloadString);
+        await webpush.sendNotification(sub, payloadString, pushOptions);
         validSubs.push(sub);
+        sentCount++;
       } catch (err) {
         if (err.statusCode === 410 || err.statusCode === 404) {
           // Expired subscription, omit from validSubs
           console.log(`[WebPush] Removing expired subscription: ${sub.endpoint}`);
         } else {
           validSubs.push(sub);
-          console.warn(`[WebPush] Notification failed: ${err.message}`);
+          console.warn(`[WebPush] Notification warning for ${sub.endpoint?.slice(0, 30)}...: ${err.message}`);
         }
       }
     }
@@ -77,5 +94,8 @@ export const pushService = {
     try {
       fs.writeFileSync(SUBS_FILE, JSON.stringify(validSubs, null, 2), 'utf-8');
     } catch (e) {}
+
+    console.log(`[WebPush] Sent high-urgency alarm to ${sentCount}/${subs.length} device(s)`);
+    return { total: subs.length, sent: sentCount };
   },
 };

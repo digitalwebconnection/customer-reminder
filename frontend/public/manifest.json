@@ -1,13 +1,14 @@
 {
   "short_name": "RemindIQ",
   "name": "RemindIQ — Customer Follow-up & Call Reminder",
-  "description": "Customer Follow-up & Call Reminder System with real-time Australian alerts.",
+  "description": "Customer Follow-up & Call Reminder System with real-time Australian alerts and mobile alarms.",
   "id": "/",
   "start_url": "/reminders",
   "scope": "/",
   "background_color": "#070b14",
   "theme_color": "#4f46e5",
   "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay"],
   "orientation": "portrait",
   "categories": ["business", "productivity", "utilities"],
   "icons": [

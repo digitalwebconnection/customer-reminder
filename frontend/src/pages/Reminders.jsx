@@ -22,8 +22,9 @@ import {
   Users,
   ChevronDown,
   ArrowUpDown,
+  BellRing,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/axios";
 import { formatInAustralianTime } from "../utils/dateUtils";
 import EditReminderModal from "../components/EditReminderModal";
@@ -33,12 +34,15 @@ import {
   stopCallRingtone,
 } from "../utils/audioAlert";
 import { useToast } from "../context/ToastContext";
+import { usePwa } from "../context/PwaContext";
 import NumberTicker from "../components/ui/NumberTicker";
 
 import QuickSnoozePortal from "../components/QuickSnoozePortal";
 
 export default function Reminders() {
   const toast = useToast();
+  const { permissions, setShowAlarmModal } = usePwa();
+  const [searchParams] = useSearchParams();
   const searchInputRef = useRef(null);
 
   const [reminders, setReminders] = useState([]);
@@ -109,6 +113,53 @@ export default function Reminders() {
       stopCallRingtone();
     };
   }, [activeDueAlert]);
+
+  // Handle URL alert query (when opening notification directly from mobile push)
+  useEffect(() => {
+    const alertId = searchParams.get("alertId");
+    const testAlarm = searchParams.get("testAlarm");
+
+    if (alertId && reminders.length > 0) {
+      const target = reminders.find((r) => r._id === alertId);
+      if (target) {
+        setActiveDueAlert(target);
+      }
+    } else if (testAlarm && !activeDueAlert) {
+      setActiveDueAlert({
+        _id: "test-alert",
+        name: "Test Customer (John Smith)",
+        phone: "+61 400 123 456",
+        dueAt: new Date().toISOString(),
+        note: "This is a live test of the phone alarm & ringtone system.",
+      });
+    }
+  }, [searchParams, reminders]);
+
+  // Listen for Service Worker postMessage notification clicks
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      const handleSwMessage = (e) => {
+        if (e.data && e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK") {
+          const { reminderId, name, phone } = e.data.data || {};
+          if (reminderId) {
+            const target = reminders.find((r) => r._id === reminderId);
+            if (target) {
+              setActiveDueAlert(target);
+            } else {
+              setActiveDueAlert({
+                _id: reminderId,
+                name: name || "Customer Call Due",
+                phone: phone || "",
+                dueAt: new Date().toISOString(),
+              });
+            }
+          }
+        }
+      };
+      navigator.serviceWorker.addEventListener("message", handleSwMessage);
+      return () => navigator.serviceWorker.removeEventListener("message", handleSwMessage);
+    }
+  }, [reminders]);
 
   const fetchReminders = async (showSpinner = false) => {
     if (showSpinner) setIsRefreshing(true);
@@ -468,119 +519,6 @@ export default function Reminders() {
         </div>
       </div>
 
-      {/* 📊 Executive Magic UI KPI Metric Cards (Interactive Filter Triggers) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Customers */}
-        <button
-          type="button"
-          onClick={() => setFilter("all")}
-          className={`relative p-3.5 sm:p-4 rounded-2xl text-left border transition-all duration-300 cursor-pointer group backdrop-blur-xl ${
-            filter === "all"
-              ? "bg-slate-900/90 border-indigo-500/60 ring-2 ring-indigo-500/30 shadow-lg shadow-indigo-500/10"
-              : "bg-slate-900/50 border-white/8 hover:border-slate-700 hover:bg-slate-900/80"
-          }`}
-        >
-         
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-400 group-hover:text-slate-300">
-              Total Reminders
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-indigo-300">
-              <Users className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-white">
-            <NumberTicker value={counts.all} />
-          </div>
-          <span className="text-[10px] text-slate-400 mt-1 block">Full customer roster</span>
-        </button>
-
-        {/* Pending Calls */}
-        <button
-          type="button"
-          onClick={() => setFilter("pending")}
-          className={`relative p-3.5 sm:p-4 rounded-2xl text-left border transition-all duration-300 cursor-pointer group backdrop-blur-xl ${
-            filter === "pending"
-              ? "bg-slate-900/90 border-amber-500/60 ring-2 ring-amber-500/30 shadow-lg shadow-amber-500/10"
-              : "bg-slate-900/50 border-white/8 hover:border-slate-700 hover:bg-slate-900/80"
-          }`}
-        >
-    
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-amber-400/90 group-hover:text-amber-300">
-              Calls Pending
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-300">
-              <Clock className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-amber-300">
-            <NumberTicker value={counts.pending} />
-          </div>
-          <span className="text-[10px] text-amber-400/70 mt-1 block">Scheduled in queue</span>
-        </button>
-
-        {/* Overdue Urgent Calls */}
-        <button
-          type="button"
-          onClick={() => setFilter("overdue")}
-          className={`relative p-3.5 sm:p-4 rounded-2xl text-left border transition-all duration-300 cursor-pointer group backdrop-blur-xl ${
-            filter === "overdue"
-              ? "bg-slate-900/90 border-rose-500/60 ring-2 ring-rose-500/30 shadow-lg shadow-rose-500/10"
-              : "bg-slate-900/50 border-white/8 hover:border-slate-700 hover:bg-slate-900/80"
-          }`}
-        >
-         
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-rose-400 group-hover:text-rose-300 flex items-center gap-1">
-              <span>Overdue Calls</span>
-              {counts.overdue > 0 && (
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-              )}
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center text-rose-300">
-              <AlertTriangle className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 text-xl sm:text-2xl font-black text-rose-400">
-            <NumberTicker value={counts.overdue} />
-          </div>
-          <span className="text-[10px] text-rose-400/70 mt-1 block">
-            {counts.overdue > 0 ? "Requires immediate follow-up" : "All calls on schedule"}
-          </span>
-        </button>
-
-        {/* Completed Follow-ups */}
-        <button
-          type="button"
-          onClick={() => setFilter("completed")}
-          className={`relative p-3.5 sm:p-4 rounded-2xl text-left border transition-all duration-300 cursor-pointer group backdrop-blur-xl ${
-            filter === "completed"
-              ? "bg-slate-900/90 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-500/10"
-              : "bg-slate-900/50 border-white/8 hover:border-slate-700 hover:bg-slate-900/80"
-          }`}
-        >
-       
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-emerald-400 group-hover:text-emerald-300">
-              Completed Calls
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-300">
-              <CheckCircle className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-xl sm:text-2xl font-black text-emerald-400">
-              <NumberTicker value={counts.completed} />
-            </span>
-            <span className="text-xs font-mono font-bold text-emerald-400/80">
-              ({completionPercentage}%)
-            </span>
-          </div>
-          <span className="text-[10px] text-emerald-400/70 mt-1 block">Successfully contacted</span>
-        </button>
-      </div>
-
       {/* Filter Tabs and Quick Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Filter Tabs: Horizontal swipeable on mobile */}
@@ -833,13 +771,7 @@ export default function Reminders() {
                       <td className="py-3.5 pl-4 pr-6 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5 relative">
                           {/* Quick Call Button */}
-                          <a
-                            href={`tel:${r.phone}`}
-                            className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/20 transition cursor-pointer"
-                            title={`Call ${r.name}`}
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                          </a>
+                          
 
                           {/* Quick Snooze Popover Trigger */}
                           <button

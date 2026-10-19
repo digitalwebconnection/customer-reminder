@@ -109,10 +109,14 @@ app.get('/api/v1/health', (req, res) => {
   });
 });
 
-// Mount Simplified Routes
+// Mount Primary & Backward-compatible Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/reminders', reminderRoutes);
 app.use('/api/v1/push', pushRoutes);
+
+app.use('/api/auth', authRoutes);
+app.use('/api/reminders', reminderRoutes);
+app.use('/api/push', pushRoutes);
 
 // Optional: Serve frontend static files if built in monorepo
 const frontendDist = [

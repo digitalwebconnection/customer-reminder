@@ -24,7 +24,7 @@ import api from "../api/axios";
 export default function Navbar() {
   const toast = useToast();
   const { logout, user } = useAuth();
-  const { promptInstall, isInstalled } = usePwa();
+  const { promptInstall, isInstalled, setShowAlarmModal, permissions } = usePwa();
   const navigate = useNavigate();
   const [notificationState, setNotificationState] = useState("default");
   const [loadingPush, setLoadingPush] = useState(false);
@@ -188,48 +188,40 @@ export default function Navbar() {
             </span>
           </button>
 
-          {/* Desktop Push Alert Controls */}
+          {/* Mobile & Desktop Push Alarm Controls */}
           {notificationState === "granted" ? (
             <button
               type="button"
-              onClick={handleSendTestAlert}
-              title="Desktop alerts are enabled. Click to test sound & notification."
+              onClick={() => setShowAlarmModal(true)}
+              title="Alarms & Notifications are enabled. Click to manage permissions & test closed app alerts."
               className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 transition shadow-sm cursor-pointer"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-              <span className="hidden sm:inline">
-                {testSent ? "Alert Sent!" : "Alerts Active"}
-              </span>
-              <span className="sm:hidden text-[11px]">
-                {testSent ? "Sent!" : "Active"}
-              </span>
+              <span className="hidden sm:inline">Alarms Active</span>
+              <span className="sm:hidden text-[11px]">Alarms</span>
             </button>
           ) : notificationState === "denied" ? (
             <button
               type="button"
-              onClick={handleEnableNotifications}
-              title="Notifications are blocked in your browser. Click the lock/settings icon beside URL to allow."
+              onClick={() => setShowAlarmModal(true)}
+              title="Notifications are blocked in your browser. Click to view instructions to unblock."
               className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition cursor-pointer"
             >
               <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-              <span className="hidden sm:inline">Alerts Blocked</span>
+              <span className="hidden sm:inline">Alarms Blocked</span>
               <span className="sm:hidden text-[11px]">Blocked</span>
             </button>
           ) : (
             <button
               type="button"
-              onClick={handleEnableNotifications}
+              onClick={() => setShowAlarmModal(true)}
               disabled={loadingPush}
-              title="Click to allow desktop notifications on this device"
+              title="Click to enable mobile alarms & notifications on this phone"
               className="btn-shimmer inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white transition cursor-pointer disabled:opacity-50 shadow-md shadow-indigo-600/30"
             >
               <BellRing className="w-3.5 h-3.5 shrink-0" />
-              <span className="hidden sm:inline">
-                {loadingPush ? "Prompting..." : "Enable Alerts"}
-              </span>
-              <span className="sm:hidden text-[11px]">
-                {loadingPush ? "..." : "Alerts"}
-              </span>
+              <span className="hidden sm:inline">Set Alarms</span>
+              <span className="sm:hidden text-[11px]">Alarms</span>
             </button>
           )}
 
