@@ -1,6 +1,11 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+import mongoose from 'mongoose';
 
-export const auth = (req, res, next) => {
+const getJwtSecret = () =>
+  process.env.JWT_SECRET || 'super_secret_dev_jwt_key_remindiq_secure_auth_session';
+
+export const auth = async (req, res, next) => {
   const cookieName = process.env.COOKIE_NAME || 'customer_session';
   let token = null;
 
@@ -28,9 +33,46 @@ export const auth = (req, res, next) => {
   }
 
   try {
-    const secret = process.env.JWT_SECRET || 'super_secret_dev_jwt_key_remindiq_secure_auth_session';
-    const decoded = jwt.verify(token, secret);
-    req.user = decoded;
+    const decoded = jwt.verify(token, getJwtSecret());
+
+    // Verify user still exists and is active
+    if (mongoose.connection.readyState === 1 && decoded.id && mongoose.Types.ObjectId.isValid(decoded.id)) {
+      const user = await User.findById(decoded.id);
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account not found. Please sign up again.',
+        });
+      }
+      if (!user.isActive) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been blocked. Contact the administrator.',
+        });
+      }
+      // Automatically ensure authorized administrator emails maintain superadmin role
+      const superAdminEmail = (process.env.SUPERADMIN_EMAIL || '').toLowerCase();
+      const userEmail = (user.email || '').toLowerCase();
+      const isAdminEmail =
+        userEmail === superAdminEmail ||
+        userEmail === 'vaibhavdigitalwebconnection@gmail.com';
+
+      if (isAdminEmail && user.role !== 'superadmin') {
+        user.role = 'superadmin';
+        await user.save();
+      }
+
+      req.user = {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        isActive: user.isActive,
+      };
+    } else {
+      req.user = decoded;
+    }
+
     next();
   } catch (err) {
     return res.status(401).json({
@@ -38,6 +80,22 @@ export const auth = (req, res, next) => {
       message: 'Invalid or expired session. Please log in again.',
     });
   }
+};
+
+export const requireSuperAdmin = (req, res, next) => {
+  const superAdminEmail = (process.env.SUPERADMIN_EMAIL || '').toLowerCase();
+  const userEmail = (req.user?.email || '').toLowerCase();
+  const isAdminEmail =
+    userEmail === superAdminEmail ||
+    userEmail === 'vaibhavdigitalwebconnection@gmail.com';
+
+  if (!req.user || (req.user.role !== 'superadmin' && !isAdminEmail)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied. Super Admin privileges required.',
+    });
+  }
+  next();
 };
 
 export default auth;

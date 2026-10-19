@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -10,6 +11,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 import reminderRoutes from './routes/reminderRoutes.js';
 import pushRoutes from './routes/pushRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,6 +73,38 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Input sanitization - prevent NoSQL injection
+const sanitizeMiddleware = (req, res, next) => {
+  const sanitize = (obj) => {
+    if (typeof obj !== 'object' || obj === null) return obj;
+    for (const key of Object.keys(obj)) {
+      if (key.startsWith('$')) {
+        delete obj[key];
+      } else if (typeof obj[key] === 'object') {
+        sanitize(obj[key]);
+      }
+    }
+    return obj;
+  };
+  if (req.body) sanitize(req.body);
+  if (req.query) sanitize(req.query);
+  if (req.params) sanitize(req.params);
+  next();
+};
+app.use(sanitizeMiddleware);
+
+// Rate limiting on auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 20 requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many requests. Please try again in 15 minutes.',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Root API Endpoint (Gives instant confirmation in browser)
 app.get('/', (req, res, next) => {
   const isDbConnected = mongoose.connection.readyState === 1;
@@ -103,20 +137,29 @@ app.get('/api/v1/health', (req, res) => {
     status: 'ok',
     database: isDbConnected ? 'connected' : 'disconnected',
     storage: isDbConnected ? 'mongodb' : 'local-json-store',
-    timezone: process.env.APP_TIMEZONE || 'Australia/Sydney',
+    timezone: process.env.APP_TIMEZONE || 'Asia/Kolkata',
     service: 'customer-reminder-api',
     timestamp: new Date().toISOString(),
   });
 });
 
+// Apply rate limiting to auth routes
+app.use('/api/v1/auth/login', authLimiter);
+app.use('/api/v1/auth/register', authLimiter);
+app.use('/api/v1/auth/forgot-password', authLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
 // Mount Primary & Backward-compatible Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/reminders', reminderRoutes);
 app.use('/api/v1/push', pushRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/reminders', reminderRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Optional: Serve frontend static files if built in monorepo
 const frontendDist = [

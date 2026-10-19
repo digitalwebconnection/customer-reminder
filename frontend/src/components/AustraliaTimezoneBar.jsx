@@ -1,41 +1,92 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Globe, Check } from 'lucide-react';
-import { useTimezone } from '../context/TimezoneContext';
+import React, { useState, useEffect } from "react";
+import { Globe } from "lucide-react";
+import { useTimezone } from "../context/TimezoneContext";
+import { useAuth } from "../context/AuthContext";
 
-export const AUSTRALIAN_ZONES = [
-  { id: 'Australia/Sydney', city: 'Sydney', state: 'NSW/ACT' },
-  { id: 'Australia/Melbourne', city: 'Melbourne', state: 'VIC' },
-  { id: 'Australia/Brisbane', city: 'Brisbane', state: 'QLD' },
-  { id: 'Australia/Adelaide', city: 'Adelaide', state: 'SA' },
+export const REGIONAL_ZONES = [
+  {
+    id: "Australia/Sydney",
+    city: "Sydney",
+    state: "NSW/ACT",
+    flag: "🇦🇺",
+    country: "Australia",
+  },
+  {
+    id: "Australia/Melbourne",
+    city: "Melbourne",
+    state: "VIC",
+    flag: "🇦🇺",
+    country: "Australia",
+  },
+  {
+    id: "Australia/Brisbane",
+    city: "Brisbane",
+    state: "QLD",
+    flag: "🇦🇺",
+    country: "Australia",
+  },
+  {
+    id: "Australia/Adelaide",
+    city: "Adelaide",
+    state: "SA",
+    flag: "🇦🇺",
+    country: "Australia",
+  },
+  {
+    id: "Asia/Kolkata",
+    city: "India (IST)",
+    state: "IST",
+    flag: "🇮🇳",
+    country: "India",
+  },
 ];
 
+export const AUSTRALIAN_ZONES = REGIONAL_ZONES; // backwards compatibility
+
 export default function AustraliaTimezoneBar() {
-  const { selectedTimezone, setTimezone } = useTimezone();
+  const { user } = useAuth();
+  const { selectedTimezone, selectedCountry, setTimezone } = useTimezone();
   const [clockData, setClockData] = useState({});
+
+  // Active country is set strictly by the user's profile
+  const activeCountry =
+    user?.country ||
+    selectedCountry ||
+    (selectedTimezone === "Asia/Kolkata" ? "India" : "Australia");
+
+  // Filter to show ONLY Australia timezones for Australia profile, and ONLY India for India profile
+  const visibleZones = REGIONAL_ZONES.filter(
+    (zone) => zone.country === activeCountry,
+  );
 
   useEffect(() => {
     const updateAllClocks = () => {
       const now = new Date();
       const newClocks = {};
 
-      AUSTRALIAN_ZONES.forEach((z) => {
+      REGIONAL_ZONES.forEach((z) => {
         try {
-          const parts = new Intl.DateTimeFormat('en-AU', {
+          const locale = z.id === "Asia/Kolkata" ? "en-IN" : "en-AU";
+          const parts = new Intl.DateTimeFormat(locale, {
             timeZone: z.id,
-            hour: 'numeric',
-            minute: '2-digit',
-            second: '2-digit',
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
             hour12: true,
-            timeZoneName: 'short',
+            timeZoneName: "short",
           }).formatToParts(now);
 
-          let hour = '', minute = '', second = '', dayPeriod = '', tzName = '';
+          let hour = "",
+            minute = "",
+            second = "",
+            dayPeriod = "",
+            tzName = "";
           parts.forEach((p) => {
-            if (p.type === 'hour') hour = p.value;
-            if (p.type === 'minute') minute = p.value;
-            if (p.type === 'second') second = p.value;
-            if (p.type === 'dayPeriod') dayPeriod = p.value;
-            if (p.type === 'timeZoneName') tzName = p.value;
+            if (p.type === "hour") hour = p.value;
+            if (p.type === "minute") minute = p.value;
+            if (p.type === "second") second = p.value;
+            if (p.type === "dayPeriod") dayPeriod = p.value;
+            if (p.type === "timeZoneName") tzName = p.value;
           });
 
           newClocks[z.id] = {
@@ -44,8 +95,8 @@ export default function AustraliaTimezoneBar() {
           };
         } catch (e) {
           newClocks[z.id] = {
-            time: '--:--:--',
-            code: 'AU',
+            time: "--:--:--",
+            code: z.id === "Asia/Kolkata" ? "IST" : "AU",
           };
         }
       });
@@ -59,55 +110,60 @@ export default function AustraliaTimezoneBar() {
   }, []);
 
   return (
-    <div className="bg-[#070b14]/90 backdrop-blur-xl border-b border-white/6 px-3 sm:px-6 py-1.5 sm:py-2 text-[11px] select-none shadow-sm">
+    <div className="bg-[#09090b]/95 backdrop-blur-xl border-b border-zinc-800/80 px-3 sm:px-6 py-1.5 sm:py-2 text-[11px] select-none shadow-xs">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-        {/* Label Header */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <div className="w-5 h-5 rounded-md bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-xs">
-            🇦🇺
+        {/* Profile Country Indicator (Set from user profile, not changed manually) */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 text-[10px] font-bold shadow-xs select-none"
+            title={`Timezone region set from your profile (${activeCountry})`}
+          >
+            <span>{activeCountry === "India" ? "🇮🇳" : "🇦🇺"}</span>
+            <span className="font-semibold">{activeCountry}</span>
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 px-2 sm:px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
-            <Globe className="w-3 h-3 text-indigo-400" />
-            <span className="hidden md:inline">Australia Live Regional Clocks</span>
-            <span className="md:hidden">AU Clocks</span>
-          </span>
         </div>
 
-        {/* Live Australian Timezone Clocks */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5">
-          {AUSTRALIAN_ZONES.map((zone) => {
+        {/* Live Regional Clocks: Filtered by active country */}
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5 touch-pan-x overscroll-x-contain">
+          {visibleZones.map((zone) => {
             const isSelected = selectedTimezone === zone.id;
-            const data = clockData[zone.id] || { time: 'Loading...', code: '' };
+            const data = clockData[zone.id] || { time: "Loading...", code: "" };
 
             return (
               <button
                 key={zone.id}
                 type="button"
-                onClick={() => setTimezone(zone.id)}
-                className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border text-left transition-all duration-200 cursor-pointer group ${
+                onClick={() => setTimezone(zone.id, zone.country)}
+                className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border text-left transition-all duration-200 cursor-pointer shrink-0 active:scale-95 group ${
                   isSelected
-                    ? 'bg-linear-to-r from-indigo-950/90 to-slate-900 border-indigo-500/80 text-white shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/50'
-                    : 'bg-slate-900/50 border-white/6 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60'
+                    ? "bg-zinc-800 border-indigo-500/80 text-white shadow-sm ring-1 ring-indigo-500/40"
+                    : "bg-zinc-900/60 border-zinc-800/80 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800/50"
                 }`}
                 title={`Click to set ${zone.city} (${zone.id}) as your active reminder timezone`}
               >
+                <span className="text-xs">{zone.flag}</span>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-slate-300 group-hover:text-white transition">
+                    <span className="text-[10px] font-bold text-zinc-300 group-hover:text-white transition">
                       {zone.city}
                     </span>
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800/90 text-indigo-300/90 font-mono border border-white/5">
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono border border-zinc-700/50">
                       {zone.state}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 font-mono text-[11px] font-semibold text-slate-100">
-                    <span>{data.time}</span>
-                    <span className="text-[9px] font-bold text-indigo-400 uppercase">{data.code}</span>
+                  <div className="flex items-center gap-1 font-mono text-[11px] font-semibold text-zinc-100 tabular-nums">
+                    <span className="tabular-nums">{data.time}</span>
+                    <span className="text-[9px] font-bold text-zinc-400 uppercase">
+                      {data.code}
+                    </span>
                   </div>
                 </div>
 
                 {isSelected && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5 shadow-sm shadow-emerald-400/50" title="Active selection" />
+                  <span
+                    className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5 shadow-xs shadow-emerald-400/50"
+                    title="Active timezone"
+                  />
                 )}
               </button>
             );

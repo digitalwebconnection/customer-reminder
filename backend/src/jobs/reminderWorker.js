@@ -4,6 +4,7 @@ import { sendReminderEmail, formatInTimezone } from '../services/emailService.js
 import { pushService } from '../services/pushService.js';
 import { oneSignalService } from '../services/oneSignalService.js';
 import { desktopNotificationService } from '../services/desktopNotificationService.js';
+import User from '../models/User.js';
 
 let isRunning = false;
 
@@ -20,16 +21,34 @@ export async function processDueReminders() {
 
     for (const reminder of dueReminders) {
       try {
-        const tz = reminder.timezone || 'Australia/Sydney';
+        const tz = reminder.timezone || 'Asia/Kolkata';
         const formattedTime = formatInTimezone(reminder.dueAt, tz);
         console.log(`[Worker] Processing reminder: "${reminder.name}" (${reminder.phone}) due at ${formattedTime}`);
 
-        // 1. Send Email Notification
-        await sendReminderEmail(reminder);
-        await dataService.markEmailSent(reminder._id);
-        console.log(`[Worker] Email sent successfully for reminder ${reminder._id}`);
+        // Determine the owner of this reminder for per-user notification
+        let ownerEmail = null;
+        let ownerUser = null;
+        if (reminder.userId) {
+          // userId may be populated or an ObjectId
+          if (typeof reminder.userId === 'object' && reminder.userId.email) {
+            ownerUser = reminder.userId;
+            ownerEmail = reminder.userId.email;
+          } else {
+            try {
+              ownerUser = await User.findById(reminder.userId);
+              ownerEmail = ownerUser?.email || null;
+            } catch (e) {
+              console.warn(`[Worker] Could not find owner for reminder ${reminder._id}`);
+            }
+          }
+        }
 
-        // 2. Send High-Urgency Web Push & OneSignal Notification
+        // 1. Send Email Notification to the reminder OWNER (not global recipient)
+        await sendReminderEmail(reminder, ownerEmail);
+        await dataService.markEmailSent(reminder._id);
+        console.log(`[Worker] Email sent to ${ownerEmail || 'default'} for reminder ${reminder._id}`);
+
+        // 2. Send High-Urgency Web Push Notification
         const pushPayload = {
           title: `🚨 Call Reminder Alarm: ${reminder.name}`,
           body: `📞 Due Now: Call ${reminder.phone} (${formattedTime})${reminder.note ? `\nNote: ${reminder.note}` : ''}`,
@@ -41,7 +60,14 @@ export async function processDueReminders() {
           isAlarm: true,
           timestamp: Date.now(),
         };
-        await pushService.sendPushToAll(pushPayload);
+
+        // Send push to the specific user's subscription if available
+        if (ownerUser && ownerUser.pushSubscription) {
+          await pushService.sendPushToSubscription(ownerUser.pushSubscription, pushPayload);
+        } else {
+          await pushService.sendPushToAll(pushPayload);
+        }
+
         await oneSignalService.sendPushNotification({
           title: pushPayload.title,
           message: pushPayload.body,

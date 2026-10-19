@@ -20,9 +20,15 @@ import {
   X,
   CalendarClock,
   Users,
+  UserPlus,
+  Repeat,
   ChevronDown,
   ArrowUpDown,
   BellRing,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/axios";
@@ -50,6 +56,8 @@ export default function Reminders() {
   const [sortBy, setSortBy] = useState("latest"); // latest (newest on top) | dueAt_asc | dueAt_desc
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [editingReminder, setEditingReminder] = useState(null);
   const [activeDueAlert, setActiveDueAlert] = useState(null);
   const [alertSecondsLeft, setAlertSecondsLeft] = useState(60);
@@ -205,10 +213,11 @@ export default function Reminders() {
     }
   };
 
-  // Immediate fetch on filter, search, or sort change + reset 2-minute timer
+  // Immediate fetch on filter, search, or sort change + reset 2-minute timer and page
   useEffect(() => {
     fetchReminders();
     setRefreshSecondsLeft(120);
+    setCurrentPage(1);
   }, [filter, search, sortBy]);
 
   // 2-Minute (120 seconds) Auto-Refresh Countdown & Execution
@@ -339,10 +348,37 @@ export default function Reminders() {
   const completionPercentage =
     counts.all > 0 ? Math.round((counts.completed / counts.all) * 100) : 0;
 
+  // Pagination (10 items per page by default)
+  const totalItems = reminders.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const paginatedReminders = reminders.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 4) {
+      return [1, 2, 3, 4, 5, "...", totalPages];
+    }
+    if (currentPage >= totalPages - 3) {
+      return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+  };
+
   const getStatusBadge = (r) => {
     if (r.status === "completed") {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shadow-sm">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           <span>Completed</span>
         </span>
@@ -353,7 +389,7 @@ export default function Reminders() {
       r.isOverdue || (r.status === "pending" && new Date(r.dueAt) < new Date());
     if (isOverdue) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/25 shadow-sm animate-pulse">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/25 animate-pulse">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
           <span>Overdue</span>
         </span>
@@ -361,7 +397,7 @@ export default function Reminders() {
     }
 
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/25 shadow-sm">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-300 border border-amber-500/25">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
         <span>Pending</span>
       </span>
@@ -369,14 +405,12 @@ export default function Reminders() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-3 sm:py-8 space-y-4 sm:space-y-6">
-
+    <div className="max-w-7xl mx-auto py-2 sm:py-6 space-y-5">
+      {/* Active Call Due Alert Notification */}
       {activeDueAlert && (
-        <div className="p-3.5 sm:p-5 rounded-3xl bg-linear-to-r from-rose-950/90 via-slate-900/95 to-slate-950 border border-rose-500/60 shadow-2xl animate-fade-in flex flex-col gap-3 relative overflow-hidden backdrop-blur-2xl">
-      
-
+        <div className="p-4 sm:p-5 rounded-xl bg-zinc-950 border border-rose-500/50 shadow-xl flex flex-col gap-3 relative overflow-hidden backdrop-blur-xl">
           {/* 60-Second Animated Progress Bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-slate-800/80">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-800">
             <div
               className="h-full bg-linear-to-r from-rose-500 to-amber-400 transition-all duration-1000 ease-linear"
               style={{ width: `${(alertSecondsLeft / 60) * 100}%` }}
@@ -385,23 +419,23 @@ export default function Reminders() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pt-1">
             <div className="flex items-start sm:items-center gap-3">
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-linear-to-br from-rose-500 to-red-600 flex items-center justify-center text-white shrink-0 animate-bounce shadow-lg shadow-rose-600/40">
-                <Phone className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-rose-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-rose-600/30">
+                <Phone className="w-5 h-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/15 px-2 sm:px-2.5 py-0.5 rounded-md border border-emerald-500/30 flex items-center gap-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
                     Call Due Now
                   </span>
-                  <span className="text-sm sm:text-base font-bold text-white truncate">
+                  <span className="text-sm sm:text-base font-semibold text-white truncate">
                     {activeDueAlert.name}
                   </span>
-                  <span className="text-[10px] sm:text-[11px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
                     ⏱️ {alertSecondsLeft}s
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 mt-1 font-mono wrap-break-word">
+                <p className="text-xs text-zinc-300 mt-1 font-mono wrap-break-word">
                   Phone:{" "}
                   <span className="font-semibold text-rose-300">
                     {activeDueAlert.phone}
@@ -413,7 +447,7 @@ export default function Reminders() {
                   )}
                 </p>
                 {activeDueAlert.note && (
-                  <p className="text-[11px] text-slate-400 italic mt-0.5 line-clamp-2">
+                  <p className="text-xs text-zinc-400 italic mt-0.5 line-clamp-2">
                     "{activeDueAlert.note}"
                   </p>
                 )}
@@ -425,7 +459,7 @@ export default function Reminders() {
               <a
                 href={`tel:${activeDueAlert.phone}`}
                 onClick={() => stopCallRingtone()}
-                className="col-span-2 sm:col-span-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-600/30 cursor-pointer"
+                className="col-span-2 sm:col-span-1 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-zinc-950 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
               >
                 <Phone className="w-4 h-4" />
                 <span>Call Now ({activeDueAlert.phone})</span>
@@ -442,7 +476,7 @@ export default function Reminders() {
                     setIsRingtoneMuted(true);
                   }
                 }}
-                className="px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition border border-slate-700 shadow-sm cursor-pointer"
+                className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition border border-zinc-800 cursor-pointer"
               >
                 {isRingtoneMuted ? (
                   <>
@@ -463,7 +497,7 @@ export default function Reminders() {
                   handleToggleCompleted(activeDueAlert);
                   setActiveDueAlert(null);
                 }}
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center transition cursor-pointer"
+                className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-xs font-medium flex items-center justify-center transition border border-zinc-800 cursor-pointer"
               >
                 Complete
               </button>
@@ -473,7 +507,7 @@ export default function Reminders() {
                   stopCallRingtone();
                   setActiveDueAlert(null);
                 }}
-                className="col-span-2 sm:col-span-1 px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-medium flex items-center justify-center transition cursor-pointer"
+                className="col-span-2 sm:col-span-1 px-3 py-2 rounded-lg bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium flex items-center justify-center transition border border-zinc-800 cursor-pointer"
               >
                 Dismiss
               </button>
@@ -482,40 +516,21 @@ export default function Reminders() {
         </div>
       )}
 
-      {/* Header, Auto-refresh indicator, and Add button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-        <div className="flex items-center justify-between sm:justify-start gap-2.5">
-          <div>
-            <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <span>All Reminders</span>
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/25 px-2.5 py-0.5 rounded-full">
-                Live Portal
-              </span>
-            </h1>
-            <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">
-              Manage client appointments and automated follow-ups across Australia
-            </p>
-          </div>
+      {/* Header with Original Titles & Image 2 Solid White Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+            All Reminders
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+            Manage client appointments and automated follow-ups across Australia.
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-          {/* Manual Instant Refresh Button */}
-          <button
-            type="button"
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-xs sm:text-sm font-semibold transition border border-white/8 shadow-sm cursor-pointer disabled:opacity-60"
-            title="Refresh reminders from database"
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 text-indigo-400 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            <span>{isRefreshing ? "Syncing..." : "Refresh"}</span>
-          </button>
-
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <Link
             to="/add"
-            className="btn-shimmer inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-white text-xs sm:text-sm font-bold transition shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 cursor-pointer active:scale-95"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-medium text-xs sm:text-sm transition shadow-xs active:scale-98 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Reminder</span>
@@ -523,77 +538,165 @@ export default function Reminders() {
         </div>
       </div>
 
-      {/* Filter Tabs and Quick Search Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Filter Tabs: Horizontal swipeable on mobile */}
-        <div className="overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none touch-pan-x">
-          <div className="inline-flex items-center gap-1 bg-slate-900/80 p-1 rounded-2xl border border-white/8 shadow-inner min-w-max">
-            {[
-              { key: "all", label: "All" },
-              { key: "pending", label: "Pending" },
-              { key: "overdue", label: "Overdue" },
-              { key: "completed", label: "Completed" },
-            ].map((tab) => {
-              const count = counts[tab.key] || 0;
-              const isActive = filter === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setFilter(tab.key)}
-                  className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                    isActive
-                      ? "bg-linear-to-r from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-600/30"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-white/4"
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                      isActive ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
-                    }`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+      {/* 4 Metric Cards with REAL WEBSITE DATA (No demo values) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Card 1: Total Reminders */}
+        <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-zinc-700/80 transition shadow-xs">
+          <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
+            <Users className="w-4 h-4 text-zinc-400" />
+            <span>Total Reminders</span>
+          </div>
+          <div className="flex items-end justify-between mt-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                {counts.all.toLocaleString()}
+              </span>
+              <span className="text-xs font-medium text-zinc-400 bg-zinc-800/80 px-1.5 py-0.5 rounded">
+                All
+              </span>
+            </div>
+            <svg className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400" viewBox="0 0 80 28" fill="none">
+              <path
+                d="M2 22 C 20 22, 30 14, 45 16 C 60 18, 68 6, 78 2"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
         </div>
 
-        {/* Search & Sort Controls */}
-        <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
-          {/* Order Sort Selector */}
-          <div className="flex items-center gap-1.5 bg-slate-900/90 border border-white/8 rounded-xl px-3 py-2 shadow-inner w-full sm:w-auto">
-            <ArrowUpDown className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-            <span className="text-[11px] text-slate-400 font-medium shrink-0">Sort:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-transparent text-xs text-slate-200 font-semibold focus:outline-none cursor-pointer pr-1 w-full"
-            >
-              <option value="latest" className="bg-slate-900 text-slate-200">
-                Latest Entry (Newest on Top)
-              </option>
-              <option value="dueAt_asc" className="bg-slate-900 text-slate-200">
-                Call Due (Soonest First)
-              </option>
-              <option value="dueAt_desc" className="bg-slate-900 text-slate-200">
-                Call Due (Latest First)
-              </option>
-            </select>
+        {/* Card 2: Pending Calls */}
+        <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-zinc-700/80 transition shadow-xs">
+          <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
+            <Clock className="w-4 h-4 text-zinc-400" />
+            <span>Pending Calls</span>
           </div>
+          <div className="flex items-end justify-between mt-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                {counts.pending.toLocaleString()}
+              </span>
+              <span className="text-xs font-medium text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                Queue
+              </span>
+            </div>
+            <svg className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400" viewBox="0 0 80 28" fill="none">
+              <path
+                d="M2 24 C 18 24, 28 16, 42 14 C 56 12, 66 18, 78 4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        </div>
 
-          {/* Enhanced Search Bar with Clear Button & Shortcut Hint */}
+        {/* Card 3: Overdue Calls */}
+        <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-zinc-700/80 transition shadow-xs">
+          <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
+            <AlertTriangle className="w-4 h-4 text-zinc-400" />
+            <span>Overdue Calls</span>
+          </div>
+          <div className="flex items-end justify-between mt-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                {counts.overdue.toLocaleString()}
+              </span>
+              <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                counts.overdue > 0 ? "text-rose-400 bg-rose-500/10" : "text-emerald-400 bg-emerald-500/10"
+              }`}>
+                {counts.overdue > 0 ? "Urgent" : "0"}
+              </span>
+            </div>
+            <svg className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400" viewBox="0 0 80 28" fill="none">
+              <path
+                d="M2 24 C 22 24, 35 10, 50 14 C 65 18, 70 6, 78 2"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        </div>
+
+        {/* Card 4: Completed Calls */}
+        <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-zinc-700/80 transition shadow-xs">
+          <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
+            <CheckCircle className="w-4 h-4 text-zinc-400" />
+            <span>Completed Calls</span>
+          </div>
+          <div className="flex items-end justify-between mt-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                {counts.completed.toLocaleString()}
+              </span>
+              <span className="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                {completionPercentage}%
+              </span>
+            </div>
+            <svg className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400" viewBox="0 0 80 28" fill="none">
+              <path
+                d="M2 22 C 20 22, 32 12, 48 16 C 62 20, 68 6, 78 2"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Tabs with REAL COUNTS and Image 2 underline style */}
+      <div className="border-b border-zinc-800 flex items-center gap-4 sm:gap-8 overflow-x-auto scrollbar-none pt-2 touch-pan-x overscroll-x-contain">
+        {[
+          { key: "all", label: "All Reminders", count: counts.all },
+          { key: "pending", label: "Pending", count: counts.pending },
+          { key: "overdue", label: "Overdue", count: counts.overdue },
+          { key: "completed", label: "Completed", count: counts.completed },
+        ].map((tab) => {
+          const isActive = filter === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setFilter(tab.key)}
+              className={`pb-3 text-sm font-medium transition-colors flex items-center gap-2 relative cursor-pointer border-b-2 -mb-px shrink-0 active:scale-95 ${
+                isActive
+                  ? "border-white text-white"
+                  : "border-transparent text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span
+                className={`text-[11px] px-1.5 py-0.2 rounded-full font-mono ${
+                  isActive ? "bg-zinc-800 text-zinc-100" : "bg-zinc-900 text-zinc-500"
+                }`}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Controls Row: Search, Date Filter / Sort, and Refresh Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1 w-full">
+          {/* Search box */}
           <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+            <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-3 sm:top-2.5" />
             <input
               ref={searchInputRef}
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search customer or phone... (/)"
-              className="w-full pl-10 pr-9 py-2.5 sm:py-2 bg-slate-900/90 border border-white/8 rounded-xl text-sm sm:text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition shadow-inner"
+              className="w-full pl-9 pr-8 py-2.5 sm:py-2 bg-zinc-900/60 border border-zinc-800 rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-700 transition"
             />
             {search ? (
               <button
@@ -601,43 +704,80 @@ export default function Reminders() {
                   setSearch("");
                   searchInputRef.current?.focus();
                 }}
-                className="absolute right-3 top-2.5 sm:top-2 text-slate-400 hover:text-white p-0.5 rounded-md transition"
+                className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white p-1 rounded transition cursor-pointer"
                 title="Clear search (Esc)"
               >
                 <X className="w-4 h-4" />
               </button>
             ) : (
-              <kbd className="hidden sm:inline-block absolute right-3 top-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-white/6 pointer-events-none">
+              <kbd className="hidden sm:inline-block absolute right-2.5 top-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700/50 pointer-events-none">
                 /
               </kbd>
             )}
+          </div>
+
+          {/* Mobile Sort & Refresh row side-by-side */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Sort selector */}
+            <div className="flex-1 sm:flex-none flex items-center gap-1.5 bg-zinc-900/60 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-300 min-h-[40px]">
+              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent text-xs text-zinc-200 focus:outline-none cursor-pointer pr-1 w-full"
+              >
+                <option value="latest" className="bg-zinc-900 text-zinc-200">
+                  Latest Entry (Newest)
+                </option>
+                <option value="dueAt_asc" className="bg-zinc-900 text-zinc-200">
+                  Call Due (Soonest)
+                </option>
+                <option value="dueAt_desc" className="bg-zinc-900 text-zinc-200">
+                  Call Due (Latest)
+                </option>
+              </select>
+            </div>
+
+            {/* Refresh action */}
+            <button
+              type="button"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 min-h-[40px] shrink-0 active:scale-95"
+              title="Refresh reminders"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 text-zinc-400 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              <span>{isRefreshing ? "Syncing..." : "Refresh"}</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Content: Table on Desktop / Cards on Mobile */}
       {loading ? (
-        <div className="p-16 text-center text-xs text-slate-400 space-y-3">
-          <RefreshCw className="w-6 h-6 animate-spin text-indigo-400 mx-auto" />
+        <div className="p-16 text-center text-xs text-zinc-400 space-y-3">
+          <RefreshCw className="w-6 h-6 animate-spin text-zinc-400 mx-auto" />
           <p>Loading follow-up reminders...</p>
         </div>
       ) : reminders.length === 0 ? (
-        <div className="p-12 text-center bg-slate-900/40 border border-slate-800 rounded-3xl space-y-4 backdrop-blur-xl">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
+        <div className="p-12 text-center bg-zinc-950/40 border border-zinc-800 rounded-xl space-y-4">
+          <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-400">
             <Clock className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <p className="text-base font-bold text-white">No reminders found</p>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <p className="text-base font-semibold text-white">No reminders found</p>
+            <p className="text-xs text-zinc-400 max-w-sm mx-auto">
               {search
-                ? `No customers match "${search}". Try checking the spelling or clearing filters.`
-                : "Your customer reminder schedule is clear. Add a new reminder to get started."}
+                ? `No customers match "${search}". Try clearing search or filters.`
+                : "Your customer reminder schedule is clear. Add a reminder to get started."}
             </p>
           </div>
           {search ? (
             <button
               onClick={() => setSearch("")}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               <span>Clear Search Query</span>
@@ -645,29 +785,29 @@ export default function Reminders() {
           ) : (
             <Link
               to="/add"
-              className="btn-shimmer inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-white text-xs font-bold shadow-lg shadow-indigo-600/30"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-medium text-xs shadow-xs"
             >
               <Plus className="w-4 h-4" />
-              <span>Schedule First Reminder</span>
+              <span>Add Reminder</span>
             </Link>
           )}
         </div>
       ) : (
         <>
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto rounded-3xl border border-white/8 bg-slate-900/60 backdrop-blur-xl shadow-2xl">
+          {/* Desktop Table View WITH REAL WEBSITE FIELDS ONLY (No demo Orders, Total spend, Avg. order value) */}
+          <div className="hidden md:block overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/60 shadow-xs">
             <table className="w-full text-left border-collapse min-w-220">
               <thead>
-                <tr className="border-b border-white/8 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3.5 pl-6 pr-4">Customer</th>
-                  <th className="py-3.5 px-4">Contact</th>
-                  <th className="py-3.5 px-4">Due Date & Time (AU)</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 pl-4 pr-6 text-right">Quick Actions</th>
+                <tr className="border-b border-zinc-800 bg-zinc-900/40 text-xs font-medium text-zinc-400">
+                  <th className="py-3 pl-5 pr-4">Customer</th>
+                  <th className="py-3 px-4">Contact</th>
+                  <th className="py-3 px-4">Due Date & Time (AU)</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 pl-4 pr-5 text-right">Quick Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-xs">
-                {reminders.map((r) => {
+              <tbody className="divide-y divide-zinc-800/60 text-xs">
+                {paginatedReminders.map((r) => {
                   const tz = r.timezone || "Australia/Sydney";
                   const initials = (r.name || "C")
                     .split(" ")
@@ -677,25 +817,23 @@ export default function Reminders() {
                     .join("")
                     .toUpperCase();
 
-                  const isSnoozeOpen = activeSnooze?.reminder?._id === r._id;
-
                   return (
                     <tr
                       key={r._id}
-                      className="hover:bg-white/3 transition-colors group relative"
+                      className="hover:bg-zinc-900/40 transition-colors group"
                     >
-                      {/* Customer Name & Phone */}
-                      <td className="py-3.5 pl-6 pr-4">
+                      {/* Customer: Name, Notes, and Initial Icon Avatar */}
+                      <td className="py-3.5 pl-5 pr-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 shrink-0 shadow-sm">
+                          <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-xs font-semibold text-zinc-200 shrink-0">
                             {initials}
                           </div>
                           <div>
-                            <div className="font-semibold text-slate-100 group-hover:text-white transition flex items-center gap-1.5">
+                            <div className="font-medium text-sm text-zinc-100 group-hover:text-white transition flex items-center gap-2">
                               <span>{r.name}</span>
                               {r.note && (
                                 <span
-                                  className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-white/6 truncate max-w-40"
+                                  className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 truncate max-w-48"
                                   title={r.note}
                                 >
                                   {r.note}
@@ -705,17 +843,17 @@ export default function Reminders() {
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <a
                                 href={`tel:${r.phone}`}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-indigo-200 font-mono text-[11px] border border-indigo-500/20 transition"
-                                title="Click to call customer immediately"
+                                className="inline-flex items-center gap-1 font-mono text-xs text-zinc-400 hover:text-white transition"
+                                title="Click to call customer"
                               >
-                                <Phone className="w-2.5 h-2.5" />
+                                <Phone className="w-3 h-3 text-zinc-500" />
                                 <span>{r.phone}</span>
                               </a>
                               <button
                                 type="button"
                                 onClick={() => handleCopyText(r.phone, "Phone")}
-                                className="text-slate-500 hover:text-slate-300 p-1 rounded transition"
-                                title="Copy phone number"
+                                className="text-zinc-600 hover:text-zinc-300 p-0.5 rounded transition"
+                                title="Copy phone"
                               >
                                 {copiedId === r.phone ? (
                                   <Check className="w-3 h-3 text-emerald-400" />
@@ -728,54 +866,60 @@ export default function Reminders() {
                         </div>
                       </td>
 
-                      {/* Contact / Email */}
-                      <td className="py-3.5 px-4 text-slate-300">
+                      {/* Contact: Email & Address */}
+                      <td className="py-3.5 px-4 text-zinc-300">
                         {r.email ? (
                           <div className="flex items-center gap-1.5">
                             <a
                               href={`mailto:${r.email}`}
-                              className="inline-flex items-center gap-1.5 text-slate-300 hover:text-indigo-300 transition"
+                              className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white transition"
                             >
-                              <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                              <span className="truncate max-w-37.5">{r.email}</span>
+                              <Mail className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                              <span className="truncate max-w-44">{r.email}</span>
                             </a>
                             <button
                               type="button"
                               onClick={() => handleCopyText(r.email, "Email")}
-                              className="text-slate-500 hover:text-slate-300 p-0.5 rounded transition"
+                              className="text-zinc-600 hover:text-zinc-300 p-0.5 rounded transition"
                               title="Copy email address"
                             >
                               <Copy className="w-2.5 h-2.5" />
                             </button>
                           </div>
                         ) : r.address ? (
-                          <div className="flex items-center gap-1.5 text-slate-400">
-                            <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                            <span className="truncate max-w-37.5">{r.address}</span>
+                          <div className="flex items-center gap-1.5 text-zinc-400">
+                            <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                            <span className="truncate max-w-44">{r.address}</span>
                           </div>
                         ) : (
-                          <span className="text-slate-600">—</span>
+                          <span className="text-zinc-600">—</span>
                         )}
                       </td>
 
-                      {/* Due Date/Time in Australia Timezone */}
+                      {/* Due Date & Time in AU timezone */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950/50 border border-white/6 font-mono text-xs text-indigo-200">
-                          <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 font-mono text-xs text-zinc-300">
+                          <Clock className="w-3.5 h-3.5 text-zinc-500" />
                           <span>{formatInAustralianTime(r.dueAt, tz)}</span>
                         </div>
                       </td>
 
-                      {/* Status Badge */}
+                      {/* Status */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {getStatusBadge(r)}
                       </td>
 
-                      {/* Actions per row with Quick Snooze */}
-                      <td className="py-3.5 pl-4 pr-6 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5 relative">
-                          {/* Quick Call Button */}
-                          
+                      {/* Quick Actions */}
+                      <td className="py-3.5 pl-4 pr-5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Quick Phone Call Button */}
+                          <a
+                            href={`tel:${r.phone}`}
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800 transition"
+                            title={`Call ${r.phone}`}
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                          </a>
 
                           {/* Quick Snooze Popover Trigger */}
                           <button
@@ -789,10 +933,10 @@ export default function Reminders() {
                                 setActiveSnooze({ reminder: r, anchorRect: rect });
                               }
                             }}
-                            className={`p-1.5 rounded-lg text-xs transition border cursor-pointer ${
+                            className={`p-1.5 rounded-md text-xs transition border cursor-pointer ${
                               activeSnooze?.reminder?._id === r._id
-                                ? "bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-400/40"
-                                : "text-slate-400 hover:text-indigo-300 hover:bg-white/6 border-white/6"
+                                ? "bg-zinc-800 text-white border-zinc-600"
+                                : "text-zinc-400 hover:text-white hover:bg-zinc-800 border-transparent"
                             }`}
                             title="Quick Reschedule / Snooze"
                           >
@@ -802,10 +946,10 @@ export default function Reminders() {
                           {/* Complete Toggle */}
                           <button
                             onClick={() => handleToggleCompleted(r)}
-                            className={`p-1.5 rounded-lg text-xs transition border cursor-pointer ${
+                            className={`p-1.5 rounded-md text-xs transition cursor-pointer ${
                               r.status === "completed"
-                                ? "text-amber-400 hover:bg-amber-500/15 border-amber-500/30"
-                                : "text-emerald-400 hover:bg-emerald-500/15 border-emerald-500/30"
+                                ? "text-amber-400 hover:bg-zinc-800"
+                                : "text-emerald-400 hover:bg-zinc-800"
                             }`}
                             title={
                               r.status === "completed" ? "Mark as Pending" : "Mark Completed"
@@ -817,7 +961,7 @@ export default function Reminders() {
                           {/* Full Edit Modal */}
                           <button
                             onClick={() => setEditingReminder(r)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-white/6 border border-white/6 transition cursor-pointer"
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer"
                             title="Edit Full Details"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -826,7 +970,7 @@ export default function Reminders() {
                           {/* Delete */}
                           <button
                             onClick={() => handleDelete(r._id, r.name)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 border border-white/6 hover:border-rose-500/30 transition cursor-pointer"
+                            className="p-1.5 rounded-md text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition cursor-pointer"
                             title="Delete Reminder"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -840,9 +984,9 @@ export default function Reminders() {
             </table>
           </div>
 
-          {/* Mobile Cards View */}
+          {/* Mobile Cards View matching Image 2 */}
           <div className="md:hidden space-y-3">
-            {reminders.map((r) => {
+            {paginatedReminders.map((r) => {
               const tz = r.timezone || "Australia/Sydney";
               const initials = (r.name || "C")
                 .split(" ")
@@ -852,32 +996,30 @@ export default function Reminders() {
                 .join("")
                 .toUpperCase();
 
-              const isSnoozeOpen = activeSnooze?.reminder?._id === r._id;
-
               return (
                 <div
                   key={r._id}
-                  className="bg-slate-900/60 backdrop-blur-xl border border-white/8 rounded-3xl p-4 space-y-3 shadow-lg relative"
+                  className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 space-y-3 shadow-xs"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300 shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-xs font-semibold text-zinc-200 shrink-0">
                         {initials}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-white">{r.name}</h3>
+                        <h3 className="text-sm font-semibold text-white">{r.name}</h3>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <a
                             href={`tel:${r.phone}`}
-                            className="text-xs text-indigo-300 hover:text-indigo-200 font-mono inline-flex items-center gap-1"
+                            className="text-xs text-zinc-300 hover:text-white font-mono inline-flex items-center gap-1"
                           >
-                            <Phone className="w-3 h-3" />
+                            <Phone className="w-3 h-3 text-zinc-500" />
                             <span>{r.phone}</span>
                           </a>
                           <button
                             type="button"
                             onClick={() => handleCopyText(r.phone, "Phone")}
-                            className="text-slate-500 hover:text-slate-300 p-0.5"
+                            className="text-zinc-600 hover:text-zinc-300 p-0.5"
                           >
                             {copiedId === r.phone ? (
                               <Check className="w-3 h-3 text-emerald-400" />
@@ -891,42 +1033,35 @@ export default function Reminders() {
                     <div>{getStatusBadge(r)}</div>
                   </div>
 
-                  <div className="text-xs text-slate-300 space-y-1.5 pt-2 border-t border-white/6">
-                    <div className="flex items-center justify-between gap-1.5 text-indigo-300 font-mono bg-slate-950/40 px-2.5 py-1 rounded-lg border border-white/4">
+                  <div className="text-xs text-zinc-300 space-y-1.5 pt-2 border-t border-zinc-800/80">
+                    <div className="flex items-center justify-between gap-1.5 font-mono text-zinc-300">
                       <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                        <Clock className="w-3.5 h-3.5 text-zinc-500" />
                         <span>{formatInAustralianTime(r.dueAt, tz)}</span>
                       </div>
                     </div>
 
-                    {r.address && (
-                      <div className="flex items-center gap-1.5 text-slate-400 px-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                        <span>{r.address}</span>
-                      </div>
-                    )}
-
                     {r.email && (
-                      <div className="flex items-center gap-1.5 text-slate-400 px-1">
-                        <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                        <a href={`mailto:${r.email}`} className="hover:text-indigo-300 truncate">
+                      <div className="flex items-center gap-1.5 text-zinc-400">
+                        <Mail className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <a href={`mailto:${r.email}`} className="hover:text-white truncate">
                           {r.email}
                         </a>
                       </div>
                     )}
 
                     {r.note && (
-                      <div className="p-2.5 rounded-xl bg-slate-950/60 border border-white/5 text-slate-300 text-[11px] italic mt-2">
+                      <div className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 text-[11px] italic mt-1">
                         "{r.note}"
                       </div>
                     )}
                   </div>
 
                   {/* Mobile Actions with Quick Snooze */}
-                  <div className="pt-2.5 border-t border-white/6 flex items-center justify-between gap-2">
+                  <div className="pt-2.5 border-t border-zinc-800/80 flex items-center justify-between gap-2">
                     <a
                       href={`tel:${r.phone}`}
-                      className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-600/25 active:scale-95"
+                      className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-sm shadow-emerald-500/20"
                     >
                       <Phone className="w-3.5 h-3.5" />
                       <span>Call</span>
@@ -945,22 +1080,22 @@ export default function Reminders() {
                             setActiveSnooze({ reminder: r, anchorRect: rect });
                           }
                         }}
-                        className={`p-2 rounded-xl text-xs border transition active:scale-95 cursor-pointer ${
+                        className={`w-9 h-9 rounded-xl text-xs border transition flex items-center justify-center active:scale-90 cursor-pointer ${
                           activeSnooze?.reminder?._id === r._id
-                            ? "bg-indigo-600 text-white border-indigo-500 ring-2 ring-indigo-400/40"
-                            : "bg-white/6 text-slate-300 border-white/8 hover:text-white"
+                            ? "bg-zinc-800 text-white border-zinc-600"
+                            : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white"
                         }`}
                         title="Quick Reschedule / Snooze"
                       >
-                        <CalendarClock className="w-3.5 h-3.5" />
+                        <CalendarClock className="w-4 h-4" />
                       </button>
 
                       <button
                         onClick={() => handleToggleCompleted(r)}
-                        className={`px-2.5 py-2 rounded-xl text-xs font-medium border transition active:scale-95 ${
+                        className={`h-9 px-3 rounded-xl text-xs font-semibold border transition active:scale-90 cursor-pointer ${
                           r.status === "completed"
-                            ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                            : "bg-white/8 hover:bg-white/15 text-slate-200 border-white/8"
+                            ? "bg-zinc-900 text-amber-300 border-zinc-800"
+                            : "bg-zinc-900 text-zinc-300 border-zinc-800"
                         }`}
                       >
                         {r.status === "completed" ? "Pending" : "Done"}
@@ -968,18 +1103,18 @@ export default function Reminders() {
 
                       <button
                         onClick={() => setEditingReminder(r)}
-                        className="p-2 rounded-xl text-slate-300 hover:text-indigo-300 bg-white/6 border border-white/8 transition active:scale-95"
+                        className="w-9 h-9 rounded-xl text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 transition flex items-center justify-center active:scale-90 cursor-pointer"
                         title="Edit"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-4 h-4" />
                       </button>
 
                       <button
                         onClick={() => handleDelete(r._id, r.name)}
-                        className="p-2 rounded-xl text-slate-300 hover:text-rose-400 bg-white/6 hover:bg-rose-500/15 border border-white/8 hover:border-rose-500/30 transition active:scale-95"
+                        className="w-9 h-9 rounded-xl text-zinc-400 hover:text-rose-400 bg-zinc-900 hover:bg-rose-950/30 border border-zinc-800 hover:border-rose-900/50 transition flex items-center justify-center active:scale-90 cursor-pointer"
                         title="Delete"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -987,6 +1122,131 @@ export default function Reminders() {
               );
             })}
           </div>
+
+          {/* Pagination Controls */}
+          {totalItems > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border border-zinc-800 bg-zinc-950/60 shadow-xs text-xs text-zinc-400">
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <span>
+                  Showing <span className="font-semibold text-white">{startIndex + 1}</span> to{" "}
+                  <span className="font-semibold text-white">{endIndex}</span> of{" "}
+                  <span className="font-semibold text-white">{totalItems}</span> leads
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-zinc-500 hidden sm:inline">Per page:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-zinc-700 cursor-pointer"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentPage(1);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      disabled={currentPage === 1}
+                      className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
+                      title="First page"
+                    >
+                      <ChevronsLeft className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentPage((p) => Math.max(1, p - 1));
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-medium"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      <span className="hidden sm:inline">Prev</span>
+                    </button>
+                  </div>
+
+                  {/* Compact Mobile Page Indicator */}
+                  <span className="sm:hidden text-xs font-semibold text-zinc-300 px-2 font-mono">
+                    {currentPage} / {totalPages}
+                  </span>
+
+                  {/* Desktop Page Numbers */}
+                  <div className="hidden sm:flex items-center gap-1">
+                    {getPageNumbers().map((p, idx) => {
+                      if (p === "...") {
+                        return (
+                          <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-zinc-500 select-none">
+                            …
+                          </span>
+                        );
+                      }
+                      const isCurrent = p === currentPage;
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => {
+                            setCurrentPage(p);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
+                          className={`min-w-8 h-8 px-2 rounded-lg text-xs font-semibold transition cursor-pointer active:scale-95 ${
+                            isCurrent
+                              ? "bg-white text-zinc-950 shadow-xs"
+                              : "bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentPage((p) => Math.min(totalPages, p + 1));
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-medium"
+                    >
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentPage(totalPages);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
+                      title="Last page"
+                    >
+                      <ChevronsRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 

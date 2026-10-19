@@ -5,6 +5,24 @@ import axios from 'axios';
 //    ensure it points to the '/api/v1' route without double slashes.
 // 2. If not provided, fallback to '/api/v1' (uses Vite dev proxy or same-origin in production).
 const getBaseURL = () => {
+  // 1. In Vite dev mode, always use local proxy to avoid hitting stale remote Render instance
+  if (import.meta.env.DEV) {
+    return '/api/v1';
+  }
+
+  // 2. When running on localhost, 127.0.0.1, or private local LAN, use local proxy
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '::1' ||
+      window.location.hostname.startsWith('192.168.') ||
+      window.location.hostname.startsWith('10.') ||
+      window.location.hostname.endsWith('.local'))
+  ) {
+    return '/api/v1';
+  }
+
   const envUrl = import.meta.env.VITE_API_URL;
   if (!envUrl) return '/api/v1';
 

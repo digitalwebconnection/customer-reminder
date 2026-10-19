@@ -86,7 +86,7 @@ self.addEventListener('push', (event) => {
   // - urgent alarm vibration pattern simulating phone ringing cadence
   const options = {
     body: data.body || 'High-priority customer call reminder is due right now.',
-    icon: '/app-icon.png',
+    icon: '/favicon.svg',
     badge: '/favicon.svg',
     vibrate: [500, 250, 500, 250, 500, 250, 800, 300, 800, 300, 1000],
     sound: '/ringtone.wav',
@@ -142,7 +142,7 @@ self.addEventListener('notificationclick', (event) => {
       .then(() => {
         return self.registration.showNotification('⏰ Call Postponed', {
           body: 'Reminder snoozed for 10 minutes.',
-          icon: '/app-icon.png',
+          icon: '/favicon.svg',
           badge: '/favicon.svg',
           tag: 'snooze-ack',
           renotify: false,
@@ -189,7 +189,7 @@ self.addEventListener('periodicsync', (event) => {
             const first = due[0];
             return self.registration.showNotification(`🚨 Call Due: ${first.name}`, {
               body: `Phone: ${first.phone}. Tap to call customer.`,
-              icon: '/app-icon.png',
+              icon: '/favicon.svg',
               badge: '/favicon.svg',
               vibrate: [500, 250, 500, 250, 500],
               data: { url: '/reminders', phone: first.phone, reminderId: first._id },

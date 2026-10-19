@@ -38,7 +38,10 @@ export default function InstallPwaBanner() {
   if (dismissed || isInstalled) return null;
 
   return (
-    <div className="fixed bottom-20 sm:bottom-4 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-45 animate-in slide-in-from-bottom-5 duration-300">
+    <div
+      style={{ bottom: typeof window !== 'undefined' && window.innerWidth < 640 ? "max(4.75rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)))" : undefined }}
+      className="fixed sm:bottom-4 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-45 animate-in slide-in-from-bottom-5 duration-300 select-none"
+    >
       <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/95 border border-indigo-500/30 shadow-2xl backdrop-blur-2xl flex items-center justify-between gap-3 text-slate-100 ring-1 ring-indigo-500/20">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-600/40 border border-white/20">

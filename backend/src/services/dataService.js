@@ -45,10 +45,11 @@ export const dataService = {
       address: data.address || '',
       note: data.note || '',
       dueAt: new Date(data.dueAt),
-      timezone: data.timezone || 'Australia/Sydney',
+      timezone: data.timezone || 'Asia/Kolkata',
       status: 'pending',
       emailSentAt: null,
       notifiedAt: null,
+      userId: data.userId, // Multi-user: associate with logged-in user
     };
 
     if (isMongoActive()) {
@@ -68,11 +69,17 @@ export const dataService = {
     }
   },
 
-  getReminders: async ({ status, search, sort = 'latest' } = {}) => {
+  getReminders: async ({ status, search, sort = 'latest', userId } = {}) => {
     const now = new Date();
 
     if (isMongoActive()) {
       let query = {};
+
+      // Multi-user: filter by userId
+      if (userId) {
+        query.userId = userId;
+      }
+
       if (status === 'pending') {
         query.status = 'pending';
       } else if (status === 'completed') {
@@ -106,10 +113,12 @@ export const dataService = {
       }));
     } else {
       const store = readStore();
-      let list = store.map((r) => ({
-        ...r,
-        isOverdue: r.status === 'pending' && new Date(r.dueAt) < now,
-      }));
+      let list = store
+        .filter((r) => !userId || r.userId === userId)
+        .map((r) => ({
+          ...r,
+          isOverdue: r.status === 'pending' && new Date(r.dueAt) < now,
+        }));
 
       if (status === 'pending') {
         list = list.filter((r) => r.status === 'pending');
@@ -145,15 +154,17 @@ export const dataService = {
     }
   },
 
-  getReminderById: async (id) => {
+  getReminderById: async (id, userId = null) => {
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
-      return await Reminder.findById(id);
+      const query = { _id: id };
+      if (userId) query.userId = userId;
+      return await Reminder.findOne(query);
     }
     const store = readStore();
-    return store.find((r) => r._id === id) || null;
+    return store.find((r) => r._id === id && (!userId || r.userId === userId)) || null;
   },
 
-  updateReminder: async (id, updates) => {
+  updateReminder: async (id, updates, userId = null) => {
     if (updates.dueAt) {
       updates.dueAt = new Date(updates.dueAt);
       // If due date was updated and pushed forward, reset emailSentAt so it can alert again at the new time
@@ -163,12 +174,17 @@ export const dataService = {
       }
     }
 
+    // Never allow userId to be changed via update
+    delete updates.userId;
+
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
-      return await Reminder.findByIdAndUpdate(id, updates, { returnDocument: 'after' });
+      const query = { _id: id };
+      if (userId) query.userId = userId;
+      return await Reminder.findOneAndUpdate(query, updates, { returnDocument: 'after' });
     }
 
     const store = readStore();
-    const idx = store.findIndex((r) => r._id === id);
+    const idx = store.findIndex((r) => r._id === id && (!userId || r.userId === userId));
     if (idx === -1) return null;
     store[idx] = {
       ...store[idx],
@@ -179,17 +195,19 @@ export const dataService = {
     return store[idx];
   },
 
-  deleteReminder: async (id) => {
+  deleteReminder: async (id, userId = null) => {
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
-      return await Reminder.findByIdAndDelete(id);
+      const query = { _id: id };
+      if (userId) query.userId = userId;
+      return await Reminder.findOneAndDelete(query);
     }
     const store = readStore();
-    const filtered = store.filter((r) => r._id !== id);
+    const filtered = store.filter((r) => !(r._id === id && (!userId || r.userId === userId)));
     writeStore(filtered);
     return { success: true };
   },
 
-  // Worker helpers
+  // Worker helpers - get ALL due reminders across all users (for cron)
   getDuePendingReminders: async () => {
     const now = new Date();
     if (isMongoActive()) {
@@ -197,7 +215,7 @@ export const dataService = {
         status: 'pending',
         dueAt: { $lte: now },
         emailSentAt: null,
-      }).sort({ dueAt: 1 });
+      }).sort({ dueAt: 1 }).populate('userId', 'email name');
     }
     const store = readStore();
     return store.filter(
@@ -229,5 +247,80 @@ export const dataService = {
       store[idx].notifiedAt = now.toISOString();
       writeStore(store);
     }
+  },
+
+  // Admin helpers
+  getAllReminders: async ({ status, search, sort = 'latest', page = 1, limit = 10 } = {}) => {
+    const now = new Date();
+    if (!isMongoActive()) return { data: [], total: 0 };
+
+    let query = {};
+    if (status === 'pending') query.status = 'pending';
+    else if (status === 'completed') query.status = 'completed';
+    else if (status === 'overdue') {
+      query.status = 'pending';
+      query.dueAt = { $lt: now };
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    let sortOptions = { createdAt: -1 };
+    if (sort === 'dueAt_asc') sortOptions = { dueAt: 1 };
+    else if (sort === 'dueAt_desc') sortOptions = { dueAt: -1 };
+
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      Reminder.find(query).sort(sortOptions).skip(skip).limit(limit).populate('userId', 'name email').lean(),
+      Reminder.countDocuments(query),
+    ]);
+
+    return {
+      data: data.map((r) => ({
+        ...r,
+        isOverdue: r.status === 'pending' && new Date(r.dueAt) < now,
+        userName: r.userId?.name || 'Unknown',
+        userEmail: r.userId?.email || 'Unknown',
+      })),
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    };
+  },
+
+  // Get reminders for a specific user (admin view)
+  getUserReminders: async (targetUserId, { status, search, sort = 'latest' } = {}) => {
+    const now = new Date();
+    if (!isMongoActive()) return [];
+
+    let query = { userId: targetUserId };
+    if (status === 'pending') query.status = 'pending';
+    else if (status === 'completed') query.status = 'completed';
+    else if (status === 'overdue') {
+      query.status = 'pending';
+      query.dueAt = { $lt: now };
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    let sortOptions = { createdAt: -1 };
+    if (sort === 'dueAt_asc') sortOptions = { dueAt: 1 };
+    else if (sort === 'dueAt_desc') sortOptions = { dueAt: -1 };
+
+    const list = await Reminder.find(query).sort(sortOptions).lean();
+    return list.map((r) => ({
+      ...r,
+      isOverdue: r.status === 'pending' && new Date(r.dueAt) < now,
+    }));
   },
 };

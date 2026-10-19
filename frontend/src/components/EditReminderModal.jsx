@@ -4,6 +4,7 @@ import { X, User, Phone, Mail, MapPin, Check, Globe, Calendar, Clock, FileText }
 import api from '../api/axios';
 import {
   AUSTRALIAN_TIMEZONES,
+  INDIAN_TIMEZONES,
   DEFAULT_TIMEZONE,
   combineDateAndTimeToUTC,
   getPartsInAustralianTimezone,
@@ -11,6 +12,11 @@ import {
 } from '../utils/dateUtils';
 import VisualDatePicker from './VisualDatePicker';
 import VisualTimePicker from './VisualTimePicker';
+import {
+  validateEmail,
+  validatePhone,
+  sanitizePhoneInput,
+} from '../utils/validationUtils';
 
 export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }) {
   const [name, setName] = useState('');
@@ -64,9 +70,20 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
       setError('Customer name is required');
       return;
     }
-    if (!phone.trim()) {
-      setError('Phone number is required');
+
+    const country = timezone === 'Asia/Kolkata' ? 'India' : 'Australia';
+    const phoneCheck = validatePhone(phone, country, true);
+    if (!phoneCheck.isValid) {
+      setError(phoneCheck.error);
       return;
+    }
+
+    if (email && email.trim()) {
+      const emailCheck = validateEmail(email, false);
+      if (!emailCheck.isValid) {
+        setError(emailCheck.error);
+        return;
+      }
     }
     if (!date || !time) {
       setError('Both call date and call time are required');
@@ -107,32 +124,32 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[9998] flex items-center justify-center p-2.5 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-slate-900/98 border border-white/15 rounded-3xl shadow-2xl flex flex-col max-h-[90vh] backdrop-blur-2xl text-slate-100 ring-1 ring-black/70 overflow-hidden my-auto"
+        className="w-full max-w-xl bg-zinc-950 border border-zinc-800 rounded-2xl sm:rounded-xl shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[90vh] text-zinc-100 ring-1 ring-black/70 overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Pinned Header */}
-        <div className="shrink-0 px-5 sm:px-6 py-4 border-b border-white/8 bg-slate-950/80 flex items-center justify-between">
+        <div className="shrink-0 px-5 sm:px-6 py-4 border-b border-zinc-800 bg-zinc-900/40 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
                 Edit Reminder
               </h3>
-              <span className="text-[10px] font-mono font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-mono font-bold text-zinc-300 bg-zinc-800 border border-zinc-700 px-2 py-0.5 rounded-md">
                 AUSTRALIA
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Update customer details, scheduled date/time, and status.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer"
             title="Close (Esc)"
           >
             <X className="w-5 h-5" />
@@ -175,12 +192,23 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
               <input
                 type="tel"
                 required
+                name="edit_customer_phone"
+                autoComplete="tel"
+                inputMode="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 0412 345 678"
+                onChange={(e) => {
+                  setPhone(sanitizePhoneInput(e.target.value));
+                  if (error) setError('');
+                }}
+                placeholder={timezone === 'Asia/Kolkata' ? '+91 98765 43210' : '0412 345 678'}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
               />
             </div>
+            <p className="mt-1 text-[10px] text-zinc-500">
+              {timezone === 'Asia/Kolkata'
+                ? 'Indian 10-digit mobile number'
+                : 'Australian 9-10 digit mobile or landline'}
+            </p>
           </div>
 
           {/* Email & Address (2-Column Grid) */}
@@ -193,8 +221,14 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
                   type="email"
+                  name="edit_customer_email"
+                  autoComplete="email"
+                  inputMode="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError('');
+                  }}
                   placeholder="name@example.com"
                   className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
                 />
@@ -218,12 +252,12 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
             </div>
           </div>
 
-          {/* Australian Timezone */}
+          {/* Regional Timezone */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
               <span className="flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Australian Timezone</span>
+                <span>Country & Regional Timezone</span>
               </span>
             </label>
             <select
@@ -231,11 +265,20 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
               onChange={(e) => setTimezone(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
             >
-              {AUSTRALIAN_TIMEZONES.map((tz) => (
-                <option key={tz.value} value={tz.value} className="bg-slate-900 text-slate-100">
-                  {tz.label} ({tz.offset})
-                </option>
-              ))}
+              <optgroup label="🇦🇺 Australia" className="bg-slate-900 text-slate-300 font-semibold">
+                {AUSTRALIAN_TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value} className="bg-slate-900 text-slate-100 font-normal">
+                    {tz.label} ({tz.offset})
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="🇮🇳 India" className="bg-slate-900 text-slate-300 font-semibold">
+                {INDIAN_TIMEZONES.map((tz) => (
+                  <option key={tz.value} value={tz.value} className="bg-slate-900 text-slate-100 font-normal">
+                    {tz.label} ({tz.offset})
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
 
@@ -299,11 +342,14 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
         </form>
 
         {/* Pinned Footer */}
-        <div className="shrink-0 px-5 sm:px-6 py-3.5 border-t border-white/8 bg-slate-950/90 flex items-center justify-end gap-3">
+        <div
+          style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom, 0px))" }}
+          className="shrink-0 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-zinc-800 bg-zinc-900/60 flex items-center justify-end gap-2.5"
+        >
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/6 transition cursor-pointer"
+            className="px-4 py-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white transition cursor-pointer min-h-[40px] active:scale-95"
           >
             Cancel
           </button>
@@ -311,7 +357,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
             type="submit"
             form="edit-reminder-form"
             disabled={loading}
-            className="btn-shimmer px-5 py-2.5 rounded-xl bg-linear-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:brightness-110 text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-indigo-600/30 cursor-pointer active:scale-95 disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 min-h-[40px]"
           >
             <Check className="w-4 h-4" />
             <span>{loading ? 'Saving Changes...' : 'Update Reminder'}</span>

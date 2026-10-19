@@ -91,7 +91,7 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
 
   return (
     <div>
-      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
         {label} {required && <span className="text-rose-400">*</span>}
       </label>
 
@@ -101,23 +101,23 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
         onClick={() => setIsOpen(true)}
         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm text-left transition cursor-pointer ${
           isOpen
-            ? 'border-indigo-400 ring-2 ring-indigo-500/20 bg-slate-900/90 text-white shadow-inner'
-            : 'border-white/8 bg-slate-950/70 text-slate-200 hover:border-white/15 hover:bg-slate-900/60 shadow-inner'
+            ? 'border-zinc-500 ring-1 ring-zinc-500/30 bg-zinc-900 text-white shadow-inner'
+            : 'border-zinc-800 bg-zinc-900/90 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900 shadow-inner'
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <Clock className="w-4 h-4 text-indigo-400 shrink-0" />
-          <span className={value ? 'font-medium font-mono text-white text-sm' : 'text-slate-500'}>
+          <Clock className="w-4 h-4 text-zinc-400 shrink-0" />
+          <span className={value ? 'font-medium font-mono text-white text-sm' : 'text-zinc-500'}>
             {value ? formatDisplayTime(value) : 'Click to select time...'}
           </span>
         </div>
-        <span className="text-xs text-indigo-400 font-mono bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+        <span className="text-xs text-zinc-300 font-mono bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
           🕒 Pick Time
         </span>
       </button>
 
       {timezoneHint && (
-        <p className="text-[11px] text-indigo-400/90 mt-1 font-mono">
+        <p className="text-[11px] text-zinc-400 mt-1 font-mono">
           {timezoneHint}
         </p>
       )}
@@ -130,91 +130,91 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
             onClick={() => setIsOpen(false)}
           >
             <div
-              className="w-full max-w-sm bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-4 backdrop-blur-2xl"
+              className="w-full max-w-sm bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-3.5 backdrop-blur-2xl max-h-[92dvh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
                 <div>
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-indigo-400" />
+                    <Clock className="w-4 h-4 text-zinc-400" />
                     <span>Select Call Time</span>
                   </h4>
                   {timezoneHint && (
-                    <p className="text-[11px] text-indigo-400/90 font-mono mt-0.5">{timezoneHint}</p>
+                    <p className="text-[11px] text-zinc-400 font-mono mt-0.5">{timezoneHint}</p>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer active:scale-90"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Quick Presets */}
-              <div className="flex flex-wrap gap-1.5 pb-2 text-xs">
+              <div className="flex items-center gap-1.5 pb-1 text-xs overflow-x-auto touch-pan-x overscroll-x-contain scrollbar-none py-1">
                 <button
                   type="button"
                   onClick={() => handleRelativePreset(15)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-[11px] cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
                 >
                   +15m
                 </button>
                 <button
                   type="button"
                   onClick={() => handleRelativePreset(60)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-[11px] cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
                 >
                   +1h
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickPreset('9', '00', 'AM')}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-[11px] cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
                 >
                   9:00 AM
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickPreset('11', '30', 'AM')}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-[11px] cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
                 >
                   11:30 AM
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickPreset('2', '00', 'PM')}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-[11px] cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
                 >
                   2:00 PM
                 </button>
                 <button
                   type="button"
                   onClick={() => handleQuickPreset('4', '30', 'PM')}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-[11px] cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
                 >
                   4:30 PM
                 </button>
               </div>
 
               {/* Time Display and AM/PM Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 border border-zinc-800">
                 <span className="text-xl font-bold font-mono text-white tracking-wider">
                   {selectedHour.padStart(2, '0')}:{selectedMinute}
                 </span>
 
-                <div className="flex items-center rounded-xl bg-slate-900 p-1 border border-slate-800">
+                <div className="flex items-center rounded-lg bg-zinc-950 p-1 border border-zinc-800">
                   {['AM', 'PM'].map((p) => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => handlePeriodSelect(p)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition cursor-pointer active:scale-95 ${
                         selectedPeriod === p
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200'
+                          ? 'bg-white text-zinc-950 shadow-xs'
+                          : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
                       {p}
@@ -225,7 +225,7 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
 
               {/* Hours Grid */}
               <div>
-                <span className="block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+                <span className="block text-[11px] font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">
                   Select Hour
                 </span>
                 <div className="grid grid-cols-6 gap-1.5">
@@ -236,10 +236,10 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
                         key={h}
                         type="button"
                         onClick={() => handleHourSelect(h)}
-                        className={`h-9 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        className={`h-10 rounded-xl text-xs font-bold transition cursor-pointer active:scale-90 ${
                           active
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 ring-2 ring-indigo-400/40'
-                            : 'bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800/80'
+                            ? 'bg-white text-zinc-950 shadow-md ring-2 ring-zinc-400/40'
+                            : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white border border-zinc-800/80'
                         }`}
                       >
                         {h}
@@ -251,7 +251,7 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
 
               {/* Minutes Grid */}
               <div>
-                <span className="block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+                <span className="block text-[11px] font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">
                   Select Minute
                 </span>
                 <div className="grid grid-cols-6 gap-1.5">
@@ -262,10 +262,10 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
                         key={m}
                         type="button"
                         onClick={() => handleMinuteSelect(m)}
-                        className={`py-1.5 rounded-xl text-xs font-mono font-bold transition cursor-pointer ${
+                        className={`h-9 rounded-xl text-xs font-mono font-bold transition cursor-pointer active:scale-90 ${
                           active
-                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400/40'
-                            : 'bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800/80'
+                            ? 'bg-emerald-500 text-zinc-950 font-bold shadow-md ring-2 ring-emerald-400/40'
+                            : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white border border-zinc-800/80'
                         }`}
                       >
                         :{m}
@@ -276,14 +276,14 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
               </div>
 
               {/* Footer */}
-              <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
-                <span className="text-xs font-mono text-indigo-400 font-bold">
+              <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
+                <span className="text-xs font-mono text-zinc-300 font-bold">
                   {formatDisplayTime(value) || `${selectedHour.padStart(2, '0')}:${selectedMinute} ${selectedPeriod}`}
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-md shadow-indigo-600/25"
+                  className="px-5 py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-xs active:scale-95"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Done</span>

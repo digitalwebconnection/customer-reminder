@@ -17,17 +17,38 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- OneSignal Web Push SDK v16 -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <!-- OneSignal Web Push SDK v16 (Domain Protected & Exception Guarded) -->
     <script>
+      // Global error shield: Prevent OneSignal non-production domain errors from halting React or data loading
+      window.addEventListener('unhandledrejection', function(event) {
+        const errStr = (event?.reason && (event.reason.message || event.reason.stack || String(event.reason))) || '';
+        if (errStr.includes('digitalwebconnection.com') || errStr.includes('OneSignal')) {
+          event.preventDefault();
+          console.info('[OneSignal] Suppressed domain mismatch notice for non-production environment.');
+        }
+      });
+
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "c211ef15-5ef5-45a5-80ce-e6f36c3fe58a",
-          allowLocalhostAsSecureOrigin: true,
-        });
+        try {
+          const isProd =
+            window.location.hostname === 'digitalwebconnection.com' ||
+            window.location.hostname.endsWith('.digitalwebconnection.com');
+
+          if (isProd) {
+            await OneSignal.init({
+              appId: "c211ef15-5ef5-45a5-80ce-e6f36c3fe58a",
+              allowLocalhostAsSecureOrigin: false,
+            });
+          } else {
+            console.info('[OneSignal] Skipping OneSignal initialization on local domain (' + window.location.hostname + '). Standard browser notifications and audio chimes are active.');
+          }
+        } catch (err) {
+          console.info('[OneSignal] Push initialization handled gracefully:', err?.message || err);
+        }
       });
     </script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   </head>
   <body class="bg-[#0b0f19] text-slate-100 min-h-screen antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
     <div id="root"></div>

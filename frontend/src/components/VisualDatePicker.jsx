@@ -113,7 +113,7 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
 
   return (
     <div>
-      <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+      <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
         {label} {required && <span className="text-rose-400">*</span>}
       </label>
 
@@ -123,17 +123,17 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
         onClick={() => setIsOpen(true)}
         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm text-left transition cursor-pointer ${
           isOpen
-            ? 'border-indigo-400 ring-2 ring-indigo-500/20 bg-slate-900/90 text-white shadow-inner'
-            : 'border-white/8 bg-slate-950/70 text-slate-200 hover:border-white/15 hover:bg-slate-900/60 shadow-inner'
+            ? 'border-zinc-500 ring-1 ring-zinc-500/30 bg-zinc-900 text-white shadow-inner'
+            : 'border-zinc-800 bg-zinc-900/90 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900 shadow-inner'
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <CalendarIcon className="w-4 h-4 text-indigo-400 shrink-0" />
-          <span className={value ? 'font-medium text-white' : 'text-slate-500'}>
+          <CalendarIcon className="w-4 h-4 text-zinc-400 shrink-0" />
+          <span className={value ? 'font-medium text-white' : 'text-zinc-500'}>
             {value ? formatDisplayDate(value) : 'Click to select date from calendar...'}
           </span>
         </div>
-        <span className="text-xs text-indigo-400 font-mono bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+        <span className="text-xs text-zinc-300 font-mono bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
           📅 Calendar
         </span>
       </button>
@@ -146,62 +146,62 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
             onClick={() => setIsOpen(false)}
           >
             <div
-              className="w-full max-w-sm bg-slate-900/95 border border-white/10 rounded-2xl shadow-2xl p-5 space-y-3 backdrop-blur-2xl"
+              className="w-full max-w-sm bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-3 backdrop-blur-2xl max-h-[92dvh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-indigo-400" />
+                  <CalendarIcon className="w-4 h-4 text-zinc-400" />
                   <span>Select Call Date</span>
                 </h4>
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer active:scale-90"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Quick Preset Chips */}
-              <div className="flex items-center gap-1.5 pb-2 text-xs overflow-x-auto scrollbar-thin">
+              <div className="flex items-center gap-1.5 pb-2 text-xs overflow-x-auto touch-pan-x overscroll-x-contain scrollbar-none py-1">
                 <button
                   type="button"
                   onClick={() => setQuickDate(0)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-medium whitespace-nowrap cursor-pointer transition"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium whitespace-nowrap cursor-pointer transition shrink-0 active:scale-95"
                 >
                   Today
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickDate(1)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-medium whitespace-nowrap cursor-pointer transition"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium whitespace-nowrap cursor-pointer transition shrink-0 active:scale-95"
                 >
                   Tomorrow
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickDate(2)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-medium whitespace-nowrap cursor-pointer transition"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium whitespace-nowrap cursor-pointer transition shrink-0 active:scale-95"
                 >
                   In 2 Days
                 </button>
                 <button
                   type="button"
                   onClick={() => setQuickDate(7)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-medium whitespace-nowrap cursor-pointer transition"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium whitespace-nowrap cursor-pointer transition shrink-0 active:scale-95"
                 >
                   Next Week
                 </button>
               </div>
 
               {/* Month/Year Navigation */}
-              <div className="flex items-center justify-between py-2 px-1 bg-slate-950 rounded-xl border border-slate-800">
+              <div className="flex items-center justify-between py-2 px-1 bg-zinc-900/90 rounded-xl border border-zinc-800">
                 <button
                   type="button"
                   onClick={prevMonth}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer active:scale-90"
                   title="Previous Month"
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -212,7 +212,7 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
                 <button
                   type="button"
                   onClick={nextMonth}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+                  className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer active:scale-90"
                   title="Next Month"
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -220,7 +220,7 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
               </div>
 
               {/* Days of Week */}
-              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 py-1 border-b border-slate-800/80 uppercase">
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-zinc-500 py-1 border-b border-zinc-800/80 uppercase">
                 {DAYS_OF_WEEK.map((d) => (
                   <span key={d}>{d}</span>
                 ))}
@@ -230,7 +230,7 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
               <div className="grid grid-cols-7 gap-1 pt-1">
                 {calendarDays.map((day, idx) => {
                   if (day === null) {
-                    return <div key={`empty-${idx}`} className="h-8" />;
+                    return <div key={`empty-${idx}`} className="h-9 w-9" />;
                   }
                   const selected = isSelected(day);
                   const current = isToday(day);
@@ -240,12 +240,12 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
                       key={`day-${day}`}
                       type="button"
                       onClick={() => handleSelectDay(day)}
-                      className={`h-8 w-8 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition cursor-pointer ${
+                      className={`h-9 w-9 mx-auto rounded-xl text-xs font-semibold flex items-center justify-center transition cursor-pointer active:scale-90 ${
                         selected
-                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold scale-105 ring-2 ring-indigo-400/40'
+                          ? 'bg-white text-zinc-950 font-bold scale-105 shadow-md ring-2 ring-zinc-400/40'
                           : current
-                          ? 'bg-slate-800 text-indigo-300 border border-indigo-500/40 font-bold'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          ? 'bg-zinc-800 text-zinc-100 border border-zinc-600 font-bold'
+                          : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
                       }`}
                     >
                       {day}
@@ -255,14 +255,14 @@ export default function VisualDatePicker({ value, onChange, label = 'Call Date',
               </div>
 
               {/* Footer */}
-              <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                <span className="text-indigo-400 font-mono">
+              <div className="mt-3 pt-2.5 border-t border-zinc-800 flex items-center justify-between text-[11px]">
+                <span className="text-zinc-400 font-mono text-xs">
                   {value ? formatDisplayDate(value) : 'Select a date above'}
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 shadow-md shadow-indigo-600/25"
+                  className="px-4 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold cursor-pointer transition flex items-center gap-1.5 shadow-xs active:scale-95"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Done</span>

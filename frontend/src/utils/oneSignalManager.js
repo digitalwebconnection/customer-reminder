@@ -2,9 +2,29 @@
  * OneSignal Web Push Manager (v16) with resilient timeout safeguard
  */
 
+const isProdDomain = () => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.location.hostname === 'digitalwebconnection.com' ||
+    window.location.hostname.endsWith('.digitalwebconnection.com')
+  );
+};
+
 export async function promptOneSignalPush() {
   return new Promise((resolve) => {
     if (typeof window === 'undefined') return resolve(false);
+
+    // If not running on the OneSignal authorized production domain, fallback directly to browser notification API
+    if (!isProdDomain()) {
+      if ('Notification' in window) {
+        Notification.requestPermission()
+          .then((perm) => resolve(perm === 'granted'))
+          .catch(() => resolve(false));
+      } else {
+        resolve(false);
+      }
+      return;
+    }
 
     // Timeout safety: never let this promise hang the UI longer than 2.5 seconds
     const timeout = setTimeout(() => {
@@ -45,7 +65,7 @@ export async function promptOneSignalPush() {
 export function isOneSignalSubscribed() {
   if (typeof window === 'undefined') return false;
   try {
-    if (window.OneSignal && window.OneSignal.User && window.OneSignal.User.PushSubscription) {
+    if (isProdDomain() && window.OneSignal && window.OneSignal.User && window.OneSignal.User.PushSubscription) {
       return !!window.OneSignal.User.PushSubscription.optedIn;
     }
     if ('Notification' in window) {

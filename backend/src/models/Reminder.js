@@ -2,6 +2,12 @@ import mongoose from 'mongoose';
 
 const reminderSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
     name: {
       type: String,
       required: true,
@@ -34,7 +40,7 @@ const reminderSchema = new mongoose.Schema(
     },
     timezone: {
       type: String,
-      default: 'Australia/Sydney',
+      default: 'Asia/Kolkata',
     },
     status: {
       type: String,
@@ -50,6 +56,7 @@ const reminderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Keep backward compat - ownerId maps to userId
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -70,6 +77,7 @@ reminderSchema.virtual('isOverdue').get(function () {
 
 reminderSchema.index({ status: 1, dueAt: 1 });
 reminderSchema.index({ name: 'text', phone: 'text' });
+reminderSchema.index({ userId: 1, status: 1 });
 
 export const Reminder = mongoose.model('Reminder', reminderSchema);
 export default Reminder;

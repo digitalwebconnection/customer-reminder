@@ -1,8 +1,12 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import argon2 from 'argon2';
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
+import ActivityLog from '../models/ActivityLog.js';
+import { auth } from '../middleware/auth.js';
+import { createTransporter } from '../services/emailService.js';
+import { validateEmail, validatePhone } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -18,110 +22,154 @@ const getCookieOptions = () => ({
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 });
 
-// Helper to seed owner accounts in MongoDB
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+    getJwtSecret(),
+    { expiresIn: '30d' }
+  );
+};
+
+const logActivity = async (userId, action, details = '', req = null, targetUserId = null) => {
+  try {
+    if (!isMongoActive()) return;
+    await ActivityLog.create({
+      userId,
+      action,
+      details,
+      targetUserId,
+      ipAddress: req ? (req.headers['x-forwarded-for'] || req.ip || '') : '',
+      userAgent: req ? (req.headers['user-agent'] || '') : '',
+    });
+  } catch (err) {
+    console.warn('[ActivityLog] Error logging activity:', err.message);
+  }
+};
+
+// Helper to seed super admin account in MongoDB
 export async function ensureOwnerExists() {
   if (!isMongoActive()) return;
 
-  const defaultOwners = [
-    {
-      email: (process.env.OWNER_EMAIL || 'admin@reminder.com').toLowerCase(),
-      password: process.env.OWNER_PASSWORD || 'Admin@123',
-      name: 'System Owner',
-    },
-    {
-      email: 'vaibhavdigitalwebconnection@gmail.com',
-      password: 'admin123',
-      name: 'Vaibhav Admin',
-    },
-  ];
+  const superAdminEmail = (process.env.SUPERADMIN_EMAIL || 'vaibhavdigitalwebconnection@gmail.com').toLowerCase();
+  const superAdminPassword = process.env.SUPERADMIN_PASSWORD || 'Admin@123';
 
-  for (const ownerData of defaultOwners) {
-    try {
-      const existing = await User.findOne({ email: ownerData.email });
-      if (!existing) {
-        const hash = await argon2.hash(ownerData.password);
-        await User.create({
-          email: ownerData.email,
-          name: ownerData.name,
-          passwordHash: hash,
-          role: 'owner',
-        });
-        console.log(`[Auth] Seeded owner account in MongoDB: ${ownerData.email}`);
-      }
-    } catch (err) {
-      console.warn(`[Auth] Could not seed owner ${ownerData.email}: ${err.message}`);
+  try {
+    const existing = await User.findOne({ email: superAdminEmail });
+    if (!existing) {
+      const hash = await User.hashPassword(superAdminPassword);
+      await User.create({
+        email: superAdminEmail,
+        name: 'Super Admin',
+        passwordHash: hash,
+        role: 'superadmin',
+        isActive: true,
+      });
+      console.log(`[Auth] Seeded super admin account: ${superAdminEmail}`);
+    } else if (existing.role !== 'superadmin') {
+      // Upgrade existing user to superadmin
+      existing.role = 'superadmin';
+      await existing.save();
+      console.log(`[Auth] Upgraded existing user to super admin: ${superAdminEmail}`);
     }
+
+    // Ensure authorized emails maintain superadmin role
+    await User.updateMany(
+      { email: { $in: [superAdminEmail,  'vaibhavdigitalwebconnection@gmail.com'] } },
+      { $set: { role: 'superadmin', isActive: true } }
+    );
+  } catch (err) {
+    console.warn(`[Auth] Could not seed super admin: ${err.message}`);
+  }
+
+  // Migrate any other old 'owner' accounts to 'user' role
+  try {
+    const ownerCount = await User.countDocuments({ role: 'owner' });
+    if (ownerCount > 0) {
+      await User.updateMany(
+        { role: 'owner', email: { $ne: superAdminEmail } },
+        { $set: { role: 'user' } }
+      );
+      console.log(`[Auth] Migrated ${ownerCount} old 'owner' accounts to 'user' role`);
+    }
+  } catch (err) {
+    console.warn(`[Auth] Migration warning: ${err.message}`);
   }
 }
 
 // POST /register - Register a new user account
 router.post('/register', async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, confirmPassword, phone, country, timezone } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required',
-      });
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Name is required' });
     }
 
-    const trimmedEmail = email.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide a valid email address',
-      });
+    const emailCheck = validateEmail(email, true);
+    if (!emailCheck.isValid) {
+      return res.status(400).json({ success: false, message: emailCheck.error });
+    }
+    const trimmedEmail = emailCheck.email;
+
+    // Phone number validation (if provided)
+    if (phone && phone.trim()) {
+      const phoneCheck = validatePhone(phone, country, false);
+      if (!phoneCheck.isValid) {
+        return res.status(400).json({ success: false, message: phoneCheck.error });
+      }
+    }
+
+    if (!password) {
+      return res.status(400).json({ success: false, message: 'Password is required' });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long' });
+    }
+
+    if (confirmPassword && password !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+    }
+
+    if (!isMongoActive()) {
+      return res.status(503).json({ success: false, message: 'Database is unavailable. Please try again later.' });
+    }
+
+    // Check for duplicate email
+    const existing = await User.findOne({ email: trimmedEmail });
+    if (existing) {
+      return res.status(409).json({
         success: false,
-        message: 'Password must be at least 6 characters long',
+        message: 'An account with this email address already exists. Please sign in.',
       });
     }
 
-    let newUser = null;
+    // Determine country and timezone
+    const userCountry = (country && country.trim()) || 'Australia';
+    const userTimezone = (timezone && timezone.trim()) || (userCountry === 'India' ? 'Asia/Kolkata' : 'Australia/Sydney');
 
-    if (isMongoActive()) {
-      const existing = await User.findOne({ email: trimmedEmail });
-      if (existing) {
-        return res.status(409).json({
-          success: false,
-          message: 'An account with this email address already exists. Please sign in.',
-        });
-      }
+    // Never allow signup as superadmin
+    const hash = await User.hashPassword(password);
+    const newUser = await User.create({
+      email: trimmedEmail,
+      name: name.trim(),
+      phone: phone ? phone.trim() : '',
+      country: userCountry,
+      timezone: userTimezone,
+      passwordHash: hash,
+      role: 'user', // Always 'user' on signup
+      isActive: true,
+    });
 
-      const hash = await argon2.hash(password);
-      newUser = await User.create({
-        email: trimmedEmail,
-        name: name ? name.trim() : trimmedEmail.split('@')[0],
-        passwordHash: hash,
-        role: 'user',
-      });
-    } else {
-      // Offline fallback user object
-      newUser = {
-        _id: `user_${Date.now()}`,
-        email: trimmedEmail,
-        name: name ? name.trim() : trimmedEmail.split('@')[0],
-        role: 'user',
-      };
-    }
+    // Log activity
+    await logActivity(newUser._id, 'signup', `New user registered: ${trimmedEmail} (${userCountry} / ${userTimezone})`, req);
 
-    // Generate 30-day JWT Token
-    const token = jwt.sign(
-      {
-        id: newUser._id.toString(),
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-      },
-      getJwtSecret(),
-      { expiresIn: '30d' }
-    );
-
+    const token = generateToken(newUser);
     const cookieName = process.env.COOKIE_NAME || 'customer_session';
     res.cookie(cookieName, token, getCookieOptions());
 
@@ -133,6 +181,9 @@ router.post('/register', async (req, res, next) => {
         id: newUser._id.toString(),
         email: newUser.email,
         name: newUser.name,
+        phone: newUser.phone,
+        country: newUser.country,
+        timezone: newUser.timezone,
         role: newUser.role,
       },
     });
@@ -141,85 +192,90 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
-// POST /login - User / Owner Login
+// POST /login - User / Super Admin Login
 router.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    const emailCheck = validateEmail(email, true);
+    if (!emailCheck.isValid) {
+      return res.status(400).json({ success: false, message: emailCheck.error });
+    }
+    const inputEmail = emailCheck.email;
+
+    if (!password) {
+      return res.status(400).json({ success: false, message: 'Password is required' });
     }
 
-    const inputEmail = email.trim().toLowerCase();
-    const envOwnerEmail = (process.env.OWNER_EMAIL || 'admin@reminder.com').toLowerCase();
-    const envOwnerPassword = process.env.OWNER_PASSWORD || 'Admin@123';
-    const fallbackOwnerEmail = 'vaibhavdigitalwebconnection@gmail.com';
-    const fallbackOwnerPassword = 'admin123';
-
-    let isValid = false;
-    let authenticatedUser = null;
-
-    if (isMongoActive()) {
-      let user = await User.findOne({ email: inputEmail });
-      if (user) {
-        try {
-          isValid = await argon2.verify(user.passwordHash, password);
-          if (isValid) {
-            authenticatedUser = user;
-          }
-        } catch (e) {
-          isValid = false;
-        }
-      } else {
-        // Check if matching initial bootstrap owner credentials
-        const isEnvOwner = inputEmail === envOwnerEmail && password === envOwnerPassword;
-        const isFallbackOwner = inputEmail === fallbackOwnerEmail && password === fallbackOwnerPassword;
-
-        if (isEnvOwner || isFallbackOwner) {
-          const hash = await argon2.hash(password);
-          authenticatedUser = await User.create({
-            email: inputEmail,
-            name: isEnvOwner ? 'System Owner' : 'Vaibhav Admin',
-            passwordHash: hash,
-            role: 'owner',
-          });
-          isValid = true;
-        }
-      }
-    } else {
-      // Offline fallback: match env owner or fallback owner
-      const isEnvOwner = inputEmail === envOwnerEmail && password === envOwnerPassword;
-      const isFallbackOwner = inputEmail === fallbackOwnerEmail && password === fallbackOwnerPassword;
-
-      if (isEnvOwner || isFallbackOwner) {
-        isValid = true;
-        authenticatedUser = {
-          _id: 'owner_01',
-          email: inputEmail,
-          name: isEnvOwner ? 'System Owner' : 'Vaibhav Admin',
-          role: 'owner',
-        };
-      }
+    if (!isMongoActive()) {
+      return res.status(503).json({ success: false, message: 'Database is unavailable. Please try again later.' });
     }
 
-    if (!isValid || !authenticatedUser) {
+    // Find user with password hash
+    const user = await User.findOne({ email: inputEmail }).select('+passwordHash');
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password. Please check your credentials.',
       });
     }
 
-    // Generate 30-day JWT Token
-    const token = jwt.sign(
-      {
-        id: authenticatedUser._id.toString(),
-        email: authenticatedUser.email,
-        name: authenticatedUser.name || authenticatedUser.email.split('@')[0],
-        role: authenticatedUser.role || 'user',
-      },
-      getJwtSecret(),
-      { expiresIn: '30d' }
-    );
+    // Check if user is blocked
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been blocked. Contact the administrator.',
+      });
+    }
 
+    // Verify password - support both bcrypt and argon2 hashes during migration
+    let isValid = false;
+    try {
+      const bcrypt = (await import('bcrypt')).default;
+      isValid = await bcrypt.compare(password, user.passwordHash);
+    } catch (e) {
+      isValid = false;
+    }
+
+    // Fallback: try argon2 for old hashes
+    if (!isValid) {
+      try {
+        const argon2 = (await import('argon2')).default;
+        isValid = await argon2.verify(user.passwordHash, password);
+        // If argon2 worked, rehash with bcrypt for future logins
+        if (isValid) {
+          user.passwordHash = await User.hashPassword(password);
+          await user.save();
+          console.log(`[Auth] Migrated ${inputEmail} from argon2 to bcrypt`);
+        }
+      } catch (e) {
+        // argon2 not available or hash not argon2, skip
+      }
+    }
+
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password. Please check your credentials.',
+      });
+    }
+
+    // Update last login
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    // Log activity
+    // Ensure authorized emails maintain superadmin role
+    const superAdminEmail = (process.env.SUPERADMIN_EMAIL || '').toLowerCase();
+    const isSpecialAdmin =
+      inputEmail === superAdminEmail ||
+  
+      inputEmail === 'vaibhavdigitalwebconnection@gmail.com';
+
+    if (isSpecialAdmin && user.role !== 'superadmin') {
+      user.role = 'superadmin';
+      await user.save();
+    }
+
+    const token = generateToken(user);
     const cookieName = process.env.COOKIE_NAME || 'customer_session';
     res.cookie(cookieName, token, getCookieOptions());
 
@@ -228,10 +284,13 @@ router.post('/login', async (req, res, next) => {
       message: 'Login successful',
       token,
       user: {
-        id: authenticatedUser._id.toString(),
-        email: authenticatedUser.email,
-        name: authenticatedUser.name || authenticatedUser.email.split('@')[0],
-        role: authenticatedUser.role || 'user',
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        phone: user.phone || '',
+        country: user.country || 'Australia',
+        timezone: user.timezone || 'Australia/Sydney',
+        role: user.role,
       },
     });
   } catch (err) {
@@ -240,7 +299,11 @@ router.post('/login', async (req, res, next) => {
 });
 
 // POST /logout - Clear session
-router.post('/logout', (req, res) => {
+router.post('/logout', auth, async (req, res) => {
+  if (req.user?.id) {
+    await logActivity(req.user.id, 'logout', 'User logged out', req);
+  }
+
   const cookieName = process.env.COOKIE_NAME || 'customer_session';
   res.clearCookie(cookieName, {
     httpOnly: true,
@@ -277,18 +340,38 @@ router.get('/me', async (req, res) => {
     const decoded = jwt.verify(token, getJwtSecret());
 
     if (isMongoActive() && decoded.id && mongoose.Types.ObjectId.isValid(decoded.id)) {
-      const user = await User.findById(decoded.id).select('-passwordHash');
-      if (user) {
-        return res.json({
-          success: true,
-          user: {
-            id: user._id.toString(),
-            email: user.email,
-            name: user.name || user.email.split('@')[0],
-            role: user.role,
-          },
-        });
+      const user = await User.findById(decoded.id);
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'Account not found' });
       }
+      if (!user.isActive) {
+        return res.status(403).json({ success: false, message: 'Your account has been blocked. Contact the administrator.' });
+      }
+
+      // Ensure authorized emails maintain superadmin role
+      const superAdminEmail = (process.env.SUPERADMIN_EMAIL || '').toLowerCase();
+      const userEmail = (user.email || '').toLowerCase();
+      const isSpecialAdmin =
+        userEmail === superAdminEmail ||
+        userEmail === 'vaibhavdigitalwebconnection@gmail.com';
+
+      if (isSpecialAdmin && user.role !== 'superadmin') {
+        user.role = 'superadmin';
+        await user.save();
+      }
+
+      return res.json({
+        success: true,
+        user: {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+          phone: user.phone || '',
+          country: user.country || 'Australia',
+          timezone: user.timezone || 'Australia/Sydney',
+          role: user.role,
+        },
+      });
     }
 
     res.json({
@@ -297,6 +380,9 @@ router.get('/me', async (req, res) => {
         id: decoded.id,
         email: decoded.email,
         name: decoded.name || decoded.email.split('@')[0],
+        phone: '',
+        country: 'Australia',
+        timezone: 'Australia/Sydney',
         role: decoded.role || 'user',
       },
     });
@@ -305,4 +391,168 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// PUT /profile - Update current user's profile
+router.put('/profile', auth, async (req, res, next) => {
+  try {
+    const { name, phone, country, timezone, currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id).select('+passwordHash');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (name) user.name = name.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+    if (country) user.country = country.trim();
+    if (timezone) user.timezone = timezone.trim();
+
+    // Password change
+    if (currentPassword && newPassword) {
+      const bcryptLib = (await import('bcrypt')).default;
+      const isMatch = await bcryptLib.compare(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+      }
+      user.passwordHash = await User.hashPassword(newPassword);
+    }
+
+    await user.save();
+    await logActivity(user._id, 'profile_updated', 'Profile updated', req);
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        country: user.country || 'Australia',
+        timezone: user.timezone || 'Australia/Sydney',
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /forgot-password - Send password reset email
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: trimmedEmail });
+
+    // Always respond with success to prevent email enumeration
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent.',
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await User.findByIdAndUpdate(user._id, {
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: user.resetPasswordExpires,
+    });
+
+    await logActivity(user._id, 'password_reset_request', 'Password reset requested', req);
+
+    // Send reset email
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0].trim();
+    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
+
+    const transporter = createTransporter();
+    if (transporter) {
+      const emailFrom = process.env.EMAIL_FROM || `"Customer Reminder" <${process.env.SMTP_USER}>`;
+      await transporter.sendMail({
+        from: emailFrom,
+        to: user.email,
+        subject: '🔑 Password Reset - RemindIQ',
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+            <div style="background: #4f46e5; padding: 20px 24px; color: #ffffff;">
+              <h2 style="margin: 0; font-size: 20px;">Password Reset Request</h2>
+            </div>
+            <div style="padding: 24px;">
+              <p style="color: #334155;">Hi ${user.name},</p>
+              <p style="color: #334155;">You requested a password reset. Click the button below to set a new password:</p>
+              <div style="text-align: center; margin: 24px 0;">
+                <a href="${resetUrl}" style="display: inline-block; background: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600;">
+                  Reset Password
+                </a>
+              </div>
+              <p style="color: #94a3b8; font-size: 13px;">This link expires in 1 hour. If you didn't request this, ignore this email.</p>
+            </div>
+          </div>
+        `,
+      });
+    } else {
+      console.log(`[Auth] Password reset link (no SMTP): ${resetUrl}`);
+    }
+
+    res.json({
+      success: true,
+      message: 'If an account with that email exists, a password reset link has been sent.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /reset-password/:token - Reset password using token
+router.post('/reset-password/:token', async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+    }
+
+    const resetTokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: { $gt: new Date() },
+    }).select('+resetPasswordToken +resetPasswordExpires');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token. Please request a new password reset.',
+      });
+    }
+
+    user.passwordHash = await User.hashPassword(password);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    await logActivity(user._id, 'password_reset_complete', 'Password reset completed', req);
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully. You can now log in with your new password.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export { logActivity };
 export default router;

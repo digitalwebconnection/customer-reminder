@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 
 const AuthContext = createContext();
@@ -14,6 +14,24 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await api.get('/auth/me');
+      if (res.data?.user) {
+        setUser(res.data.user);
+        localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
+        return res.data.user;
+      }
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setUser(null);
+        localStorage.removeItem('remindiq_user');
+        localStorage.removeItem('remindiq_token');
+      }
+    }
+    return null;
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('remindiq_token');
     if (!token && !user) {
@@ -21,25 +39,10 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    api.get('/auth/me')
-      .then((res) => {
-        if (res.data?.user) {
-          setUser(res.data.user);
-          localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
-        }
-      })
-      .catch((err) => {
-        // If 401 or token expired, clear state
-        if (err.response?.status === 401) {
-          setUser(null);
-          localStorage.removeItem('remindiq_user');
-          localStorage.removeItem('remindiq_token');
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+    refreshUser().finally(() => {
+      setLoading(false);
+    });
+  }, [refreshUser]);
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
@@ -53,11 +56,29 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
-  const register = async (name, email, password) => {
-    const res = await api.post('/auth/register', { name, email, password });
+  const register = async (payload) => {
+    // Accepts either object { name, email, phone, password, confirmPassword } or positional args for backwards compat
+    let body = {};
+    if (typeof payload === 'object') {
+      body = payload;
+    } else {
+      const [name, email, password, phone, confirmPassword] = arguments;
+      body = { name, email, password, phone, confirmPassword };
+    }
+
+    const res = await api.post('/auth/register', body);
     if (res.data?.token) {
       localStorage.setItem('remindiq_token', res.data.token);
     }
+    if (res.data?.user) {
+      setUser(res.data.user);
+      localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
+    }
+    return res.data;
+  };
+
+  const updateProfile = async (profileData) => {
+    const res = await api.put('/auth/profile', profileData);
     if (res.data?.user) {
       setUser(res.data.user);
       localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
@@ -74,15 +95,20 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('remindiq_token');
   };
 
+  const isSuperAdmin = user?.role === 'superadmin';
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
+        isSuperAdmin,
         loading,
         login,
         register,
         logout,
+        updateProfile,
+        refreshUser,
       }}
     >
       {children}

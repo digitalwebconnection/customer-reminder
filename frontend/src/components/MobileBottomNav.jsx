@@ -3,10 +3,14 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   ListTodo,
   Plus,
-  Smartphone,
   LogOut,
   BellRing,
   Bell,
+  Shield,
+  User as UserIcon,
+  LayoutDashboard,
+  Users,
+  History,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { usePwa } from "../context/PwaContext";
@@ -14,7 +18,7 @@ import { useToast } from "../context/ToastContext";
 
 export default function MobileBottomNav() {
   const { user, logout } = useAuth();
-  const { isInstalled, promptInstall, permissions, setShowAlarmModal } = usePwa();
+  const { permissions, setShowAlarmModal } = usePwa();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -26,38 +30,121 @@ export default function MobileBottomNav() {
 
   if (!user) return null; // Don't show on login page
 
+  const isSuperAdmin = user.role === "superadmin";
   const isAlarmReady = permissions.notification === "granted" && permissions.pushSubscribed;
 
+  // 1. Super Admin Mobile Navigation (Strictly admin items, NO personal reminders)
+  if (isSuperAdmin) {
+    return (
+      <nav
+        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-2xl border-t border-zinc-800/90 px-3 py-1.5 shadow-2xl safe-area-bottom select-none"
+      >
+        <div className="flex items-center justify-around max-w-md mx-auto">
+          {/* Dashboard */}
+          <NavLink
+            to="/admin"
+            end
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+              }`
+            }
+          >
+            <LayoutDashboard className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Dashboard</span>
+          </NavLink>
+
+          {/* Users */}
+          <NavLink
+            to="/admin/users"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+              }`
+            }
+          >
+            <Users className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Users</span>
+          </NavLink>
+
+          {/* Global Reminders */}
+          <NavLink
+            to="/admin/reminders"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+              }`
+            }
+          >
+            <ListTodo className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Global</span>
+          </NavLink>
+
+          {/* Audit Logs */}
+          <NavLink
+            to="/admin/logs"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+              }`
+            }
+          >
+            <History className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Logs</span>
+          </NavLink>
+
+          {/* Profile */}
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+              }`
+            }
+          >
+            <UserIcon className="w-5 h-5 mb-0.5" />
+            <span className="text-[10px] tracking-tight">Profile</span>
+          </NavLink>
+        </div>
+      </nav>
+    );
+  }
+
+  // 2. Standard User Mobile Navigation (Personal Reminders & Add)
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#070b14]/95 backdrop-blur-2xl border-t border-white/10 px-2 py-1.5 shadow-2xl safe-area-bottom">
+    <nav
+      style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-2xl border-t border-zinc-800/90 px-3 py-1.5 shadow-2xl safe-area-bottom select-none"
+    >
       <div className="flex items-center justify-between max-w-md mx-auto">
-        {/* 1. All Reminders Tab */}
+        {/* All Reminders Tab */}
         <NavLink
           to="/reminders"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl transition-all cursor-pointer ${
+            `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
               isActive
-                ? "text-indigo-400 font-bold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "text-white font-bold"
+                : "text-zinc-400 hover:text-zinc-200"
             }`
           }
         >
-          <ListTodo className="w-5 h-5" />
+          <ListTodo className="w-5 h-5 mb-0.5" />
           <span className="text-[10px] tracking-tight">Reminders</span>
         </NavLink>
 
-        {/* 2. Mobile Alarms & Permissions Hub */}
+        {/* Mobile Alarms Hub */}
         <button
           type="button"
           onClick={() => setShowAlarmModal(true)}
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl transition-all cursor-pointer ${
+          className={`flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
             isAlarmReady
-              ? "text-slate-400 hover:text-emerald-400"
+              ? "text-zinc-400 hover:text-emerald-400"
               : "text-amber-400 font-bold hover:text-amber-300"
           }`}
           title="Mobile Alarms & Background Notifications"
         >
-          <div className="relative">
+          <div className="relative mb-0.5">
             {isAlarmReady ? (
               <Bell className="w-5 h-5 text-emerald-400" />
             ) : (
@@ -66,8 +153,8 @@ export default function MobileBottomNav() {
             <span
               className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
                 isAlarmReady
-                  ? "bg-emerald-400 ring-2 ring-[#070b14]"
-                  : "bg-amber-400 animate-ping ring-2 ring-[#070b14]"
+                  ? "bg-emerald-400 ring-2 ring-[#09090b]"
+                  : "bg-amber-400 animate-ping ring-2 ring-[#09090b]"
               }`}
             />
           </div>
@@ -76,45 +163,41 @@ export default function MobileBottomNav() {
           </span>
         </button>
 
-        {/* 3. Central Elevated Add Reminder Button */}
+        {/* Elevated Add Reminder Button */}
         <NavLink
           to="/add"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-2xl bg-linear-to-tr from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/40 border-2 border-[#070b14] active:scale-95 transition-transform ${
-              isActive ? "ring-2 ring-indigo-400 ring-offset-2 ring-offset-[#070b14]" : ""
+            `flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-2xl bg-white text-zinc-950 shadow-xl shadow-black/50 border-2 border-[#09090b] active:scale-90 transition-all cursor-pointer ${
+              isActive ? "ring-2 ring-white ring-offset-2 ring-offset-[#09090b]" : ""
             }`
           }
           title="Add Customer Reminder"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-6 h-6 stroke-[2.5]" />
         </NavLink>
 
-        {/* 4. Install App / Mobile Status */}
-        <button
-          type="button"
-          onClick={() => promptInstall()}
-          className="flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl text-slate-400 hover:text-indigo-300 transition-all cursor-pointer"
-          title="Install RemindIQ App"
+        {/* Profile */}
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+              isActive ? "text-white font-bold" : "text-zinc-400 hover:text-zinc-200"
+            }`
+          }
+          title="My Profile"
         >
-          <div className="relative">
-            <Smartphone className="w-5 h-5" />
-            {!isInstalled && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            )}
-          </div>
-          <span className="text-[10px] tracking-tight">
-            {isInstalled ? "App" : "Get App"}
-          </span>
-        </button>
+          <UserIcon className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px] tracking-tight">Profile</span>
+        </NavLink>
 
-        {/* 5. Logout */}
+        {/* Logout */}
         <button
           type="button"
           onClick={handleLogout}
-          className="flex flex-col items-center gap-1 py-1 px-2.5 rounded-2xl text-slate-400 hover:text-rose-400 transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl text-zinc-400 hover:text-rose-400 transition-all active:scale-95 cursor-pointer"
           title={`Log out (${user?.email})`}
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-5 h-5 mb-0.5" />
           <span className="text-[10px] tracking-tight">Log Out</span>
         </button>
       </div>

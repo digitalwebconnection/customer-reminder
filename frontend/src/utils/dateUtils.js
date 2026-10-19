@@ -1,18 +1,46 @@
 /**
- * Australian Timezone & Date/Time utilities
+ * International Regional Timezone & Date/Time utilities
+ * Supports Australia & India
  */
 
 export const AUSTRALIAN_TIMEZONES = [
-  { value: 'Australia/Sydney', label: 'Sydney, NSW / Canberra, ACT (AEDT/AEST)', state: 'NSW', short: 'Sydney' },
-  { value: 'Australia/Melbourne', label: 'Melbourne, VIC (AEDT/AEST)', state: 'VIC', short: 'Melbourne' },
-  { value: 'Australia/Brisbane', label: 'Brisbane, QLD (AEST — No DST)', state: 'QLD', short: 'Brisbane' },
-  { value: 'Australia/Adelaide', label: 'Adelaide, SA (ACDT/ACST)', state: 'SA', short: 'Adelaide' },
- ];
+  { value: 'Australia/Sydney', label: 'Sydney, NSW / Canberra, ACT (AEDT/AEST)', state: 'NSW', short: 'Sydney', country: 'Australia', offset: 'AEDT/AEST' },
+  { value: 'Australia/Melbourne', label: 'Melbourne, VIC (AEDT/AEST)', state: 'VIC', short: 'Melbourne', country: 'Australia', offset: 'AEDT/AEST' },
+  { value: 'Australia/Brisbane', label: 'Brisbane, QLD (AEST — No DST)', state: 'QLD', short: 'Brisbane', country: 'Australia', offset: 'AEST' },
+  { value: 'Australia/Adelaide', label: 'Adelaide, SA (ACDT/ACST)', state: 'SA', short: 'Adelaide', country: 'Australia', offset: 'ACDT/ACST' },
+];
+
+export const INDIAN_TIMEZONES = [
+  { value: 'Asia/Kolkata', label: 'India Standard Time (IST — UTC+5:30)', state: 'IST', short: 'India', country: 'India', offset: 'IST (UTC+5:30)' },
+];
+
+export const COUNTRIES = [
+  {
+    code: 'AU',
+    name: 'Australia',
+    flag: '🇦🇺',
+    defaultTimezone: 'Australia/Sydney',
+    timezones: AUSTRALIAN_TIMEZONES,
+  },
+  {
+    code: 'IN',
+    name: 'India',
+    flag: '🇮🇳',
+    defaultTimezone: 'Asia/Kolkata',
+    timezones: INDIAN_TIMEZONES,
+  },
+];
+
+export const ALL_TIMEZONES = [
+  ...AUSTRALIAN_TIMEZONES,
+  ...INDIAN_TIMEZONES,
+];
 
 export const DEFAULT_TIMEZONE = 'Australia/Sydney';
+export const DEFAULT_COUNTRY = 'Australia';
 
 /**
- * Convert local date string (YYYY-MM-DD) and time string (HH:mm) in a target Australian timezone to UTC ISO string
+ * Convert local date string (YYYY-MM-DD) and time string (HH:mm) in a target timezone to UTC ISO string
  */
 export function combineDateAndTimeToUTC(dateStr, timeStr, timezone = DEFAULT_TIMEZONE) {
   if (!dateStr || !timeStr) return null;
@@ -34,18 +62,19 @@ export function combineDateAndTimeToUTC(dateStr, timeStr, timezone = DEFAULT_TIM
 }
 
 /**
- * Format a UTC Date input into readable Australian format with timezone label
- * e.g. "17 Oct 2026, 02:30 PM (Sydney)"
+ * Format a UTC Date input into readable format with timezone label
+ * e.g. "17 Oct 2026, 02:30 PM (Sydney)" or "19 Oct 2026, 12:30 PM (India)"
  */
 export function formatInAustralianTime(dateInput, timezone = DEFAULT_TIMEZONE) {
   if (!dateInput) return '';
   const d = new Date(dateInput);
   if (isNaN(d.getTime())) return '';
 
-  const zoneObj = AUSTRALIAN_TIMEZONES.find((z) => z.value === timezone);
-  const shortCity = zoneObj ? zoneObj.short : 'AU';
+  const zoneObj = ALL_TIMEZONES.find((z) => z.value === timezone);
+  const shortCity = zoneObj ? zoneObj.short : (timezone === 'Asia/Kolkata' ? 'India' : 'AU');
+  const locale = timezone === 'Asia/Kolkata' ? 'en-IN' : 'en-AU';
 
-  const formatted = new Intl.DateTimeFormat('en-AU', {
+  const formatted = new Intl.DateTimeFormat(locale, {
     timeZone: timezone,
     day: '2-digit',
     month: 'short',
@@ -58,8 +87,11 @@ export function formatInAustralianTime(dateInput, timezone = DEFAULT_TIMEZONE) {
   return `${formatted} (${shortCity})`;
 }
 
+// Universal alias
+export const formatInTimezone = formatInAustralianTime;
+
 /**
- * Extract YYYY-MM-DD and HH:mm from UTC Date for a specific Australian timezone
+ * Extract YYYY-MM-DD and HH:mm from UTC Date for a specific timezone
  */
 export function getPartsInAustralianTimezone(dateInput, timezone = DEFAULT_TIMEZONE) {
   if (!dateInput) return { date: '', time: '' };
@@ -90,3 +122,5 @@ export function getPartsInAustralianTimezone(dateInput, timezone = DEFAULT_TIMEZ
     time: `${hour}:${minute}`,
   };
 }
+
+export const getPartsInTimezone = getPartsInAustralianTimezone;

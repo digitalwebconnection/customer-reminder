@@ -2,6 +2,7 @@ import express from 'express';
 import { dataService } from '../services/dataService.js';
 import { auth } from '../middleware/auth.js';
 import { desktopNotificationService } from '../services/desktopNotificationService.js';
+import { validateEmail, validatePhone } from '../utils/validation.js';
 
 const router = express.Router();
 
@@ -12,7 +13,8 @@ router.use(auth);
 router.get('/', async (req, res, next) => {
   try {
     const { status, search, sort } = req.query;
-    const reminders = await dataService.getReminders({ status, search, sort });
+    const userId = req.user.id; // From JWT
+    const reminders = await dataService.getReminders({ status, search, sort, userId });
     res.json({ success: true, data: reminders });
   } catch (err) {
     next(err);
@@ -25,15 +27,26 @@ router.post('/', async (req, res, next) => {
     const { name, phone, email, address, note, dueAt, timezone } = req.body;
 
     if (!name || !name.trim()) {
-      return res.status(400).json({ success: false, message: 'Name is required' });
+      return res.status(400).json({ success: false, message: 'Customer name is required' });
     }
-    if (!phone || !phone.trim()) {
-      return res.status(400).json({ success: false, message: 'Phone number is required' });
+
+    const phoneCheck = validatePhone(phone, timezone === 'Asia/Kolkata' ? 'India' : 'Australia', true);
+    if (!phoneCheck.isValid) {
+      return res.status(400).json({ success: false, message: phoneCheck.error });
     }
+
+    if (email && email.trim()) {
+      const emailCheck = validateEmail(email, false);
+      if (!emailCheck.isValid) {
+        return res.status(400).json({ success: false, message: emailCheck.error });
+      }
+    }
+
     if (!dueAt) {
       return res.status(400).json({ success: false, message: 'Due date and time are required' });
     }
 
+    const userId = req.user.id; // From JWT
     const reminder = await dataService.createReminder({
       name: name.trim(),
       phone: phone.trim(),
@@ -41,7 +54,8 @@ router.post('/', async (req, res, next) => {
       address: address ? address.trim() : '',
       note: note ? note.trim() : '',
       dueAt,
-      timezone: timezone || 'Australia/Sydney',
+      timezone: timezone || 'Asia/Kolkata',
+      userId,
     });
 
     res.status(201).json({ success: true, message: 'Reminder created successfully', data: reminder });
@@ -53,7 +67,8 @@ router.post('/', async (req, res, next) => {
 // GET /reminders/:id - Get single reminder
 router.get('/:id', async (req, res, next) => {
   try {
-    const reminder = await dataService.getReminderById(req.params.id);
+    const userId = req.user.id;
+    const reminder = await dataService.getReminderById(req.params.id, userId);
     if (!reminder) {
       return res.status(404).json({ success: false, message: 'Reminder not found' });
     }
@@ -66,7 +81,28 @@ router.get('/:id', async (req, res, next) => {
 // PATCH /reminders/:id - Update reminder or mark completed
 router.patch('/:id', async (req, res, next) => {
   try {
-    const updated = await dataService.updateReminder(req.params.id, req.body);
+    const userId = req.user.id;
+
+    if (req.body.name !== undefined && !req.body.name.trim()) {
+      return res.status(400).json({ success: false, message: 'Customer name cannot be empty' });
+    }
+
+    if (req.body.phone !== undefined) {
+      const tz = req.body.timezone || 'Asia/Kolkata';
+      const phoneCheck = validatePhone(req.body.phone, tz === 'Asia/Kolkata' ? 'India' : 'Australia', true);
+      if (!phoneCheck.isValid) {
+        return res.status(400).json({ success: false, message: phoneCheck.error });
+      }
+    }
+
+    if (req.body.email !== undefined && req.body.email.trim()) {
+      const emailCheck = validateEmail(req.body.email, false);
+      if (!emailCheck.isValid) {
+        return res.status(400).json({ success: false, message: emailCheck.error });
+      }
+    }
+
+    const updated = await dataService.updateReminder(req.params.id, req.body, userId);
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Reminder not found' });
     }
@@ -79,7 +115,8 @@ router.patch('/:id', async (req, res, next) => {
 // DELETE /reminders/:id - Delete reminder
 router.delete('/:id', async (req, res, next) => {
   try {
-    const deleted = await dataService.deleteReminder(req.params.id);
+    const userId = req.user.id;
+    const deleted = await dataService.deleteReminder(req.params.id, userId);
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Reminder not found' });
     }

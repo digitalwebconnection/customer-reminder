@@ -1,9 +1,9 @@
 import nodemailer from 'nodemailer';
 
-export const formatInTimezone = (dateInput, tz = 'Australia/Sydney') => {
+export const formatInTimezone = (dateInput, tz = 'Asia/Kolkata') => {
   if (!dateInput) return '';
   const d = new Date(dateInput);
-  return new Intl.DateTimeFormat('en-AU', {
+  return new Intl.DateTimeFormat('en-IN', {
     timeZone: tz,
     dateStyle: 'full',
     timeStyle: 'short',
@@ -28,14 +28,20 @@ export const createTransporter = () => {
   return null;
 };
 
-export async function sendReminderEmail(reminder) {
+/**
+ * Send a reminder email to the owner of the reminder.
+ * @param {Object} reminder - The reminder document
+ * @param {string|null} recipientEmail - The specific user's email (multi-user). Falls back to env defaults.
+ */
+export async function sendReminderEmail(reminder, recipientEmail = null) {
   const recipient =
+    recipientEmail ||
     process.env.NOTIFICATION_EMAIL ||
     process.env.OWNER_EMAIL ||
     process.env.SMTP_USER ||
     'vaibhavdigitalwebconnection@gmail.com';
 
-  const tz = reminder.timezone || 'Australia/Sydney';
+  const tz = reminder.timezone || 'Asia/Kolkata';
   const displayTime = formatInTimezone(reminder.dueAt, tz);
   const from = process.env.EMAIL_FROM || `"Customer Reminder" <${recipient}>`;
 

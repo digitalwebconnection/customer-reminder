@@ -191,7 +191,7 @@ export function triggerDesktopNotification(title, body) {
     try {
       new Notification(title, {
         body,
-        icon: '/app-icon.png',
+        icon: '/favicon.svg',
       });
     } catch (e) {
       console.warn('Notification error:', e);
