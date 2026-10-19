@@ -48,6 +48,10 @@ const userSchema = new mongoose.Schema(
       type: Object,
       default: null,
     },
+    pushSubscriptions: {
+      type: [Object],
+      default: [],
+    },
     resetPasswordToken: {
       type: String,
       default: null,

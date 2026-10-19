@@ -56,14 +56,19 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
-  const register = async (payload) => {
+  const register = async (payload, maybeEmail, maybePassword, maybePhone, maybeConfirmPassword) => {
     // Accepts either object { name, email, phone, password, confirmPassword } or positional args for backwards compat
     let body = {};
-    if (typeof payload === 'object') {
+    if (payload && typeof payload === 'object') {
       body = payload;
     } else {
-      const [name, email, password, phone, confirmPassword] = arguments;
-      body = { name, email, password, phone, confirmPassword };
+      body = {
+        name: payload,
+        email: maybeEmail,
+        password: maybePassword,
+        phone: maybePhone,
+        confirmPassword: maybeConfirmPassword,
+      };
     }
 
     const res = await api.post('/auth/register', body);

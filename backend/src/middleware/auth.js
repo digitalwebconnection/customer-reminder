@@ -98,4 +98,49 @@ export const requireSuperAdmin = (req, res, next) => {
   next();
 };
 
+export const optionalAuth = async (req, res, next) => {
+  const cookieName = process.env.COOKIE_NAME || 'customer_session';
+  let token = null;
+
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (authHeader && typeof authHeader === 'string') {
+    const parts = authHeader.trim().split(/\s+/);
+    if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
+      token = parts[1];
+    } else if (parts.length === 1 && !parts[0].toLowerCase().startsWith('bearer')) {
+      token = parts[0];
+    }
+  }
+
+  if (!token && req.cookies && req.cookies[cookieName]) {
+    token = req.cookies[cookieName];
+  }
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, getJwtSecret());
+    if (mongoose.connection.readyState === 1 && decoded.id && mongoose.Types.ObjectId.isValid(decoded.id)) {
+      const user = await User.findById(decoded.id);
+      if (user && user.isActive) {
+        req.user = {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        };
+      }
+    } else if (decoded) {
+      req.user = decoded;
+    }
+  } catch (e) {
+    // Silent ignore on optional auth
+  }
+
+  next();
+};
+
 export default auth;
+

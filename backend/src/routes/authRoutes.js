@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
 import ActivityLog from '../models/ActivityLog.js';
-import { auth } from '../middleware/auth.js';
+import { auth, optionalAuth } from '../middleware/auth.js';
 import { createTransporter } from '../services/emailService.js';
 import { validateEmail, validatePhone } from '../utils/validation.js';
 
@@ -195,6 +195,7 @@ router.post('/register', async (req, res, next) => {
 // POST /login - User / Super Admin Login
 router.post('/login', async (req, res, next) => {
   try {
+    const { email, password } = req.body || {};
     const emailCheck = validateEmail(email, true);
     if (!emailCheck.isValid) {
       return res.status(400).json({ success: false, message: emailCheck.error });
@@ -299,7 +300,7 @@ router.post('/login', async (req, res, next) => {
 });
 
 // POST /logout - Clear session
-router.post('/logout', auth, async (req, res) => {
+router.post('/logout', optionalAuth, async (req, res) => {
   if (req.user?.id) {
     await logActivity(req.user.id, 'logout', 'User logged out', req);
   }

@@ -173,8 +173,10 @@ export async function requestAndSubscribePush() {
 
 /**
  * Dispatches a real test push alarm from the backend to this device
+ * @param {number} delaySeconds - Optional delay (e.g. 5s) allowing user to lock screen first
  */
-export async function sendTestMobileAlarmPush() {
-  const res = await api.post('/push/test');
+export async function sendTestMobileAlarmPush(delaySeconds = 0) {
+  const res = await api.post('/push/test', { delaySeconds });
   return res.data;
 }
+

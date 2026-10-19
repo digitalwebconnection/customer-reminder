@@ -175,9 +175,10 @@ export function PwaProvider({ children }) {
 
   /**
    * Dispatches high-urgency test alarm to verify background phone ringing
+   * @param {number} delaySeconds
    */
-  const testMobileAlarm = async () => {
-    return await sendTestMobileAlarmPush();
+  const testMobileAlarm = async (delaySeconds = 0) => {
+    return await sendTestMobileAlarmPush(delaySeconds);
   };
 
   return (

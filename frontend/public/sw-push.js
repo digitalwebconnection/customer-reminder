@@ -1,69 +1,5 @@
-// RemindIQ Progressive Web App (PWA) Service Worker v2
-// High-Urgency Background Push Alarms, Offline Cache & Action Handlers
-
-const CACHE_NAME = 'remindiq-pwa-v2';
-const PRECACHE_URLS = [
-  '/',
-  '/reminders',
-  '/manifest.json',
-  '/favicon.svg',
-  '/app-icon.png',
-  '/ringtone.wav',
-];
-
-// Install Event: Precaches essential offline app shell
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_URLS).catch((err) => {
-        console.warn('[SW] Cache precache warning:', err);
-      });
-    })
-  );
-  self.skipWaiting();
-});
-
-// Activate Event: Cleans up obsolete caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
-      );
-    })
-  );
-  self.clients.claim();
-});
-
-// Fetch Event: Network-first with cache fallback for static assets
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
-    return;
-  }
-
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.status === 200 && event.request.url.startsWith(self.location.origin)) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(async () => {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
-        return new Response('Offline - RemindIQ', { status: 503, statusText: 'Service Unavailable' });
-      })
-  );
-});
+// RemindIQ Background Push Notification & Alarm Action Handlers
+// Imported into generated Service Worker via Workbox importScripts
 
 // Web Push Event: Triggers phone notifications and loud alarm when app is closed / backgrounded
 self.addEventListener('push', (event) => {
@@ -109,7 +45,23 @@ self.addEventListener('push', (event) => {
     ],
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  const notificationPromise = self.registration.showNotification(title, options);
+
+  // If any app windows are open or in background, wake them immediately with sound & modal
+  const broadcastPromise = self.clients
+    .matchAll({ type: 'window', includeUncontrolled: true })
+    .then((clientList) => {
+      for (const client of clientList) {
+        try {
+          client.postMessage({
+            type: 'PUSH_ALARM_RECEIVED',
+            data: { reminderId, name: data.name, phone: data.phone, title, body: data.body },
+          });
+        } catch (e) {}
+      }
+    });
+
+  event.waitUntil(Promise.all([notificationPromise, broadcastPromise]));
 });
 
 // Notification Click Event: Dial phone, Snooze 10m in background, or Open App

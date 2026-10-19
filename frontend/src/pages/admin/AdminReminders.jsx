@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import api from '../../api/axios';
 import { useToast } from '../../context/ToastContext';
+import { formatInAustralianTime } from '../../utils/dateUtils';
 
 export default function AdminReminders() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -241,7 +242,8 @@ export default function AdminReminders() {
             reminders.map((r) => {
               const now = new Date();
               const isOverdue = r.status === 'pending' && new Date(r.dueAt) < now;
-              const ownerInitial = (r.userId?.name || r.userId?.email || 'U').charAt(0).toUpperCase();
+              const ownerName = r.userId?.name || r.userName || r.userId?.email || r.userEmail || 'Unknown';
+              const ownerInitial = (ownerName || 'U').charAt(0).toUpperCase();
 
               return (
                 <div key={r._id} className="p-4 space-y-3">
@@ -295,13 +297,13 @@ export default function AdminReminders() {
                         {ownerInitial}
                       </div>
                       <span className="truncate max-w-[120px] text-zinc-300 text-[11px]">
-                        {r.userId?.name || r.userId?.email || 'Unknown'}
+                        {ownerName}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1 text-[11px] text-zinc-300">
                       <Clock className="w-3.5 h-3.5 text-zinc-500" />
-                      <span>{formatInAustralianTime(r.dueAt, r.timezone || 'Australia/Sydney')}</span>
+                      <span>{formatInAustralianTime(r.dueAt, r.timezone || 'Asia/Kolkata')}</span>
                     </div>
                   </div>
 
@@ -397,14 +399,14 @@ export default function AdminReminders() {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-[10px] text-zinc-300 shrink-0">
-                            {(r.userId?.name || r.userId?.email || 'U').charAt(0).toUpperCase()}
+                            {(r.userId?.name || r.userName || r.userId?.email || r.userEmail || 'U').charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-zinc-300 truncate">
-                              {r.userId?.name || 'Account'}
+                              {r.userId?.name || r.userName || 'Account'}
                             </p>
                             <p className="text-[10px] text-zinc-500 font-mono truncate">
-                              {r.userId?.email || ''}
+                              {r.userId?.email || r.userEmail || ''}
                             </p>
                           </div>
                         </div>
@@ -415,21 +417,9 @@ export default function AdminReminders() {
                         <div className="flex items-center gap-1.5 text-zinc-300">
                           <Calendar className="w-3.5 h-3.5 text-zinc-500" />
                           <span>
-                            {new Date(r.dueAt).toLocaleDateString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
+                            {formatInAustralianTime(r.dueAt, r.timezone || 'Asia/Kolkata')}
                           </span>
                         </div>
-                        <p className="text-[10px] text-zinc-500 pl-5">
-                          {new Date(r.dueAt).toLocaleTimeString('en-IN', {
-                            timeZone: 'Asia/Kolkata',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
                       </td>
 
                       {/* Status */}

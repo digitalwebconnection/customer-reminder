@@ -37,6 +37,7 @@ export default function MobileAlarmPermissionModal() {
   const [activeTab, setActiveTab] = useState(isIos ? "ios" : "android");
   const [testingAlarm, setTestingAlarm] = useState(false);
   const [testSentSuccess, setTestSentSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   if (!showAlarmModal) return null;
 
@@ -70,25 +71,43 @@ export default function MobileAlarmPermissionModal() {
     }
   };
 
-  const handleTestAlarm = async () => {
+  const handleTestAlarm = async (delay = 0) => {
     setTestingAlarm(true);
     setTestSentSuccess(false);
 
     try {
-      playChimeSound();
-      const res = await testMobileAlarm();
+      const res = await testMobileAlarm(delay);
+
+      if (delay > 0) {
+        setCountdown(delay);
+        const interval = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
+        toast.call(
+          `⏱️ ${delay}s Test Scheduled!`,
+          "Press your phone's Home button or lock your screen right now! Phone will ring in 5 seconds."
+        );
+      } else {
+        playChimeSound();
+        toast.call(
+          "🚨 Test Alarm Dispatched!",
+          "Check your notification bar now."
+        );
+      }
 
       setTestSentSuccess(true);
-      toast.call(
-        "🚨 Test Alarm Dispatched!",
-        "NOW: Press your phone's Home button or lock your screen. Your phone will ring and show the notification!"
-      );
-
-      setTimeout(() => setTestSentSuccess(false), 8000);
+      setTimeout(() => setTestSentSuccess(false), 12000);
     } catch (err) {
       toast.error(
         "Test Failed",
-        "Could not dispatch test push. Make sure permissions are granted first."
+        err.response?.data?.message || err.message || "Could not dispatch test push. Make sure permissions are granted first."
       );
     } finally {
       setTestingAlarm(false);
@@ -248,33 +267,64 @@ export default function MobileAlarmPermissionModal() {
             </span>
           </button>
 
-          {/* Test Background Alarm Button */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={handleTestAlarm}
-              disabled={testingAlarm}
-              className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-white text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-98"
-            >
-              <BellRing className="w-3.5 h-3.5 text-amber-400" />
-              <span>{testingAlarm ? "Sending..." : "Test Phone Alarm"}</span>
-            </button>
+          {/* Test Background Alarm Buttons */}
+          <div className="space-y-2 pt-1">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleTestAlarm(0)}
+                disabled={testingAlarm || countdown > 0}
+                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+              >
+                <BellRing className="w-3.5 h-3.5 text-amber-400" />
+                <span>Test Alarm Now</span>
+              </button>
 
+              <button
+                type="button"
+                onClick={() => playChimeSound()}
+                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-slate-300 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Test Ringtone</span>
+              </button>
+            </div>
+
+            {/* Test Alarm When App Closed */}
             <button
               type="button"
-              onClick={() => playChimeSound()}
-              className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-slate-300 text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              onClick={() => handleTestAlarm(5)}
+              disabled={testingAlarm || countdown > 0}
+              className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600/30 to-amber-500/20 hover:from-amber-600/40 hover:to-amber-500/30 border border-amber-500/30 text-amber-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
             >
-              <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Test Ringtone</span>
+              <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span>
+                {countdown > 0
+                  ? `Phone will ring in ${countdown}s — Lock phone now!`
+                  : "Test While App Is Closed (5s Countdown)"}
+              </span>
             </button>
           </div>
 
-          {testSentSuccess && (
+          {countdown > 0 && (
+            <div className="p-3.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between animate-pulse">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                <span>
+                  <strong>PRESS PHONE HOME BUTTON OR LOCK SCREEN NOW!</strong>
+                </span>
+              </div>
+              <span className="text-sm font-extrabold font-mono bg-amber-500 text-zinc-950 px-2 py-0.5 rounded-md">
+                {countdown}s
+              </span>
+            </div>
+          )}
+
+          {testSentSuccess && countdown === 0 && (
             <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs animate-fade-in flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
               <div>
-                <strong>Test Sent!</strong> Now close this app or lock your phone. The alarm notification will pop up on your screen.
+                <strong>Alarm Dispatched!</strong> Your phone received the high-urgency push notification.
               </div>
             </div>
           )}

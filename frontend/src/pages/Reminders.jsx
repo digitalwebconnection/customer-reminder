@@ -151,7 +151,11 @@ export default function Reminders() {
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       const handleSwMessage = (e) => {
-        if (e.data && e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK") {
+        if (
+          e.data &&
+          (e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK" ||
+            e.data.type === "PUSH_ALARM_RECEIVED")
+        ) {
           const { reminderId, name, phone } = e.data.data || {};
           if (reminderId) {
             const target = reminders.find((r) => r._id === reminderId);
