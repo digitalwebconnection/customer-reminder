@@ -52,10 +52,22 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling common error responses
+// Response interceptor for handling common error responses & transient 502 dev server restarts
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config;
+    // Auto-retry once on transient 502 (Bad Gateway), 503, or connection drop during backend restarts
+    if (
+      config &&
+      !config._retry &&
+      (error.response?.status === 502 || error.response?.status === 503 || !error.response)
+    ) {
+      config._retry = true;
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      return api(config);
+    }
+
     // If unauthenticated (401), clear saved auth tokens
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('remindiq_token');
