@@ -204,9 +204,7 @@ export default function VisualDatePicker({
             {value ? formatDisplayDate(value) : 'Click to select date from calendar...'}
           </span>
         </div>
-        <span className="text-xs text-zinc-300 font-mono bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
-          📅 Calendar
-        </span>
+       
       </button>
 
       {/* Visual Calendar Modal (Rendered via Portal to prevent clipping) */}

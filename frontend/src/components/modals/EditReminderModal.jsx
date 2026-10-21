@@ -199,7 +199,7 @@ export default function EditReminderModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. John Smith"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
               />
             </div>
           </div>
@@ -227,7 +227,7 @@ export default function EditReminderModal({
                     ? "+91 98765 43210"
                     : "0412 345 678"
                 }
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
               />
             </div>
             <p className="mt-1 text-[10px] text-zinc-500">
@@ -256,7 +256,7 @@ export default function EditReminderModal({
                     if (error) setError("");
                   }}
                   placeholder="name@example.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
                 />
               </div>
             </div>
@@ -272,7 +272,7 @@ export default function EditReminderModal({
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="e.g. Sydney, NSW"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
                 />
               </div>
             </div>
@@ -289,7 +289,7 @@ export default function EditReminderModal({
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
             >
               <optgroup
                 label="🇦🇺 Australia"
@@ -346,7 +346,7 @@ export default function EditReminderModal({
 
           {/* Real-time Preview */}
           {previewDueUTC && (
-            <div className="p-3 rounded-xl bg-linear-to-r from-indigo-950/70 to-purple-950/50 border border-indigo-500/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1 shadow-inner">
+            <div className="p-3 rounded-xl bg-linear-to-r from-slate-800/70 to-slate-700/50 border border-indigo-500/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1 shadow-inner">
               <span className="text-slate-400 font-medium">
                 Scheduled In Zone:
               </span>
@@ -364,7 +364,7 @@ export default function EditReminderModal({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
+              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
             >
               <option value="pending" className="bg-slate-900 text-slate-100">
                 Pending (Call Pending)
@@ -388,7 +388,7 @@ export default function EditReminderModal({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="e.g. Call regarding insurance quotation follow-up"
-              className="w-full p-3 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition resize-none shadow-inner"
+              className="w-full p-3 bg-slate-800/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition resize-none shadow-inner"
             />
           </div>
         </form>

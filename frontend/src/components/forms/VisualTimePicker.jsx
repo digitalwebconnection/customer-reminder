@@ -263,8 +263,8 @@ function WheelColumn({ items, selectedValue, onSelect, formatLabel }) {
             style={{ height: ITEM_HEIGHT }}
             className={`w-full flex items-center justify-center transition-all duration-150 select-none cursor-pointer outline-hidden ${
               isSelected
-                ? 'text-white text-base sm:text-lg font-extrabold tracking-tight scale-105'
-                : 'text-zinc-400 hover:text-zinc-200 text-xs sm:text-sm font-medium opacity-80 hover:opacity-100'
+                ? 'text-white text-base sm:text-sm font-extrabold tracking-tight scale-105'
+                : 'text-zinc-400 hover:text-zinc-200 text-xs sm:text-xs font-medium opacity-80 hover:opacity-100'
             }`}
           >
             {formatLabel ? formatLabel(item) : item}
@@ -444,7 +444,7 @@ export default function VisualTimePicker({
         }}
         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm text-left transition cursor-pointer select-none ${
           isOpen
-            ? 'border-indigo-500/80 ring-2 ring-indigo-500/20 bg-zinc-900 text-white shadow-inner'
+            ? 'border-slate-500/80 ring-2 ring-slate-500/20 bg-zinc-900 text-white shadow-inner'
             : 'border-zinc-800 bg-zinc-900/90 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900 shadow-inner'
         }`}
       >
@@ -455,15 +455,7 @@ export default function VisualTimePicker({
           </span>
         </div>
 
-        <span
-          className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition ${
-            isOpen
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700'
-          }`}
-        >
-          {isOpen ? 'Close' : 'Pick Time'}
-        </span>
+    
       </button>
 
       {timezoneHint && (
