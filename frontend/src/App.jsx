@@ -7,29 +7,26 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import AustraliaTimezoneBar from "./components/AustraliaTimezoneBar";
+// Layout Components
+import { Navbar, AustraliaTimezoneBar, MobileBottomNav, AdminLayout } from "./components/layout";
 
-// Lazy-loaded Pages (Code-splitting for faster initial page load & mobile performance)
-const AddReminder = lazy(() => import("./pages/AddReminder"));
-const Reminders = lazy(() => import("./pages/Reminders"));
-const Login = lazy(() => import("./pages/Login"));
-const SignUp = lazy(() => import("./pages/SignUp"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Profile = lazy(() => import("./pages/Profile"));
+// Lazy-loaded Domain Pages (Code-splitting for faster initial page load & mobile performance)
+const AddReminder = lazy(() => import("./pages/reminders/AddReminder"));
+const Reminders = lazy(() => import("./pages/reminders/Reminders"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const SignUp = lazy(() => import("./pages/auth/SignUp"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const Profile = lazy(() => import("./pages/profile/Profile"));
 
-// Super Admin Pages & Layout
-import AdminLayout from "./components/admin/AdminLayout";
+// Super Admin Domain Pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminReminders = lazy(() => import("./pages/admin/AdminReminders"));
 const AdminActivityLogs = lazy(() => import("./pages/admin/AdminActivityLogs"));
 
 // Route Guards
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
-import GuestRoute from "./components/GuestRoute";
+import { ProtectedRoute, AdminRoute, GuestRoute } from "./routes";
 
 // Providers
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -55,13 +52,13 @@ function RoleBasedHome() {
   return <Navigate to="/reminders" replace />;
 }
 
-// Components
-import InstallPwaBanner from "./components/InstallPwaBanner";
-import InstallPwaModal from "./components/InstallPwaModal";
-import MobileBottomNav from "./components/MobileBottomNav";
-import LogoutConfirmationModal from "./components/LogoutConfirmationModal";
-import { registerServiceWorker } from "./utils/pushManager";
-import { initRenderKeepAlive } from "./utils/renderKeepAlive";
+// Modals & PWA Components
+import { InstallPwaBanner, InstallPwaModal } from "./components/pwa";
+import { LogoutConfirmationModal } from "./components/modals";
+
+// Background Services
+import { registerServiceWorker } from "./services/pushManager";
+import { initRenderKeepAlive } from "./services/renderKeepAlive";
 
 function Layout({ children }) {
   const navigate = useNavigate();
