@@ -114,8 +114,17 @@ export default defineConfig({
         secure: false,
         ws: true,
         configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.error('[Vite Proxy Error]:', err.message);
+          proxy.on('error', (err, req, res) => {
+            console.warn(`[Vite Proxy] Backend temporarily unavailable (${err.code || err.message}) for ${req.method} ${req.url}`);
+            if (res && !res.headersSent && typeof res.writeHead === 'function') {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(
+                JSON.stringify({
+                  success: false,
+                  message: 'Backend server is restarting or temporarily unreachable. Please retry.',
+                })
+              );
+            }
           });
         },
       },

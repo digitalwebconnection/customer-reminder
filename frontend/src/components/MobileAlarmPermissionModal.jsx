@@ -27,6 +27,7 @@ export default function MobileAlarmPermissionModal() {
     permissions,
     loadingPermissions,
     enableAllAlarmPermissions,
+    enableRingPermission,
     testMobileAlarm,
     isIos,
     isInstalled,
@@ -43,7 +44,8 @@ export default function MobileAlarmPermissionModal() {
 
   const isGranted = permissions.notification === "granted";
   const isPushActive = permissions.pushSubscribed;
-  const isAllReady = isGranted && isPushActive;
+  const isRingActive = permissions.ringSound === "granted";
+  const isAllReady = isGranted && isPushActive && isRingActive;
 
   const handleGrantPermissions = async () => {
     try {
@@ -52,8 +54,8 @@ export default function MobileAlarmPermissionModal() {
 
       if (res?.success) {
         toast.success(
-          "Permissions Granted! 🎉",
-          "Your phone is now armed to receive call alarms even when the app is closed."
+          "Permissions & Ringtone Armed! 🎉",
+          "Your phone is now configured to sound loud call alarms when reminders are due."
         );
       } else if (res?.permissions?.notification === "denied") {
         toast.error(
@@ -62,8 +64,8 @@ export default function MobileAlarmPermissionModal() {
         );
       } else {
         toast.info(
-          "Status Updated",
-          "Notification preferences have been synchronized."
+          "Preferences Updated",
+          "Ringtone audio and alarm preferences have been synchronized."
         );
       }
     } catch (err) {
@@ -244,6 +246,44 @@ export default function MobileAlarmPermissionModal() {
                 <span className="text-[11px] font-bold text-slate-400 bg-slate-800 border border-white/10 px-2.5 py-1 rounded-xl">
                   Standard
                 </span>
+              )}
+            </div>
+          </div>
+
+          {/* 4. Ringtone & Audio Alarm Sound */}
+          <div className="p-3 rounded-2xl bg-slate-950/70 border border-white/8 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/25">
+                <Volume2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-200">Ringtone & Audio Alarm</div>
+                <div className="text-[11px] text-slate-400 truncate">
+                  Plays phone bell ringing on customer reminders
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0">
+              {permissions.ringSound === "granted" ? (
+                <button
+                  type="button"
+                  onClick={() => playChimeSound()}
+                  className="text-[11px] font-bold text-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  title="Click to test ring sound"
+                >
+                  <CheckCircle2 className="w-3 h-3" /> Ring Ready 🔊
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await enableRingPermission();
+                    toast.success("Ringtone Enabled! 🔔", "Audio alarm is now unlocked on this device.");
+                  }}
+                  className="text-[11px] font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 px-2.5 py-1 rounded-xl flex items-center gap-1 cursor-pointer transition active:scale-95"
+                >
+                  <Volume2 className="w-3 h-3" /> Allow Ring
+                </button>
               )}
             </div>
           </div>

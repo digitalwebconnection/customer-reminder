@@ -1,11 +1,91 @@
 /**
  * High-Volume, Crisp Telephone Call Ringtone Engine
  * Engineered for maximum acoustic presence and unmistakable phone call alerting.
+ * Fully supports mobile autoplay unlock and background/foreground ring permissions.
  */
 
 let ringtoneAudioElement = null;
 let ringtoneWebAudioLoop = null;
 let isRingtoneActive = false;
+let globalAudioCtx = null;
+
+/**
+ * Gets or creates the shared AudioContext singleton.
+ * Preserves the instance so mobile gesture unlock persists across reminder alerts.
+ */
+export function getSharedAudioContext() {
+  if (typeof window === 'undefined') return null;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return null;
+
+  if (!globalAudioCtx || globalAudioCtx.state === 'closed') {
+    globalAudioCtx = new AudioContext();
+  }
+  return globalAudioCtx;
+}
+
+/**
+ * Checks if Ringtone Audio Permission is currently enabled by the user
+ */
+export function isRingPermissionGranted() {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('remindiq_ring_permission') === 'granted';
+}
+
+/**
+ * Updates Ringtone Audio Permission status in local storage
+ */
+export function setRingPermission(status = 'granted') {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('remindiq_ring_permission', status);
+}
+
+/**
+ * 1-Tap Mobile Audio Permission Unblocker
+ * Unlocks mobile browser autoplay policies for both Web Audio API & HTML5 Audio
+ * using an active user interaction gesture.
+ */
+export async function unlockRingAudio() {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const ctx = getSharedAudioContext();
+    if (ctx) {
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+      // Play a 1-sample silent audio buffer to satisfy mobile gesture unlock requirements
+      const silentBuffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
+      source.buffer = silentBuffer;
+      source.connect(ctx.destination);
+      source.start(0);
+    }
+
+    // Also prime HTML5 Audio element
+    try {
+      const audio = new Audio('/ringtone.wav');
+      audio.volume = 0.01;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+          })
+          .catch(() => {});
+      }
+    } catch (e) {}
+
+    setRingPermission('granted');
+    return true;
+  } catch (err) {
+    console.warn('[Audio] Failed to unlock audio context:', err);
+    return false;
+  }
+}
+
+export const unlockAudioContext = unlockRingAudio;
 
 /**
  * Starts a loud, realistic incoming telephone double-ring
@@ -54,12 +134,11 @@ function startLoudWebAudioPhoneRing() {
   if (ringtoneWebAudioLoop) return;
 
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
 
     if (ctx.state === 'suspended') {
-      ctx.resume();
+      ctx.resume().catch(() => {});
     }
 
     // Dynamics compressor to maximize loudness without audio clipping
@@ -71,7 +150,7 @@ function startLoudWebAudioPhoneRing() {
     compressor.release.setValueAtTime(0.25, ctx.currentTime);
     compressor.connect(ctx.destination);
 
-    // Master High-Gain Stage (0.90 master amplitude — over 4x louder than previous 0.22)
+    // Master High-Gain Stage (0.90 master amplitude)
     const masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(0.90, ctx.currentTime);
     masterGain.connect(compressor);
@@ -146,7 +225,7 @@ function startLoudWebAudioPhoneRing() {
         isPlaying = false;
         clearInterval(interval);
         try {
-          ctx.close();
+          masterGain.gain.setValueAtTime(0, ctx.currentTime);
         } catch (e) {}
       },
     };
@@ -187,6 +266,7 @@ export const stopReminderSiren = stopCallRingtone;
  * Test chime / ringtone preview (plays 1 loud double-ring sequence)
  */
 export function playChimeSound() {
+  unlockRingAudio().catch(() => {});
   startCallRingtone();
   setTimeout(() => {
     stopCallRingtone();

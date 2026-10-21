@@ -40,6 +40,7 @@ import {
   playChimeSound,
   startCallRingtone,
   stopCallRingtone,
+  unlockRingAudio,
 } from "../utils/audioAlert";
 import { useToast } from "../context/ToastContext";
 import { usePwa } from "../context/PwaContext";
@@ -51,7 +52,7 @@ import QuickSnoozePortal from "../components/QuickSnoozePortal";
 export default function Reminders() {
   const toast = useToast();
   const { user } = useAuth();
-  const { permissions, setShowAlarmModal } = usePwa();
+  const { permissions, setShowAlarmModal, enableRingPermission } = usePwa();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchInputRef = useRef(null);
 
@@ -133,6 +134,19 @@ export default function Reminders() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeSnooze, search]);
+
+  // Transparently unlock mobile audio context on first touch/click
+  useEffect(() => {
+    const handleGestureUnlock = () => {
+      unlockRingAudio().catch(() => {});
+    };
+    window.addEventListener("click", handleGestureUnlock, { once: true });
+    window.addEventListener("touchstart", handleGestureUnlock, { once: true });
+    return () => {
+      window.removeEventListener("click", handleGestureUnlock);
+      window.removeEventListener("touchstart", handleGestureUnlock);
+    };
+  }, []);
 
   // Smooth Call Ringtone & 60-Second Countdown Timer for due reminder banner
   useEffect(() => {
@@ -760,6 +774,49 @@ export default function Reminders() {
                 Dismiss
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ringtone Audio Permission Banner (Allows loud phone ringing for due reminders) */}
+      {permissions?.ringSound !== "granted" && (
+        <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-zinc-900 to-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+              <Volume2 className="w-4 h-4 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-bold text-white">
+                  Enable Ringtone Permission
+                </span>
+                <span className="text-[10px] font-mono uppercase bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">
+                  Mobile Alarm Sound
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5">
+                Allow RemindIQ to play loud phone ringtone when customer reminders are due.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <button
+              type="button"
+              onClick={async () => {
+                const res = await enableRingPermission();
+                if (res?.success) {
+                  toast.success(
+                    "Ringtone Sound Enabled! 🔔",
+                    "Your device is now armed to ring out loud when reminders are due."
+                  );
+                }
+              }}
+              className="w-full sm:w-auto px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 active:scale-95 text-zinc-950 text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25 transition cursor-pointer"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+              <span>Allow Ring Sound</span>
+            </button>
           </div>
         </div>
       )}

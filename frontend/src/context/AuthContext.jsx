@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
         if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
           requestAndSubscribePush().catch(() => {});
         }
-        setOneSignalUser(res.data.user._id);
+        setOneSignalUser(res.data.user.id || res.data.user._id);
         return res.data.user;
       }
     } catch (err) {
@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         requestAndSubscribePush().catch(() => {});
       }
-      setOneSignalUser(res.data.user._id);
+      setOneSignalUser(res.data.user.id || res.data.user._id);
     }
     return res.data;
   };
@@ -94,7 +94,7 @@ export function AuthProvider({ children }) {
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         requestAndSubscribePush().catch(() => {});
       }
-      setOneSignalUser(res.data.user._id);
+      setOneSignalUser(res.data.user.id || res.data.user._id);
     }
     return res.data;
   };

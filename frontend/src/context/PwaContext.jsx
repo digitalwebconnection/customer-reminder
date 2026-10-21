@@ -5,6 +5,11 @@ import {
   sendTestMobileAlarmPush,
 } from "../utils/pushManager";
 import { promptOneSignalPush } from "../utils/oneSignalManager";
+import {
+  unlockRingAudio,
+  isRingPermissionGranted,
+  playChimeSound,
+} from "../utils/audioAlert";
 
 const PwaContext = createContext();
 
@@ -25,24 +30,45 @@ export function PwaProvider({ children }) {
     pushSubscribed: false,
     storagePersisted: false,
     isStandalone: false,
+    ringSound: isRingPermissionGranted() ? 'granted' : 'default',
   });
   const [loadingPermissions, setLoadingPermissions] = useState(false);
 
   const refreshPermissions = useCallback(async () => {
     try {
       const details = await getDetailedPermissions();
-      setPermissions(details);
-      if (details.isStandalone) {
+      const ringSound = isRingPermissionGranted() ? 'granted' : 'default';
+      const merged = { ...details, ringSound };
+      setPermissions(merged);
+      if (details?.isStandalone) {
         setIsInstalled(true);
       }
-      return details;
+      return merged;
     } catch (e) {
       console.warn('[PWA] Error checking permissions:', e);
     }
   }, []);
 
   /**
-   * 1-Click Master Enabler for all mobile alarms & background permissions
+   * Dedicated 1-Tap Ringtone & Audio Permission Activator
+   * Unlocks mobile autoplay policies and arms phone speaker ringtone
+   */
+  const enableRingPermission = useCallback(async () => {
+    setLoadingPermissions(true);
+    try {
+      const ok = await unlockRingAudio();
+      if (ok) {
+        playChimeSound();
+      }
+      const updated = await refreshPermissions();
+      return { success: ok, permissions: updated };
+    } finally {
+      setLoadingPermissions(false);
+    }
+  }, [refreshPermissions]);
+
+  /**
+   * 1-Click Master Enabler for all mobile alarms, audio ringtone & background permissions
    */
   const enableAllAlarmPermissions = useCallback(async () => {
     setLoadingPermissions(true);
@@ -50,12 +76,17 @@ export function PwaProvider({ children }) {
       // 1. Web Push & Notification & Persistent Storage
       const pushResult = await requestAndSubscribePush();
 
-      // 2. OneSignal SDK fallback prompt
+      // 2. Unlock Mobile Ringtone Audio Context
+      try {
+        await unlockRingAudio();
+      } catch (e) {}
+
+      // 3. OneSignal SDK fallback prompt
       try {
         await promptOneSignalPush();
       } catch (e) {}
 
-      // 3. Refresh live status
+      // 4. Refresh live status
       const updated = await refreshPermissions();
       return { success: pushResult.success, permissions: updated };
     } finally {
@@ -195,6 +226,7 @@ export function PwaProvider({ children }) {
         loadingPermissions,
         refreshPermissions,
         enableAllAlarmPermissions,
+        enableRingPermission,
         testMobileAlarm,
         promptInstall,
       }}
