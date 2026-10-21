@@ -13,6 +13,8 @@ import {
   PanelLeftOpen,
   Menu,
   X,
+  Volume2,
+  VolumeX,
   Activity,
   Shield,
   User as UserIcon,
@@ -32,7 +34,14 @@ import api from "../api/axios";
 export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
   const toast = useToast();
   const { logout, user } = useAuth();
-  const { promptInstall, isInstalled, setShowAlarmModal } = usePwa();
+  const {
+    promptInstall,
+    isInstalled,
+    setShowAlarmModal,
+    permissions,
+    enableRingPermission,
+    toggleRingPermission,
+  } = usePwa();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -199,14 +208,25 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
         {/* Quick Alarm Status Pill on Mobile */}
         <div className="flex items-center gap-2">
           {notificationState === "granted" ? (
-            <button
-              type="button"
-              onClick={() => setShowAlarmModal(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 active:scale-95"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Alarms Active</span>
-            </button>
+            permissions?.ringSound === "granted" ? (
+              <button
+                type="button"
+                onClick={() => setShowAlarmModal(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 active:scale-95"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Alarms & Ring Ready</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAlarmModal(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30 active:scale-95"
+              >
+                <BellRing className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <span>Set Ring</span>
+              </button>
+            )
           ) : notificationState === "denied" ? (
             <button
               type="button"
@@ -355,7 +375,38 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                     )}
                   </button>
 
-              
+                  {/* Reminder Ringtone Permission Item */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (permissions?.ringSound === 'granted') {
+                        const res = await toggleRingPermission();
+                        if (res?.success) {
+                          toast.success("Ringtone Enabled 🔔", "Reminders will ring out loud.");
+                        } else {
+                          toast.info("Ringtone Muted 🔕", "Reminder ringtone silenced.");
+                        }
+                      } else {
+                        const res = await enableRingPermission();
+                        if (res?.success) {
+                          toast.success("Ringtone Permission Set! 🔊", "Phone ringtone is now active.");
+                        }
+                      }
+                    }}
+                    className={`flex items-center justify-between w-full text-left px-3 py-2 rounded-lg text-xs font-medium border transition cursor-pointer active:scale-95 ${
+                      permissions?.ringSound === 'granted'
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                        : "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Volume2 className="w-4 h-4 shrink-0" />
+                      <span>Reminder Ringtone</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-950/80">
+                      {permissions?.ringSound === 'granted' ? "Ring Ready 🔊" : "Set Ring 🔔"}
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>

@@ -96,6 +96,11 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
       return;
     }
 
+    if (status === 'pending' && new Date(dueAt).getTime() < Date.now() - 60000) {
+      setError('Scheduled call date and time cannot be in the past. Please choose a current or future time.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -290,6 +295,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
                 onChange={setDate}
                 label="Call Date"
                 required={true}
+                timezone={timezone}
               />
             </div>
             <div>

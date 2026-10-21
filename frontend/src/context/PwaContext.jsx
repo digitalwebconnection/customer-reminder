@@ -9,6 +9,7 @@ import {
   unlockRingAudio,
   isRingPermissionGranted,
   playChimeSound,
+  toggleRingPermission as toggleAudioRing,
 } from "../utils/audioAlert";
 
 const PwaContext = createContext();
@@ -65,6 +66,15 @@ export function PwaProvider({ children }) {
     } finally {
       setLoadingPermissions(false);
     }
+  }, [refreshPermissions]);
+
+  /**
+   * Toggle Ringtone Permission (Mute / Unmute)
+   */
+  const toggleRingPermission = useCallback(async () => {
+    const isNowGranted = toggleAudioRing();
+    const updated = await refreshPermissions();
+    return { success: isNowGranted, permissions: updated };
   }, [refreshPermissions]);
 
   /**
@@ -156,6 +166,12 @@ export function PwaProvider({ children }) {
     autoSetPermissions();
 
     const handleFirstGesture = async () => {
+      // Prime and unlock mobile audio context on first user touch gesture
+      try {
+        await unlockRingAudio();
+        refreshPermissions();
+      } catch (e) {}
+
       if (typeof window !== "undefined" && "Notification" in window) {
         if (Notification.permission === "default" && !autoArmedRef.current) {
           try {
@@ -227,6 +243,7 @@ export function PwaProvider({ children }) {
         refreshPermissions,
         enableAllAlarmPermissions,
         enableRingPermission,
+        toggleRingPermission,
         testMobileAlarm,
         promptInstall,
       }}

@@ -41,6 +41,21 @@ export function setRingPermission(status = 'granted') {
 }
 
 /**
+ * Toggles ring permission between 'granted' and 'muted'
+ */
+export function toggleRingPermission() {
+  if (isRingPermissionGranted()) {
+    setRingPermission('muted');
+    stopCallRingtone();
+    return false;
+  } else {
+    unlockRingAudio();
+    playChimeSound();
+    return true;
+  }
+}
+
+/**
  * 1-Tap Mobile Audio Permission Unblocker
  * Unlocks mobile browser autoplay policies for both Web Audio API & HTML5 Audio
  * using an active user interaction gesture.
@@ -92,6 +107,9 @@ export const unlockAudioContext = unlockRingAudio;
  * Cadence: Double ring ("Ring-Ring ... Ring-Ring") repeating while reminder is due
  */
 export function startCallRingtone() {
+  if (typeof window !== 'undefined' && localStorage.getItem('remindiq_ring_permission') === 'muted') {
+    return;
+  }
   stopCallRingtone();
   isRingtoneActive = true;
 

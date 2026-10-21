@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   X,
   Volume2,
+  VolumeX,
   Sparkles,
   Radio,
   Zap,
@@ -28,6 +29,7 @@ export default function MobileAlarmPermissionModal() {
     loadingPermissions,
     enableAllAlarmPermissions,
     enableRingPermission,
+    toggleRingPermission,
     testMobileAlarm,
     isIos,
     isInstalled,
@@ -251,40 +253,89 @@ export default function MobileAlarmPermissionModal() {
           </div>
 
           {/* 4. Ringtone & Audio Alarm Sound */}
-          <div className="p-3 rounded-2xl bg-slate-950/70 border border-white/8 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/25">
-                <Volume2 className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-slate-200">Ringtone & Audio Alarm</div>
-                <div className="text-[11px] text-slate-400 truncate">
-                  Plays phone bell ringing on customer reminders
+          <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-white/8 space-y-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${
+                    isRingActive
+                      ? "bg-amber-500/20 text-amber-400 border-amber-500/35"
+                      : "bg-slate-800 text-slate-400 border-white/10"
+                  }`}
+                >
+                  <Volume2 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-slate-200 flex items-center gap-2">
+                    <span>Reminder Ringtone Permission</span>
+                    {isRingActive ? (
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Ring Ready 🔊
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                        Not Set 🔕
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Plays telephone double-ring alarm on customer reminders
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="shrink-0">
-              {permissions.ringSound === "granted" ? (
+
+            {/* Quick Action Controls for Ringtone Permission */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/5 gap-2">
+              <span className="text-[11px] text-slate-400">
+                {isRingActive ? (
+                  <span className="text-emerald-400 font-medium">Loud Ring Enabled</span>
+                ) : (
+                  <span className="text-amber-300 font-medium">Tap to Allow Ring</span>
+                )}
+              </span>
+
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => playChimeSound()}
-                  className="text-[11px] font-bold text-emerald-400 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1 cursor-pointer transition active:scale-95"
-                  title="Click to test ring sound"
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-white/10 transition cursor-pointer active:scale-95 flex items-center gap-1"
+                  title="Test Ringtone sound preview"
                 >
-                  <CheckCircle2 className="w-3 h-3" /> Ring Ready 🔊
+                  <Volume2 className="w-3 h-3 text-indigo-400" />
+                  <span>Test Ring</span>
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await enableRingPermission();
-                    toast.success("Ringtone Enabled! 🔔", "Audio alarm is now unlocked on this device.");
-                  }}
-                  className="text-[11px] font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 px-2.5 py-1 rounded-xl flex items-center gap-1 cursor-pointer transition active:scale-95"
-                >
-                  <Volume2 className="w-3 h-3" /> Allow Ring
-                </button>
-              )}
+
+                {isRingActive ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await toggleRingPermission();
+                      if (res?.success) {
+                        toast.success("Ringtone Enabled! 🔔", "Audio alarms will ring.");
+                      } else {
+                        toast.info("Ringtone Muted 🔕", "Ringtone audio silenced.");
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-rose-300 text-[11px] font-semibold border border-zinc-700 transition cursor-pointer active:scale-95 flex items-center gap-1"
+                  >
+                    <VolumeX className="w-3 h-3" />
+                    <span>Mute</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await enableRingPermission();
+                      toast.success("Ringtone Permission Set! 🔔", "Phone ringtone is now active.");
+                    }}
+                    className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-bold shadow-md shadow-amber-500/20 transition cursor-pointer active:scale-95 flex items-center gap-1"
+                  >
+                    <Volume2 className="w-3 h-3" />
+                    <span>Set Ringtone</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -432,6 +483,15 @@ export default function MobileAlarmPermissionModal() {
                   <strong>Allow Background Data:</strong> In App Info &gt; <strong>Mobile data</strong> &gt; toggle ON <strong>Allow background data usage</strong>.
                 </p>
               </div>
+
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 text-[11px] mt-0.5">
+                  4
+                </span>
+                <p>
+                  <strong>Media & Ring Volume:</strong> In phone Sound settings, ensure <strong>Media and Ring volume</strong> are turned up so the double-ring chime sounds loud.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="space-y-2 text-xs text-slate-300 bg-slate-950/60 p-3.5 rounded-2xl border border-white/6">
@@ -459,6 +519,15 @@ export default function MobileAlarmPermissionModal() {
                 </span>
                 <p>
                   <strong>Check iOS Settings:</strong> Go to iPhone <strong>Settings &gt; Notifications &gt; RemindIQ</strong> and ensure <strong>Allow Notifications</strong>, <strong>Sounds</strong>, and <strong>Badges</strong> are enabled.
+                </p>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <span className="w-5 h-5 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 text-[11px] mt-0.5">
+                  4
+                </span>
+                <p>
+                  <strong>Hardware Silent Switch:</strong> Ensure the physical mute switch on the side of your iPhone is set to <strong>Ring</strong> (not orange silent mode).
                 </p>
               </div>
             </div>

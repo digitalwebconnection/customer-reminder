@@ -103,6 +103,11 @@ export default function AddReminder() {
       return;
     }
 
+    if (new Date(dueAt).getTime() < Date.now() - 60000) {
+      setError("Scheduled call date and time cannot be in the past. Please choose a current or future time.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -408,6 +413,7 @@ export default function AddReminder() {
                   onChange={setDate}
                   label="Call Date"
                   required={true}
+                  timezone={timezone}
                 />
 
                 {/* Visual Time Selector */}

@@ -17,7 +17,7 @@ import { usePwa } from "../context/PwaContext";
 import { useToast } from "../context/ToastContext";
 
 export default function MobileBottomNav() {
-  const { user, logout } = useAuth();
+  const { user, logout, isSuperAdmin } = useAuth();
   const { permissions, setShowAlarmModal } = usePwa();
   const toast = useToast();
   const navigate = useNavigate();
@@ -30,8 +30,10 @@ export default function MobileBottomNav() {
 
   if (!user) return null; // Don't show on login page
 
-  const isSuperAdmin = user.role === "superadmin";
-  const isAlarmReady = permissions.notification === "granted" && permissions.pushSubscribed;
+  const isAlarmReady =
+    permissions.notification === "granted" &&
+    permissions.pushSubscribed &&
+    permissions.ringSound === "granted";
 
   // 1. Super Admin Mobile Navigation (Strictly admin items, NO personal reminders)
   if (isSuperAdmin) {
@@ -133,7 +135,7 @@ export default function MobileBottomNav() {
           <span className="text-[10px] tracking-tight">Reminders</span>
         </NavLink>
 
-        {/* Mobile Alarms Hub */}
+        {/* Mobile Alarms & Ringtone Hub */}
         <button
           type="button"
           onClick={() => setShowAlarmModal(true)}
@@ -142,7 +144,7 @@ export default function MobileBottomNav() {
               ? "text-zinc-400 hover:text-emerald-400"
               : "text-amber-400 font-bold hover:text-amber-300"
           }`}
-          title="Mobile Alarms & Background Notifications"
+          title="Mobile Alarms & Ringtone Permission"
         >
           <div className="relative mb-0.5">
             {isAlarmReady ? (
@@ -159,7 +161,11 @@ export default function MobileBottomNav() {
             />
           </div>
           <span className="text-[10px] tracking-tight">
-            {isAlarmReady ? "Alarms" : "Set Alarms"}
+            {isAlarmReady
+              ? "Ring/Alarm"
+              : permissions.ringSound !== "granted"
+              ? "Set Ring"
+              : "Set Alarm"}
           </span>
         </button>
 
