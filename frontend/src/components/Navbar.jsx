@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   PlusCircle,
@@ -7,16 +7,12 @@ import {
   BellRing,
   LogOut,
   AlertCircle,
-  Radio,
   Smartphone,
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
   X,
   Volume2,
-  VolumeX,
-  Activity,
-  Shield,
   User as UserIcon,
   LayoutDashboard,
   Users,
@@ -25,14 +21,12 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { usePwa } from "../context/PwaContext";
-import { requestAndSubscribePush } from "../utils/pushManager";
-import { promptOneSignalPush } from "../utils/oneSignalManager";
 import { subscribeKeepAlive, pingBackend } from "../utils/renderKeepAlive";
 import api from "../api/axios";
 
 export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
   const toast = useToast();
-  const { logout, user } = useAuth();
+  const { logout, openLogoutModal, user } = useAuth();
   const {
     promptInstall,
     isInstalled,
@@ -109,10 +103,9 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
     setTimeout(() => setTestSent(false), 3000);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    toast.info("Signed Out", "You have been logged out.");
-    navigate("/login");
+  const handleLogout = () => {
+    setMobileOpen(false);
+    openLogoutModal();
   };
 
   const userInitial = (user?.name || user?.email || "U").charAt(0).toUpperCase();
@@ -202,48 +195,6 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
           </NavLink>
         </div>
 
-        {/* Quick Alarm Status Pill on Mobile */}
-        <div className="flex items-center gap-2">
-          {notificationState === "granted" ? (
-            permissions?.ringSound === "granted" ? (
-              <button
-                type="button"
-                onClick={() => setShowAlarmModal(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 active:scale-95"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Alarms & Ring Ready</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowAlarmModal(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30 active:scale-95"
-              >
-                <BellRing className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                <span>Set Ring</span>
-              </button>
-            )
-          ) : notificationState === "denied" ? (
-            <button
-              type="button"
-              onClick={() => setShowAlarmModal(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30 active:scale-95"
-            >
-              <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-              <span>Blocked</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowAlarmModal(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-100 border border-zinc-700 active:scale-95"
-            >
-              <BellRing className="w-3.5 h-3.5 text-amber-400" />
-              <span>Set Alarms</span>
-            </button>
-          )}
-        </div>
       </header>
 
       {/* ======================================================== */}

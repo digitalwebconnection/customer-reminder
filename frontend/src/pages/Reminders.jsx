@@ -8,6 +8,7 @@ import {
   Calendar,
   CheckCircle,
   CheckCircle2,
+  Circle,
   Loader2,
   AlertTriangle,
   Edit2,
@@ -60,25 +61,78 @@ export default function Reminders() {
   // (Prevents repetitive alerts only after user explicitly clicks Dismiss or completes call)
   const dismissedIdsRef = useRef(new Set());
 
+  // Active desktop Notification instances: reminderId -> Notification
+  const activeDesktopNotifsRef = useRef(new Map());
+
   const markAlertDismissed = (id) => {
     if (!id) return;
     dismissedIdsRef.current.add(id);
   };
 
+  /**
+   * Safely closes any desktop and Service Worker notification for a reminder
+   */
+  const closeNotificationForReminder = (reminderId) => {
+    if (!reminderId) return;
+
+    // 1. Close active window Notification object immediately
+    const notif = activeDesktopNotifsRef.current.get(reminderId);
+    if (notif) {
+      try {
+        notif.close();
+      } catch (e) {}
+      activeDesktopNotifsRef.current.delete(reminderId);
+    }
+
+    // 2. Close any Service Worker notifications matching this reminder
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          if (reg && reg.getNotifications) {
+            return reg.getNotifications();
+          }
+          return [];
+        })
+        .then((notifs) => {
+          notifs.forEach((n) => {
+            const tag = n.tag || "";
+            const nReminderId = n.data?.reminderId || "";
+            if (
+              tag === `remindiq-alarm-${reminderId}` ||
+              tag === `remindiq-alert-${reminderId}` ||
+              tag.includes(reminderId) ||
+              nReminderId === reminderId
+            ) {
+              try {
+                n.close();
+              } catch (e) {}
+            }
+          });
+        })
+        .catch(() => {});
+    }
+  };
+
   const clearUrlAlertParams = () => {
-    const newParams = new URLSearchParams(searchParams);
-    let changed = false;
-    if (newParams.has("alertId")) {
-      newParams.delete("alertId");
-      changed = true;
-    }
-    if (newParams.has("testAlarm")) {
-      newParams.delete("testAlarm");
-      changed = true;
-    }
-    if (changed) {
-      setSearchParams(newParams, { replace: true });
-    }
+    // Defer to next tick to avoid "Cannot update a component while rendering a different component"
+    setTimeout(() => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          let changed = false;
+          if (next.has("alertId")) {
+            next.delete("alertId");
+            changed = true;
+          }
+          if (next.has("testAlarm")) {
+            next.delete("testAlarm");
+            changed = true;
+          }
+          return changed ? next : prev;
+        },
+        { replace: true }
+      );
+    }, 0);
   };
 
   const [reminders, setReminders] = useState([]);
@@ -233,7 +287,10 @@ export default function Reminders() {
           const { reminderId } = e.data.data || {};
           if (reminderId) {
             markAlertDismissed(reminderId);
-            stopCallRingtone();
+            closeNotificationForReminder(reminderId);
+            clearUrlAlertParams();
+            document.title =
+              "RemindIQ — Customer Follow-up & Call Reminder System";
             setActiveDueAlert((curr) =>
               curr?._id === reminderId ? null : curr,
             );
@@ -250,11 +307,13 @@ export default function Reminders() {
         // Test alarm completion from SW notification action
         if (e.data.type === "TEST_ALARM_COMPLETED") {
           markAlertDismissed("test-alert");
-          stopCallRingtone();
+          closeNotificationForReminder("test-alert");
+          clearUrlAlertParams();
+          document.title =
+            "RemindIQ — Customer Follow-up & Call Reminder System";
           setActiveDueAlert((curr) =>
             curr?._id?.startsWith("test-") ? null : curr,
           );
-          clearUrlAlertParams();
           return;
         }
 
@@ -401,12 +460,36 @@ export default function Reminders() {
 
         if ("Notification" in window && Notification.permission === "granted") {
           try {
+            // Close any existing notification for this reminder
+            closeNotificationForReminder(r._id);
+
             const tz = r.timezone || "Australia/Sydney";
-            new Notification(`📞 Call Due: ${r.name}`, {
+            const notif = new Notification(`📞 Call Due: ${r.name}`, {
               body: `Phone: ${r.phone} | Due: ${formatInAustralianTime(r.dueAt, tz)}\nNote: ${r.note || "None"}`,
               icon: "/icon-192.png",
               badge: "/badge.png",
+              tag: `remindiq-alert-${r._id}`,
+              renotify: true,
             });
+
+            notif.onclick = () => {
+              window.focus();
+              try {
+                notif.close();
+              } catch (e) {}
+              activeDesktopNotifsRef.current.delete(r._id);
+            };
+
+            // Hold reference so it can be closed immediately when completed/dismissed
+            activeDesktopNotifsRef.current.set(r._id, notif);
+
+            // Auto-close after 25s so it does not linger indefinitely on desktop
+            setTimeout(() => {
+              try {
+                notif.close();
+              } catch (e) {}
+              activeDesktopNotifsRef.current.delete(r._id);
+            }, 25000);
           } catch (e) {}
         }
       }
@@ -420,19 +503,22 @@ export default function Reminders() {
     const alertId = alertItem._id;
     const alertName = alertItem.name || "Customer Call";
 
-    // 1. Immediately stop ringtone audio
-    stopCallRingtone();
+    // 1. Immediately close active desktop & Service Worker notifications
+    closeNotificationForReminder(alertId);
 
-    // 2. Hide alarm banner immediately from mobile screen
+    // 2. Hide alarm banner immediately
     setActiveDueAlert(null);
 
     // 3. Clear URL query params (alertId, testAlarm)
     clearUrlAlertParams();
 
-    // 4. Mark dismissed in memory so it does not alert again
+    // 4. Reset tab title
+    document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
+
+    // 5. Mark dismissed in memory so it does not alert again
     markAlertDismissed(alertId);
 
-    // 5. Test alert handler: acknowledge without invalid database request
+    // 6. Test alert handler: acknowledge without invalid database request
     if (
       !alertId ||
       alertId === "test-alert" ||
@@ -446,14 +532,14 @@ export default function Reminders() {
       return;
     }
 
-    // 6. Optimistic update: mark status 'completed' in local state immediately
+    // 7. Optimistic update: mark status 'completed' in local state immediately
     setReminders((prev) =>
       prev.map((r) =>
         r._id === alertId ? { ...r, status: "completed", isOverdue: false } : r,
       ),
     );
 
-    // 7. Explicitly set status: 'completed' in backend database
+    // 8. Explicitly set status: 'completed' in backend database
     try {
       await api.patch(`/reminders/${alertId}`, { status: "completed" });
       toast.success(
@@ -475,8 +561,10 @@ export default function Reminders() {
 
   const handleDismissAlert = (alertItem) => {
     if (!alertItem) return;
+    closeNotificationForReminder(alertItem._id);
     setActiveDueAlert(null);
     clearUrlAlertParams();
+    document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
     markAlertDismissed(alertItem._id);
     toast.info(
       "Alert Dismissed",
@@ -486,7 +574,11 @@ export default function Reminders() {
 
   const handleToggleCompleted = async (reminder) => {
     if (!reminder) return;
+    if (activeSnooze) setActiveSnooze(null);
     const reminderId = reminder._id;
+
+    // 1. Immediately close any open desktop or SW notification for this reminder
+    closeNotificationForReminder(reminderId);
 
     // Handle test reminders gracefully
     if (
@@ -496,6 +588,7 @@ export default function Reminders() {
     ) {
       if (activeDueAlert?._id === reminderId) setActiveDueAlert(null);
       clearUrlAlertParams();
+      document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
       markAlertDismissed(reminderId);
       toast.info("Test Cleared", "Test reminder removed from view.");
       return;
@@ -503,10 +596,14 @@ export default function Reminders() {
 
     const newStatus = reminder.status === "completed" ? "pending" : "completed";
 
-    // If active alert is currently showing for this reminder, dismiss toast
-    if (activeDueAlert?._id === reminderId) {
+    // If active alert is currently showing or URL parameter is present for this reminder, clear them
+    if (
+      activeDueAlert?._id === reminderId ||
+      searchParams.get("alertId") === reminderId
+    ) {
       setActiveDueAlert(null);
       clearUrlAlertParams();
+      document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
     }
 
     if (newStatus === "completed") {
@@ -561,6 +658,12 @@ export default function Reminders() {
     ) {
       return;
     }
+    closeNotificationForReminder(id);
+    if (activeDueAlert?._id === id || searchParams.get("alertId") === id) {
+      setActiveDueAlert(null);
+      clearUrlAlertParams();
+      document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
+    }
     try {
       await api.delete(`/reminders/${id}`);
       toast.info("Reminder Deleted", `Removed record for ${name}.`);
@@ -580,9 +683,14 @@ export default function Reminders() {
 
   const handleQuickSnooze = async (reminder, hoursToAdd, label) => {
     setActiveSnooze(null);
-    if (activeDueAlert?._id === reminder._id) {
+    closeNotificationForReminder(reminder._id);
+    if (
+      activeDueAlert?._id === reminder._id ||
+      searchParams.get("alertId") === reminder._id
+    ) {
       setActiveDueAlert(null);
       clearUrlAlertParams();
+      document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
     }
     // Remove from dismissed so it alerts again at new due time
     dismissedIdsRef.current.delete(reminder._id);
@@ -716,7 +824,7 @@ export default function Reminders() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-2 sm:py-6 space-y-5">
+    <div className="max-w-7xl mx-auto pt-2 pb-28 sm:py-6 space-y-5">
 
       {/* Header with Original Titles & Image 2 Solid White Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -741,12 +849,21 @@ export default function Reminders() {
         </div>
       </div>
 
-      {/* 4 Metric Cards with REAL WEBSITE DATA (No demo values) */}
+      {/* 4 Metric Cards with REAL WEBSITE DATA - Interactive Filtering */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Total Reminders */}
-        <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-zinc-700/80 transition shadow-xs">
+        <button
+          type="button"
+          onClick={() => setFilter("all")}
+          className={`text-left rounded-xl p-4 sm:p-5 flex flex-col justify-between transition shadow-xs cursor-pointer active:scale-98 border ${
+            filter === "all"
+              ? "bg-zinc-900/80 border-zinc-600 ring-1 ring-zinc-500/30"
+              : "bg-zinc-950/60 border-zinc-800 hover:border-zinc-700/80 hover:bg-zinc-900/40"
+          }`}
+          title="Click to view all reminders"
+        >
           <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
-            <Users className="w-4 h-4 text-zinc-400" />
+            <Users className="w-4 h-4 text-sky-400" />
             <span>Total Reminders</span>
           </div>
           <div className="flex items-end justify-between mt-3">
@@ -759,7 +876,7 @@ export default function Reminders() {
               </span>
             </div>
             <svg
-              className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400"
+              className="w-16 sm:w-20 h-7 shrink-0 text-sky-400"
               viewBox="0 0 80 28"
               fill="none"
             >
@@ -772,12 +889,21 @@ export default function Reminders() {
               />
             </svg>
           </div>
-        </div>
+        </button>
 
         {/* Card 2: Pending Calls */}
-        <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-zinc-700/80 transition shadow-xs">
+        <button
+          type="button"
+          onClick={() => setFilter("pending")}
+          className={`text-left rounded-xl p-4 sm:p-5 flex flex-col justify-between transition shadow-xs cursor-pointer active:scale-98 border ${
+            filter === "pending"
+              ? "bg-zinc-900/80 border-amber-500/70 ring-1 ring-amber-500/30"
+              : "bg-zinc-950/60 border-zinc-800 hover:border-zinc-700/80 hover:bg-zinc-900/40"
+          }`}
+          title="Click to filter pending calls"
+        >
           <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
-            <Clock className="w-4 h-4 text-zinc-400" />
+            <Clock className="w-4 h-4 text-amber-400" />
             <span>Pending Calls</span>
           </div>
           <div className="flex items-end justify-between mt-3">
@@ -790,7 +916,7 @@ export default function Reminders() {
               </span>
             </div>
             <svg
-              className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400"
+              className="w-16 sm:w-20 h-7 shrink-0 text-amber-400"
               viewBox="0 0 80 28"
               fill="none"
             >
@@ -803,12 +929,21 @@ export default function Reminders() {
               />
             </svg>
           </div>
-        </div>
+        </button>
 
         {/* Card 3: Overdue Calls */}
-        <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-zinc-700/80 transition shadow-xs">
+        <button
+          type="button"
+          onClick={() => setFilter("overdue")}
+          className={`text-left rounded-xl p-4 sm:p-5 flex flex-col justify-between transition shadow-xs cursor-pointer active:scale-98 border ${
+            filter === "overdue"
+              ? "bg-zinc-900/80 border-rose-500/70 ring-1 ring-rose-500/30"
+              : "bg-zinc-950/60 border-zinc-800 hover:border-zinc-700/80 hover:bg-zinc-900/40"
+          }`}
+          title="Click to filter overdue calls"
+        >
           <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
-            <AlertTriangle className="w-4 h-4 text-zinc-400" />
+            <AlertTriangle className="w-4 h-4 text-rose-400" />
             <span>Overdue Calls</span>
           </div>
           <div className="flex items-end justify-between mt-3">
@@ -820,14 +955,16 @@ export default function Reminders() {
                 className={`text-xs font-medium px-1.5 py-0.5 rounded ${
                   counts.overdue > 0
                     ? "text-rose-400 bg-rose-500/10"
-                    : "text-emerald-400 bg-emerald-500/10"
+                    : "text-zinc-500 bg-zinc-800/60"
                 }`}
               >
                 {counts.overdue > 0 ? "Urgent" : "0"}
               </span>
             </div>
             <svg
-              className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400"
+              className={`w-16 sm:w-20 h-7 shrink-0 ${
+                counts.overdue > 0 ? "text-rose-400" : "text-zinc-700"
+              }`}
               viewBox="0 0 80 28"
               fill="none"
             >
@@ -840,12 +977,21 @@ export default function Reminders() {
               />
             </svg>
           </div>
-        </div>
+        </button>
 
         {/* Card 4: Completed Calls */}
-        <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between hover:border-zinc-700/80 transition shadow-xs">
+        <button
+          type="button"
+          onClick={() => setFilter("completed")}
+          className={`text-left rounded-xl p-4 sm:p-5 flex flex-col justify-between transition shadow-xs cursor-pointer active:scale-98 border ${
+            filter === "completed"
+              ? "bg-zinc-900/80 border-emerald-500/70 ring-1 ring-emerald-500/30"
+              : "bg-zinc-950/60 border-zinc-800 hover:border-zinc-700/80 hover:bg-zinc-900/40"
+          }`}
+          title="Click to filter completed calls"
+        >
           <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
-            <CheckCircle className="w-4 h-4 text-zinc-400" />
+            <CheckCircle className="w-4 h-4 text-emerald-400" />
             <span>Completed Calls</span>
           </div>
           <div className="flex items-end justify-between mt-3">
@@ -858,7 +1004,7 @@ export default function Reminders() {
               </span>
             </div>
             <svg
-              className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400"
+              className="w-16 sm:w-20 h-7 shrink-0 text-emerald-400"
               viewBox="0 0 80 28"
               fill="none"
             >
@@ -871,7 +1017,7 @@ export default function Reminders() {
               />
             </svg>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Filter Tabs with REAL COUNTS and Image 2 underline style */}
@@ -1001,6 +1147,8 @@ export default function Reminders() {
             <p className="text-xs text-zinc-400 max-w-sm mx-auto">
               {search
                 ? `No customers match "${search}". Try clearing search or filters.`
+                : filter !== "all"
+                ? `No ${filter} reminders right now. All caught up!`
                 : "Your customer reminder schedule is clear. Add a reminder to get started."}
             </p>
           </div>
@@ -1011,6 +1159,14 @@ export default function Reminders() {
             >
               <X className="w-3.5 h-3.5" />
               <span>Clear Search Query</span>
+            </button>
+          ) : filter !== "all" ? (
+            <button
+              onClick={() => setFilter("all")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-medium cursor-pointer"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>View All Reminders</span>
             </button>
           ) : (
             <Link
@@ -1183,19 +1339,27 @@ export default function Reminders() {
 
                           {/* Complete Toggle */}
                           <button
-                            onClick={() => handleToggleCompleted(r)}
-                            className={`p-1.5 rounded-md text-xs transition cursor-pointer ${
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleCompleted(r);
+                            }}
+                            className={`p-1.5 rounded-md text-xs transition cursor-pointer flex items-center justify-center ${
                               r.status === "completed"
-                                ? "text-amber-400 hover:bg-zinc-800"
-                                : "text-emerald-400 hover:bg-zinc-800"
+                                ? "text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30"
+                                : "text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800 border border-transparent"
                             }`}
                             title={
                               r.status === "completed"
-                                ? "Mark as Pending"
-                                : "Mark Completed"
+                                ? "Completed (Click to mark as pending)"
+                                : "Click to mark as completed"
                             }
                           >
-                            <CheckCircle className="w-3.5 h-3.5" />
+                            {r.status === "completed" ? (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            ) : (
+                              <Circle className="w-3.5 h-3.5" />
+                            )}
                           </button>
 
                           {/* Full Edit Modal */}
@@ -1337,14 +1501,33 @@ export default function Reminders() {
                       </button>
 
                       <button
-                        onClick={() => handleToggleCompleted(r)}
-                        className={`h-9 px-3 rounded-xl text-xs font-semibold border transition active:scale-90 cursor-pointer ${
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleCompleted(r);
+                        }}
+                        className={`h-9 px-3 rounded-xl text-xs font-semibold border transition active:scale-90 cursor-pointer flex items-center gap-1.5 ${
                           r.status === "completed"
-                            ? "bg-zinc-900 text-amber-300 border-zinc-800"
-                            : "bg-zinc-900 text-zinc-300 border-zinc-800"
+                            ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25"
+                            : "bg-zinc-900 text-zinc-300 border-zinc-800 hover:text-emerald-400 hover:border-zinc-700"
                         }`}
+                        title={
+                          r.status === "completed"
+                            ? "Completed (Click to mark as pending)"
+                            : "Click to mark as completed"
+                        }
                       >
-                        {r.status === "completed" ? "Pending" : "Done"}
+                        {r.status === "completed" ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Done</span>
+                          </>
+                        ) : (
+                          <>
+                            <Circle className="w-3.5 h-3.5 text-zinc-400" />
+                            <span>Mark Done</span>
+                          </>
+                        )}
                       </button>
 
                       <button

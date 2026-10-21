@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   X,
@@ -7,10 +7,7 @@ import {
   Mail,
   MapPin,
   Check,
-  Globe,
-  Calendar,
-  Clock,
-  FileText,
+  Globe
 } from "lucide-react";
 import api from "../api/axios";
 import {

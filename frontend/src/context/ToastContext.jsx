@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 import { CheckCircle2, AlertCircle, Info, X, PhoneCall } from "lucide-react";
 
 const ToastContext = createContext(null);
@@ -12,7 +12,8 @@ export function ToastProvider({ children }) {
 
   const addToast = useCallback(
     ({ title, message, type = "info", duration = 4000 }) => {
-      const id = Date.now().toString() + Math.random().toString(36).substring(2, 6);
+      const id =
+        Date.now().toString() + Math.random().toString(36).substring(2, 6);
       const newToast = { id, title, message, type };
 
       setToasts((prev) => [...prev, newToast]);
@@ -23,7 +24,7 @@ export function ToastProvider({ children }) {
         }, duration);
       }
     },
-    [removeToast]
+    [removeToast],
   );
 
   const toast = {
@@ -40,7 +41,9 @@ export function ToastProvider({ children }) {
       case "error":
         return <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />;
       case "call":
-        return <PhoneCall className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />;
+        return (
+          <PhoneCall className="w-4 h-4 text-amber-400 shrink-0 animate-pulse" />
+        );
       default:
         return <Info className="w-4 h-4 text-indigo-400 shrink-0" />;
     }
@@ -62,13 +65,13 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      {/* Toast Overlay Container */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-3 sm:px-0">
+      {/* Toast Overlay Container - Top Right Toaster */}
+      <div className="fixed top-5 right-5 z-60 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-3 sm:px-0">
         {toasts.map((t) => (
           <div
             key={t.id}
             className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-2xl border shadow-2xl backdrop-blur-2xl animate-fade-in transition-all duration-300 ${getBorderColor(
-              t.type
+              t.type,
             )}`}
           >
             <div className="mt-0.5">{getIcon(t.type)}</div>

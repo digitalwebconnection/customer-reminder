@@ -8,8 +8,23 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    {
+      name: 'serve-sw-in-dev',
+      apply: 'serve',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url === '/sw.js') {
+            req.url = '/dev-sw.js?dev-sw';
+          }
+          next();
+        });
+      },
+    },
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true,
+      },
       includeAssets: ['favicon.svg', 'app-icon.png', 'icon-192.png', 'icon-512.png', 'badge.png'],
       manifest: {
         short_name: 'RemindIQ',

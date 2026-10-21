@@ -17,14 +17,12 @@ import { useToast } from '../../context/ToastContext';
 import MobileBottomNav from '../MobileBottomNav';
 
 export default function AdminLayout({ children }) {
-  const { user, logout } = useAuth();
+  const { user, openLogoutModal } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logout();
-    toast.info('Signed Out', 'You have been logged out.');
-    navigate('/login');
+  const handleLogout = () => {
+    openLogoutModal();
   };
 
   const navLinks = [

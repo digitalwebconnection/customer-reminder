@@ -15,15 +15,19 @@ function urlBase64ToUint8Array(base64String) {
  * Registers or returns active Service Worker
  */
 export async function registerServiceWorker() {
-  if (!('serviceWorker' in navigator)) {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return null;
   }
   try {
+    const existing = await navigator.serviceWorker.getRegistration();
+    if (existing && existing.active) {
+      return existing;
+    }
     const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     await navigator.serviceWorker.ready;
     return registration;
   } catch (err) {
-    console.warn('[SW] Registration failed:', err);
+    console.warn('[SW] Registration failed:', err?.message || err);
     return null;
   }
 }

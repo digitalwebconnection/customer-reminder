@@ -81,7 +81,8 @@ router.get('/:id', async (req, res, next) => {
 // PATCH /reminders/:id - Update reminder or mark completed
 router.patch('/:id', async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const isPrivileged = req.user?.role === 'superadmin' || req.user?.role === 'admin';
+    const userId = isPrivileged ? null : req.user.id;
 
     if (req.body.name !== undefined && !req.body.name.trim()) {
       return res.status(400).json({ success: false, message: 'Customer name cannot be empty' });
@@ -115,7 +116,8 @@ router.patch('/:id', async (req, res, next) => {
 // DELETE /reminders/:id - Delete reminder
 router.delete('/:id', async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const isPrivileged = req.user?.role === 'superadmin' || req.user?.role === 'admin';
+    const userId = isPrivileged ? null : req.user.id;
     const deleted = await dataService.deleteReminder(req.params.id, userId);
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Reminder not found' });

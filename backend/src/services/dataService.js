@@ -77,7 +77,7 @@ export const dataService = {
 
       // Multi-user: filter by userId
       if (userId) {
-        query.userId = userId;
+        query.$or = [{ userId: userId }, { ownerId: userId }];
       }
 
       if (status === 'pending') {
@@ -114,7 +114,7 @@ export const dataService = {
     } else {
       const store = readStore();
       let list = store
-        .filter((r) => !userId || r.userId === userId)
+        .filter((r) => !userId || r.userId === userId || r.ownerId === userId)
         .map((r) => ({
           ...r,
           isOverdue: r.status === 'pending' && new Date(r.dueAt) < now,
@@ -157,11 +157,13 @@ export const dataService = {
   getReminderById: async (id, userId = null) => {
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
       const query = { _id: id };
-      if (userId) query.userId = userId;
+      if (userId) {
+        query.$or = [{ userId: userId }, { ownerId: userId }];
+      }
       return await Reminder.findOne(query);
     }
     const store = readStore();
-    return store.find((r) => r._id === id && (!userId || r.userId === userId)) || null;
+    return store.find((r) => r._id === id && (!userId || r.userId === userId || r.ownerId === userId)) || null;
   },
 
   updateReminder: async (id, updates, userId = null) => {
@@ -179,12 +181,14 @@ export const dataService = {
 
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
       const query = { _id: id };
-      if (userId) query.userId = userId;
-      return await Reminder.findOneAndUpdate(query, updates, { returnDocument: 'after' });
+      if (userId) {
+        query.$or = [{ userId: userId }, { ownerId: userId }];
+      }
+      return await Reminder.findOneAndUpdate(query, updates, { new: true, returnDocument: 'after' });
     }
 
     const store = readStore();
-    const idx = store.findIndex((r) => r._id === id && (!userId || r.userId === userId));
+    const idx = store.findIndex((r) => r._id === id && (!userId || r.userId === userId || r.ownerId === userId));
     if (idx === -1) return null;
     store[idx] = {
       ...store[idx],
@@ -198,11 +202,16 @@ export const dataService = {
   deleteReminder: async (id, userId = null) => {
     if (isMongoActive() && mongoose.isValidObjectId(id)) {
       const query = { _id: id };
-      if (userId) query.userId = userId;
-      return await Reminder.findOneAndDelete(query);
+      if (userId) {
+        query.$or = [{ userId: userId }, { ownerId: userId }];
+      }
+      const res = await Reminder.findOneAndDelete(query);
+      return res ? { success: true } : null;
     }
     const store = readStore();
-    const filtered = store.filter((r) => !(r._id === id && (!userId || r.userId === userId)));
+    const beforeLen = store.length;
+    const filtered = store.filter((r) => !(r._id === id && (!userId || r.userId === userId || r.ownerId === userId)));
+    if (filtered.length === beforeLen) return null;
     writeStore(filtered);
     return { success: true };
   },

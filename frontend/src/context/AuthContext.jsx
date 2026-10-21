@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import  { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
 import { requestAndSubscribePush } from '../utils/pushManager';
 import { setOneSignalUser } from '../utils/oneSignalManager';
@@ -125,6 +125,24 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('remindiq_token');
   };
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const openLogoutModal = () => setShowLogoutModal(true);
+  const closeLogoutModal = () => {
+    if (!isLoggingOut) setShowLogoutModal(false);
+  };
+
+  const confirmLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setIsLoggingOut(false);
+      setShowLogoutModal(false);
+    }
+  };
+
   const isSuperAdmin = user?.role === 'superadmin';
 
   return (
@@ -137,6 +155,11 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        showLogoutModal,
+        openLogoutModal,
+        closeLogoutModal,
+        confirmLogout,
+        isLoggingOut,
         updateProfile,
         refreshUser,
       }}

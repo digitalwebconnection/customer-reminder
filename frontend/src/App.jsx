@@ -1,39 +1,46 @@
-import React, { useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import AustraliaTimezoneBar from './components/AustraliaTimezoneBar';
+import React, { useEffect, lazy, Suspense } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
+import Navbar from "./components/Navbar";
+import AustraliaTimezoneBar from "./components/AustraliaTimezoneBar";
 
 // Lazy-loaded Pages (Code-splitting for faster initial page load & mobile performance)
-const AddReminder = lazy(() => import('./pages/AddReminder'));
-const Reminders = lazy(() => import('./pages/Reminders'));
-const Login = lazy(() => import('./pages/Login'));
-const SignUp = lazy(() => import('./pages/SignUp'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-const Profile = lazy(() => import('./pages/Profile'));
+const AddReminder = lazy(() => import("./pages/AddReminder"));
+const Reminders = lazy(() => import("./pages/Reminders"));
+const Login = lazy(() => import("./pages/Login"));
+const SignUp = lazy(() => import("./pages/SignUp"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 // Super Admin Pages & Layout
-import AdminLayout from './components/admin/AdminLayout';
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
-const AdminReminders = lazy(() => import('./pages/admin/AdminReminders'));
-const AdminActivityLogs = lazy(() => import('./pages/admin/AdminActivityLogs'));
+import AdminLayout from "./components/admin/AdminLayout";
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminReminders = lazy(() => import("./pages/admin/AdminReminders"));
+const AdminActivityLogs = lazy(() => import("./pages/admin/AdminActivityLogs"));
 
 // Route Guards
-import ProtectedRoute from './components/ProtectedRoute';
-import AdminRoute from './components/AdminRoute';
-import GuestRoute from './components/GuestRoute';
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+import GuestRoute from "./components/GuestRoute";
 
 // Providers
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { TimezoneProvider } from './context/TimezoneContext';
-import { ToastProvider } from './context/ToastContext';
-import { PwaProvider } from './context/PwaContext';
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { TimezoneProvider } from "./context/TimezoneContext";
+import { ToastProvider } from "./context/ToastContext";
+import { PwaProvider } from "./context/PwaContext";
 
 // Helper for regular user routes (super admin redirected to /admin)
 function UserOnlyRoute({ children }) {
   const { user } = useAuth();
-  if (user?.role === 'superadmin') {
+  if (user?.role === "superadmin") {
     return <Navigate to="/admin" replace />;
   }
   return children;
@@ -44,17 +51,17 @@ function RoleBasedHome() {
   const { user, isAuthenticated, loading } = useAuth();
   if (loading) return null;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role === 'superadmin') return <Navigate to="/admin" replace />;
+  if (user?.role === "superadmin") return <Navigate to="/admin" replace />;
   return <Navigate to="/reminders" replace />;
 }
 
 // Components
-import InstallPwaBanner from './components/InstallPwaBanner';
-import InstallPwaModal from './components/InstallPwaModal';
-import MobileAlarmPermissionModal from './components/MobileAlarmPermissionModal';
-import MobileBottomNav from './components/MobileBottomNav';
-import { registerServiceWorker } from './utils/pushManager';
-import { initRenderKeepAlive } from './utils/renderKeepAlive';
+import InstallPwaBanner from "./components/InstallPwaBanner";
+import InstallPwaModal from "./components/InstallPwaModal";
+import MobileBottomNav from "./components/MobileBottomNav";
+import LogoutConfirmationModal from "./components/LogoutConfirmationModal";
+import { registerServiceWorker } from "./utils/pushManager";
+import { initRenderKeepAlive } from "./utils/renderKeepAlive";
 
 function Layout({ children }) {
   const navigate = useNavigate();
@@ -63,7 +70,7 @@ function Layout({ children }) {
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => {
     try {
-      return localStorage.getItem('remindiq_sidebar_collapsed') === 'true';
+      return localStorage.getItem("remindiq_sidebar_collapsed") === "true";
     } catch (e) {
       return false;
     }
@@ -71,13 +78,13 @@ function Layout({ children }) {
 
   // Global listener: If push alarm is received or clicked while on any page, route to the ringing screen
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
+    if (!("serviceWorker" in navigator)) return;
 
     const handleSwMessage = (e) => {
       if (!e.data) return;
       if (
-        e.data.type === 'CALL_REMINDER_NOTIFICATION_CLICK' ||
-        e.data.type === 'PUSH_ALARM_RECEIVED'
+        e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK" ||
+        e.data.type === "PUSH_ALARM_RECEIVED"
       ) {
         const { reminderId, userId: msgUserId } = e.data.data || {};
         if (msgUserId && user?._id && String(msgUserId) !== String(user._id)) {
@@ -85,22 +92,26 @@ function Layout({ children }) {
         }
         if (reminderId) {
           const target = `/reminders?alertId=${reminderId}`;
-          if (location.pathname !== '/reminders' || !location.search.includes(reminderId)) {
+          if (
+            location.pathname !== "/reminders" ||
+            !location.search.includes(reminderId)
+          ) {
             navigate(target);
           }
         }
       }
     };
 
-    navigator.serviceWorker.addEventListener('message', handleSwMessage);
-    return () => navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+    navigator.serviceWorker.addEventListener("message", handleSwMessage);
+    return () =>
+      navigator.serviceWorker.removeEventListener("message", handleSwMessage);
   }, [navigate, location, user]);
 
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
       try {
-        localStorage.setItem('remindiq_sidebar_collapsed', String(next));
+        localStorage.setItem("remindiq_sidebar_collapsed", String(next));
       } catch (e) {}
       return next;
     });
@@ -136,7 +147,7 @@ function Layout({ children }) {
       {/* Mobile Experience: Floating Install Banner, Install Modal, Alarm Permissions Hub & Native Bottom Navigation */}
       <InstallPwaBanner />
       <InstallPwaModal />
-      <MobileAlarmPermissionModal />
+
       <MobileBottomNav />
     </div>
   );
@@ -151,19 +162,22 @@ export default function App() {
 
   return (
     <AuthProvider>
-        <PwaProvider>
-          <TimezoneProvider>
-            <ToastProvider>
-              <BrowserRouter>
-                <Suspense
-                  fallback={
-                    <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-3">
-                      <div className="w-8 h-8 rounded-full border-2 border-zinc-700 border-t-white animate-spin" />
-                      <span className="text-xs text-zinc-500 font-mono">Loading RemindIQ...</span>
-                    </div>
-                  }
-                >
-                  <Routes>
+      <PwaProvider>
+        <TimezoneProvider>
+          <ToastProvider>
+            <BrowserRouter>
+              <LogoutConfirmationModal />
+              <Suspense
+                fallback={
+                  <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-3">
+                    <div className="w-8 h-8 rounded-full border-2 border-zinc-700 border-t-white animate-spin" />
+                    <span className="text-xs text-zinc-500 font-mono">
+                      Loading RemindIQ...
+                    </span>
+                  </div>
+                }
+              >
+                <Routes>
                   {/* Public Guest Auth Routes */}
                   <Route
                     path="/login"
@@ -282,9 +296,9 @@ export default function App() {
                 </Routes>
               </Suspense>
             </BrowserRouter>
-            </ToastProvider>
-          </TimezoneProvider>
-        </PwaProvider>
-      </AuthProvider>
+          </ToastProvider>
+        </TimezoneProvider>
+      </PwaProvider>
+    </AuthProvider>
   );
 }

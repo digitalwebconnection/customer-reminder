@@ -57,19 +57,26 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config;
-    // Auto-retry once on transient 502 (Bad Gateway), 503, or connection drop during backend restarts
+    const retryCount = config?._retryCount || 0;
+
+    // Auto-retry up to 3 times on transient 502 (Bad Gateway), 503, or connection drop during backend restarts
     if (
       config &&
-      !config._retry &&
+      retryCount < 3 &&
       (error.response?.status === 502 || error.response?.status === 503 || !error.response)
     ) {
-      config._retry = true;
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      config._retryCount = retryCount + 1;
+      await new Promise((resolve) => setTimeout(resolve, 600 * config._retryCount));
       return api(config);
     }
 
-    // If unauthenticated (401), clear saved auth tokens
-    if (error.response && error.response.status === 401) {
+    // If unauthenticated (401), clear saved auth tokens only if not on public auth endpoints
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !config?.url?.includes('/auth/login') &&
+      !config?.url?.includes('/auth/register')
+    ) {
       localStorage.removeItem('remindiq_token');
       localStorage.removeItem('remindiq_user');
     }

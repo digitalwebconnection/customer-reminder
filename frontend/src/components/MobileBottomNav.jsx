@@ -1,4 +1,3 @@
-import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   ListTodo,
@@ -6,7 +5,6 @@ import {
   LogOut,
   BellRing,
   Bell,
-  Shield,
   User as UserIcon,
   LayoutDashboard,
   Users,
@@ -17,15 +15,13 @@ import { usePwa } from "../context/PwaContext";
 import { useToast } from "../context/ToastContext";
 
 export default function MobileBottomNav() {
-  const { user, logout, isSuperAdmin } = useAuth();
+  const { user, openLogoutModal, isSuperAdmin } = useAuth();
   const { permissions, setShowAlarmModal } = usePwa();
   const toast = useToast();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logout();
-    toast.info("Signed Out", "You have been logged out.");
-    navigate("/login");
+  const handleLogout = () => {
+    openLogoutModal();
   };
 
   if (!user) return null; // Don't show on login page
