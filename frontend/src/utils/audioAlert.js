@@ -107,9 +107,6 @@ export const unlockAudioContext = unlockRingAudio;
  * Cadence: Double ring ("Ring-Ring ... Ring-Ring") repeating while reminder is due
  */
 export function startCallRingtone() {
-  if (typeof window !== 'undefined' && localStorage.getItem('remindiq_ring_permission') === 'muted') {
-    return;
-  }
   stopCallRingtone();
   isRingtoneActive = true;
 
@@ -145,6 +142,26 @@ export function startCallRingtone() {
 
   // 3. Start phone ringing vibration cadence on supported mobile devices
   startMobileVibration();
+}
+
+// Auto-resume ringtone immediately on the first user interaction if browser initially blocked autoplay
+if (typeof window !== 'undefined') {
+  const resumeOnFirstTouch = () => {
+    try {
+      const ctx = getSharedAudioContext();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      if (isRingtoneActive && !ringtoneAudioElement) {
+        startCallRingtone();
+      }
+    } catch (e) {}
+  };
+
+  window.addEventListener('click', resumeOnFirstTouch, { passive: true });
+  window.addEventListener('touchstart', resumeOnFirstTouch, { passive: true });
+  window.addEventListener('pointerdown', resumeOnFirstTouch, { passive: true });
+  window.addEventListener('keydown', resumeOnFirstTouch, { passive: true });
 }
 
 /**

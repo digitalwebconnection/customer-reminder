@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { formatInAustralianTime } from "../utils/dateUtils";
+import { unlockRingAudio, startCallRingtone } from "../utils/audioAlert";
 
 /**
  * IncomingCallOverlay
@@ -62,6 +63,16 @@ export default function IncomingCallOverlay({
     }
   };
 
+  const handleTouchUnlock = () => {
+    unlockRingAudio()
+      .then(() => {
+        if (!isMuted) {
+          startCallRingtone();
+        }
+      })
+      .catch(() => {});
+  };
+
   const progressPercent = Math.max(0, Math.min(100, (secondsLeft / 60) * 100));
 
   const content = (
@@ -69,6 +80,8 @@ export default function IncomingCallOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={`Incoming Call Reminder: ${name}`}
+      onClick={handleTouchUnlock}
+      onTouchStart={handleTouchUnlock}
       className="fixed inset-0 z-[9999] flex flex-col justify-between bg-[#080a0f]/96 sm:bg-[#080a0f]/85 backdrop-blur-2xl text-white select-none overflow-y-auto animate-in fade-in duration-200"
     >
       {/* 60-Second Top Animated Ringing Progress Bar */}

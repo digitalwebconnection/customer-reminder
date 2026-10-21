@@ -56,24 +56,20 @@ export default function Reminders() {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchInputRef = useRef(null);
 
-  // Helper to read handled alert IDs from sessionStorage across mobile page reloads
-  const getDismissedAlertIds = () => {
+  // Clear any legacy blacklisted alert IDs from previous sessions so alarms ring freely
+  useEffect(() => {
     try {
-      const raw = sessionStorage.getItem("remindiq_handled_alert_ids");
-      return raw ? new Set(JSON.parse(raw)) : new Set();
-    } catch (e) {
-      return new Set();
-    }
-  };
-
-  const markAlertHandled = (id) => {
-    if (!id) return;
-    try {
-      notifiedIdsRef.current.add(id);
-      const existing = getDismissedAlertIds();
-      existing.add(id);
-      sessionStorage.setItem("remindiq_handled_alert_ids", JSON.stringify([...existing]));
+      sessionStorage.removeItem("remindiq_handled_alert_ids");
     } catch (e) {}
+  }, []);
+
+  // Track dismissed reminder IDs strictly in memory for the active view session
+  // (Prevents repetitive alerts only after user explicitly clicks Dismiss or completes call)
+  const dismissedIdsRef = useRef(new Set());
+
+  const markAlertDismissed = (id) => {
+    if (!id) return;
+    dismissedIdsRef.current.add(id);
   };
 
   const clearUrlAlertParams = () => {
@@ -104,7 +100,6 @@ export default function Reminders() {
   const [alertSecondsLeft, setAlertSecondsLeft] = useState(60);
   const [isRingtoneMuted, setIsRingtoneMuted] = useState(false);
   const [isCompletingAlert, setIsCompletingAlert] = useState(false);
-  const notifiedIdsRef = useRef(getDismissedAlertIds());
   const [activeSnooze, setActiveSnooze] = useState(null); // { reminder, anchorRect }
   const [copiedId, setCopiedId] = useState(null);
 
@@ -167,7 +162,7 @@ export default function Reminders() {
           clearInterval(timer);
           stopCallRingtone();
           if (activeDueAlert?._id) {
-            markAlertHandled(activeDueAlert._id);
+            markAlertDismissed(activeDueAlert._id);
           }
           clearUrlAlertParams();
           setActiveDueAlert(null);
@@ -191,17 +186,13 @@ export default function Reminders() {
     const testAlarm = searchParams.get("testAlarm");
 
     if (alertId) {
-      // If already handled in this session, do not re-alert! Clean URL query
-      if (notifiedIdsRef.current.has(alertId)) {
-        clearUrlAlertParams();
-        return;
-      }
+      // Ensure alert is not marked as dismissed when explicitly opening URL or notification
+      dismissedIdsRef.current.delete(alertId);
 
       if (reminders.length > 0) {
         const target = reminders.find((r) => r._id === alertId);
         if (target) {
           if (target.status === "pending") {
-            markAlertHandled(target._id);
             setActiveDueAlert(target);
           } else {
             clearUrlAlertParams();
@@ -216,8 +207,7 @@ export default function Reminders() {
           .get(`/reminders/${alertId}`)
           .then((res) => {
             const r = res.data?.data;
-            if (r && r.status === "pending" && !notifiedIdsRef.current.has(r._id)) {
-              markAlertHandled(r._id);
+            if (r && r.status === "pending") {
               setActiveDueAlert(r);
             } else {
               clearUrlAlertParams();
@@ -229,7 +219,7 @@ export default function Reminders() {
       }
     } else if (testAlarm && !activeDueAlert) {
       // Always allow test alarm to trigger when explicitly requested
-      notifiedIdsRef.current.delete("test-alert");
+      dismissedIdsRef.current.delete("test-alert");
       setActiveDueAlert({
         _id: "test-alert",
         name: "Test Customer (John Smith)",
@@ -267,7 +257,7 @@ export default function Reminders() {
         if (e.data.type === "REMINDER_COMPLETED_BACKGROUND") {
           const { reminderId } = e.data.data || {};
           if (reminderId) {
-            markAlertHandled(reminderId);
+            markAlertDismissed(reminderId);
             stopCallRingtone();
             setActiveDueAlert((curr) => (curr?._id === reminderId ? null : curr));
             setReminders((prev) =>
@@ -280,7 +270,7 @@ export default function Reminders() {
 
         // Test alarm completion from SW notification action
         if (e.data.type === "TEST_ALARM_COMPLETED") {
-          markAlertHandled("test-alert");
+          markAlertDismissed("test-alert");
           stopCallRingtone();
           setActiveDueAlert((curr) => (curr?._id?.startsWith("test-") ? null : curr));
           clearUrlAlertParams();
@@ -299,19 +289,14 @@ export default function Reminders() {
           }
 
           if (reminderId) {
-            // If already handled in this session, do not re-alert!
-            if (notifiedIdsRef.current.has(reminderId)) {
-              return;
-            }
+            dismissedIdsRef.current.delete(reminderId);
 
             const target = reminders.find((r) => r._id === reminderId);
             if (target) {
               if (target.status === "pending") {
-                markAlertHandled(target._id);
                 setActiveDueAlert(target);
               }
             } else if (!msgUserId || (user?._id && String(msgUserId) === String(user._id))) {
-              markAlertHandled(reminderId);
               setActiveDueAlert({
                 _id: reminderId,
                 name: name || "Customer Call Due",
@@ -410,9 +395,7 @@ export default function Reminders() {
     const now = new Date();
     list.forEach((r) => {
       const isDueNow = r.status === "pending" && new Date(r.dueAt) <= now;
-      if (isDueNow && !notifiedIdsRef.current.has(r._id)) {
-        markAlertHandled(r._id);
-
+      if (isDueNow && !dismissedIdsRef.current.has(r._id) && activeDueAlert?._id !== r._id) {
         setActiveDueAlert(r);
 
         if ("Notification" in window && Notification.permission === "granted") {
@@ -445,8 +428,8 @@ export default function Reminders() {
     // 3. Clear URL query params (alertId, testAlarm)
     clearUrlAlertParams();
 
-    // 4. Mark handled in session storage so it NEVER re-alerts or re-rings
-    markAlertHandled(alertId);
+    // 4. Mark dismissed in memory so it does not alert again
+    markAlertDismissed(alertId);
 
     // 5. Test alert handler: acknowledge without invalid database request
     if (!alertId || alertId === "test-alert" || String(alertId).startsWith("test-")) {
@@ -486,7 +469,7 @@ export default function Reminders() {
     stopCallRingtone();
     setActiveDueAlert(null);
     clearUrlAlertParams();
-    markAlertHandled(alertItem._id);
+    markAlertDismissed(alertItem._id);
     toast.info("Alert Dismissed", `Silenced alarm for ${alertItem.name || "call"}.`);
   };
 
@@ -499,7 +482,7 @@ export default function Reminders() {
       stopCallRingtone();
       if (activeDueAlert?._id === reminderId) setActiveDueAlert(null);
       clearUrlAlertParams();
-      markAlertHandled(reminderId);
+      markAlertDismissed(reminderId);
       toast.info("Test Cleared", "Test reminder removed from view.");
       return;
     }
@@ -514,15 +497,10 @@ export default function Reminders() {
     }
 
     if (newStatus === "completed") {
-      markAlertHandled(reminderId);
+      markAlertDismissed(reminderId);
     } else {
       // Reopened as pending - allow it to notify if re-scheduled
-      notifiedIdsRef.current.delete(reminderId);
-      try {
-        const existing = getDismissedAlertIds();
-        existing.delete(reminderId);
-        sessionStorage.setItem("remindiq_handled_alert_ids", JSON.stringify([...existing]));
-      } catch (e) {}
+      dismissedIdsRef.current.delete(reminderId);
     }
 
     // Optimistic UI update
@@ -581,13 +559,8 @@ export default function Reminders() {
       setActiveDueAlert(null);
       clearUrlAlertParams();
     }
-    // Remove from handled so it alerts again at new due time
-    notifiedIdsRef.current.delete(reminder._id);
-    try {
-      const existing = getDismissedAlertIds();
-      existing.delete(reminder._id);
-      sessionStorage.setItem("remindiq_handled_alert_ids", JSON.stringify([...existing]));
-    } catch (e) {}
+    // Remove from dismissed so it alerts again at new due time
+    dismissedIdsRef.current.delete(reminder._id);
 
     try {
       const currentDue = new Date(reminder.dueAt);
