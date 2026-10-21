@@ -1021,40 +1021,7 @@ export default function Reminders() {
         </button>
       </div>
 
-      {/* Filter Tabs with REAL COUNTS and Image 2 underline style */}
-      <div className="border-b border-zinc-800 flex items-center gap-4 sm:gap-8 overflow-x-auto scrollbar-none pt-2 touch-pan-x overscroll-x-contain">
-        {[
-          { key: "all", label: "All Reminders", count: counts.all },
-          { key: "pending", label: "Pending", count: counts.pending },
-          { key: "overdue", label: "Overdue", count: counts.overdue },
-          { key: "completed", label: "Completed", count: counts.completed },
-        ].map((tab) => {
-          const isActive = filter === tab.key;
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setFilter(tab.key)}
-              className={`pb-3 text-sm font-medium transition-colors flex items-center gap-2 relative cursor-pointer border-b-2 -mb-px shrink-0 active:scale-95 ${
-                isActive
-                  ? "border-white text-white"
-                  : "border-transparent text-zinc-400 hover:text-zinc-200"
-              }`}
-            >
-              <span>{tab.label}</span>
-              <span
-                className={`text-[11px] px-1.5 py-0.2 rounded-full font-mono ${
-                  isActive
-                    ? "bg-zinc-800 text-zinc-100"
-                    : "bg-zinc-900 text-zinc-500"
-                }`}
-              >
-                {tab.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+
 
       {/* Controls Row: Search, Date Filter / Sort, and Refresh Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pt-1">
