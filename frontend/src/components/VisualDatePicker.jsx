@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
 
@@ -17,6 +17,8 @@ export default function VisualDatePicker({
   timezone, // Optional timezone (e.g. 'Australia/Sydney', 'Asia/Kolkata')
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   // Calculate today's date in target timezone or browser timezone as 'YYYY-MM-DD'
   const todayStr = useMemo(() => {
@@ -239,37 +241,7 @@ export default function VisualDatePicker({
                 </button>
               </div>
 
-              {/* Quick Preset Chips */}
-              <div className="flex items-center gap-1.5 pb-2 text-xs overflow-x-auto touch-pan-x overscroll-x-contain scrollbar-none py-1">
-                <button
-                  type="button"
-                  onClick={() => setQuickDate(0)}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-amber-300 border border-amber-500/30 font-medium whitespace-nowrap cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  Today
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDate(1)}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium whitespace-nowrap cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  Tomorrow
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDate(2)}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium whitespace-nowrap cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  In 2 Days
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDate(7)}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 font-medium whitespace-nowrap cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  Next Week
-                </button>
-              </div>
+            
 
               {/* Month/Year Navigation */}
               <div className="flex items-center justify-between py-2 px-1 bg-zinc-900/90 rounded-xl border border-zinc-800">
@@ -306,8 +278,25 @@ export default function VisualDatePicker({
                 ))}
               </div>
 
-              {/* Calendar Grid */}
-              <div className="grid grid-cols-7 gap-1 pt-1">
+              {/* Calendar Grid with Touch / Swipe Sliding */}
+              <div
+                onTouchStart={(e) => {
+                  touchStartX.current = e.touches[0].clientX;
+                  touchStartY.current = e.touches[0].clientY;
+                }}
+                onTouchEnd={(e) => {
+                  const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+                  const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+                  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+                    if (deltaX < 0) {
+                      nextMonth();
+                    } else if (!isPrevMonthDisabled) {
+                      prevMonth();
+                    }
+                  }
+                }}
+                className="grid grid-cols-7 gap-1 pt-1 select-none touch-pan-y"
+              >
                 {calendarDays.map((day, idx) => {
                   if (day === null) {
                     return <div key={`empty-${idx}`} className="h-9 w-9" />;

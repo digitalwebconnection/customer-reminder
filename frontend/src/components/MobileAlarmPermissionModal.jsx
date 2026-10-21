@@ -120,7 +120,7 @@ export default function MobileAlarmPermissionModal() {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10002] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-10002 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
       onClick={() => setShowAlarmModal(false)}
     >
       <div

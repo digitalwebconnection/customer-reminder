@@ -1,23 +1,311 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Clock, Check, X } from 'lucide-react';
+import { Clock, Check } from 'lucide-react';
 
-const HOURS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-const MINUTES = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')); // Every 1 minute: 00 to 59
+const PERIODS = ['AM', 'PM'];
 
-export default function VisualTimePicker({ value, onChange, label = 'Call Time', required = true, timezoneHint }) {
+const ITEM_HEIGHT = 36; // Compact row height (px)
+
+/**
+ * Reusable vertical wheel column with PURE MOUSE WHEEL SCROLLING, DRAG, TOUCH & CLICK
+ * Ultra-compact 3-row Apple style drum picker optimized for both Desktop and Mobile.
+ */
+function WheelColumn({ items, selectedValue, onSelect, formatLabel }) {
+  const containerRef = useRef(null);
+  const selectedIndex = Math.max(0, items.indexOf(selectedValue));
+  const targetIndexRef = useRef(selectedIndex);
+  const isInteractingRef = useRef(false);
+  const wheelResetTimerRef = useRef(null);
+  const wheelAccumulatorRef = useRef(0);
+  const touchScrollTimerRef = useRef(null);
+
+  // Mouse drag interaction refs
+  const isDraggingRef = useRef(false);
+  const hasMovedRef = useRef(false);
+  const startYRef = useRef(0);
+  const startScrollTopRef = useRef(0);
+  const lastYRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const velocityRef = useRef(0);
+
+  // Sync targetIndexRef whenever selectedValue changes
+  useEffect(() => {
+    targetIndexRef.current = selectedIndex;
+  }, [selectedIndex]);
+
+  // Initial scroll into center position on mount & when opened
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
+      const raf = requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
+        }
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, []);
+
+  // Sync scroll if selectedValue changed externally and user is NOT interacting
+  useEffect(() => {
+    if (containerRef.current && !isInteractingRef.current) {
+      const targetScroll = selectedIndex * ITEM_HEIGHT;
+      if (Math.abs(containerRef.current.scrollTop - targetScroll) > 1) {
+        containerRef.current.scrollTop = targetScroll;
+      }
+    }
+  }, [selectedIndex]);
+
+  // Dedicated Mouse Wheel Scroll Handler - Pure Mouse Scrolling
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      isInteractingRef.current = true;
+      clearTimeout(wheelResetTimerRef.current);
+
+      const direction = e.deltaY > 0 ? 1 : -1;
+      let delta = Math.abs(e.deltaY);
+      if (e.deltaMode === 1) delta *= 36; // DOM_DELTA_LINE
+      if (e.deltaMode === 2) delta *= 360; // DOM_DELTA_PAGE
+
+      let steps = 1;
+      if (delta >= 180) {
+        steps = Math.min(5, Math.floor(delta / 90));
+      } else if (delta < 36) {
+        wheelAccumulatorRef.current += e.deltaY;
+        if (Math.abs(wheelAccumulatorRef.current) >= 25) {
+          steps = 1;
+          wheelAccumulatorRef.current = 0;
+        } else {
+          return;
+        }
+      }
+
+      const current = targetIndexRef.current;
+      const nextIndex = Math.max(0, Math.min(items.length - 1, current + direction * steps));
+
+      if (nextIndex !== current) {
+        targetIndexRef.current = nextIndex;
+        el.scrollTo({
+          top: nextIndex * ITEM_HEIGHT,
+          behavior: 'smooth',
+        });
+        onSelect(items[nextIndex]);
+      }
+
+      wheelResetTimerRef.current = setTimeout(() => {
+        isInteractingRef.current = false;
+        wheelAccumulatorRef.current = 0;
+      }, 250);
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+      clearTimeout(wheelResetTimerRef.current);
+    };
+  }, [items, onSelect]);
+
+  // Mouse Drag-To-Slide Handler
+  const handleMouseDown = (e) => {
+    if (e.button !== 0 || !containerRef.current) return;
+    isDraggingRef.current = true;
+    isInteractingRef.current = true;
+    hasMovedRef.current = false;
+    startYRef.current = e.clientY;
+    startScrollTopRef.current = containerRef.current.scrollTop;
+    lastYRef.current = e.clientY;
+    lastTimeRef.current = performance.now();
+    velocityRef.current = 0;
+
+    const handleWindowMouseMove = (moveEvent) => {
+      if (!isDraggingRef.current || !containerRef.current) return;
+      const currentY = moveEvent.clientY;
+      const deltaY = currentY - startYRef.current;
+
+      if (Math.abs(deltaY) > 3) {
+        hasMovedRef.current = true;
+      }
+
+      const now = performance.now();
+      const dt = now - lastTimeRef.current;
+      if (dt > 0) {
+        velocityRef.current = (lastYRef.current - currentY) / dt;
+      }
+      lastYRef.current = currentY;
+      lastTimeRef.current = now;
+
+      const newScroll = startScrollTopRef.current - deltaY;
+      containerRef.current.scrollTop = newScroll;
+
+      const liveIndex = Math.max(
+        0,
+        Math.min(items.length - 1, Math.round(newScroll / ITEM_HEIGHT))
+      );
+      if (items[liveIndex] && items[liveIndex] !== selectedValue) {
+        targetIndexRef.current = liveIndex;
+        onSelect(items[liveIndex]);
+      }
+    };
+
+    const handleWindowMouseUp = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+
+      if (!containerRef.current) return;
+
+      const flick = velocityRef.current;
+      let finalIndex;
+      if (Math.abs(flick) > 0.3) {
+        const momentumDistance = flick * 70;
+        const targetScroll = containerRef.current.scrollTop + momentumDistance;
+        finalIndex = Math.max(
+          0,
+          Math.min(items.length - 1, Math.round(targetScroll / ITEM_HEIGHT))
+        );
+      } else {
+        finalIndex = Math.max(
+          0,
+          Math.min(items.length - 1, Math.round(containerRef.current.scrollTop / ITEM_HEIGHT))
+        );
+      }
+
+      targetIndexRef.current = finalIndex;
+      containerRef.current.scrollTo({
+        top: finalIndex * ITEM_HEIGHT,
+        behavior: 'smooth',
+      });
+      if (items[finalIndex]) {
+        onSelect(items[finalIndex]);
+      }
+
+      setTimeout(() => {
+        isInteractingRef.current = false;
+      }, 200);
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handleWindowMouseUp);
+  };
+
+  // Touch scroll live updates & smooth snap for mobile touch devices
+  const handleScroll = (e) => {
+    if (isDraggingRef.current || isInteractingRef.current) return;
+    const scrollTop = e.currentTarget.scrollTop;
+    const liveIndex = Math.max(0, Math.min(items.length - 1, Math.round(scrollTop / ITEM_HEIGHT)));
+    if (items[liveIndex] && items[liveIndex] !== selectedValue) {
+      targetIndexRef.current = liveIndex;
+      onSelect(items[liveIndex]);
+    }
+
+    // Auto-snap cleanly to nearest center row after mobile touch gesture completes
+    clearTimeout(touchScrollTimerRef.current);
+    touchScrollTimerRef.current = setTimeout(() => {
+      if (!containerRef.current) return;
+      const finalScrollTop = containerRef.current.scrollTop;
+      const finalIndex = Math.max(0, Math.min(items.length - 1, Math.round(finalScrollTop / ITEM_HEIGHT)));
+      const targetScroll = finalIndex * ITEM_HEIGHT;
+      if (Math.abs(finalScrollTop - targetScroll) > 1) {
+        containerRef.current.scrollTo({
+          top: targetScroll,
+          behavior: 'smooth',
+        });
+      }
+      if (items[finalIndex] && items[finalIndex] !== selectedValue) {
+        onSelect(items[finalIndex]);
+      }
+    }, 120);
+  };
+
+  const handleItemClick = (index, item) => {
+    if (hasMovedRef.current) return;
+    targetIndexRef.current = index;
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: index * ITEM_HEIGHT,
+        behavior: 'smooth',
+      });
+    }
+    onSelect(item);
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      onMouseDown={handleMouseDown}
+      style={{
+        height: ITEM_HEIGHT * 3,
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+      }}
+      className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y relative z-0 cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden"
+    >
+      {/* Top spacer so index 0 centers in middle row */}
+      <div style={{ height: ITEM_HEIGHT }} className="shrink-0 pointer-events-none" />
+
+      {items.map((item, index) => {
+        const isSelected = item === selectedValue;
+        return (
+          <button
+            key={item}
+            type="button"
+            onClick={() => handleItemClick(index, item)}
+            style={{ height: ITEM_HEIGHT }}
+            className={`w-full flex items-center justify-center transition-all duration-150 select-none cursor-pointer outline-hidden ${
+              isSelected
+                ? 'text-white text-sm sm:text-base font-bold tracking-tight'
+                : 'text-zinc-500 hover:text-zinc-300 text-[11px] sm:text-[12px] font-normal opacity-30 hover:opacity-60'
+            }`}
+          >
+            {formatLabel ? formatLabel(item) : item}
+          </button>
+        );
+      })}
+
+      {/* Bottom spacer so last index centers in middle row */}
+      <div style={{ height: ITEM_HEIGHT }} className="shrink-0 pointer-events-none" />
+    </div>
+  );
+}
+
+export default function VisualTimePicker({
+  value,
+  onChange,
+  label = 'Call Time',
+  required = true,
+  timezoneHint,
+}) {
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [dropdownCoords, setDropdownCoords] = useState({
+    top: 0,
+    left: 0,
+    width: 200,
+    openUp: false,
+  });
 
-  // Parse value ('HH:mm') into hour (1-12), minute ('00'), period ('AM'|'PM')
+  // Parse value ('HH:mm') into hour ('01'-'12'), minute ('00'-'59'), period ('AM'|'PM')
   const parseTime = (val) => {
     if (!val) return { hour: '10', minute: '00', period: 'AM' };
     const [hStr, mStr] = val.split(':');
     let h = parseInt(hStr, 10);
-    const m = mStr || '00';
+    if (isNaN(h)) h = 10;
+    const m = mStr ? String(parseInt(mStr, 10) || 0).padStart(2, '0') : '00';
     const period = h >= 12 ? 'PM' : 'AM';
     h = h % 12;
     if (h === 0) h = 12;
-    return { hour: String(h), minute: m, period };
+    return { hour: String(h).padStart(2, '0'), minute: m, period };
   };
 
   const parsed = parseTime(value);
@@ -34,29 +322,99 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
     }
   }, [value]);
 
-  // Handle escape key
+  // Responsive floating position calculation (centers under button on mobile, right-aligns on desktop)
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const dropdownHeight = 158;
+    const dropdownWidth = 200;
+
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    // Open upwards only if space below is limited and space above is sufficient
+    const openUp = spaceBelow < dropdownHeight && spaceAbove > dropdownHeight;
+
+    let top = openUp ? rect.top - dropdownHeight - 6 : rect.bottom + 6;
+    top = Math.max(8, Math.min(window.innerHeight - dropdownHeight - 8, top));
+
+    // Centered relative to trigger button on mobile, right-aligned on desktop
+    const isMobile = window.innerWidth < 640;
+    let left;
+    if (isMobile) {
+      left = rect.left + (rect.width - dropdownWidth) / 2;
+    } else {
+      left = rect.right - dropdownWidth;
+    }
+
+    // Clamp horizontally to stay within viewport
+    if (left < 10) left = 10;
+    if (left + dropdownWidth > window.innerWidth - 10) {
+      left = window.innerWidth - dropdownWidth - 10;
+    }
+
+    setDropdownCoords({ top, left, width: dropdownWidth, openUp });
+  }, []);
+
+  // Handle position recalculation, scroll/resize, outside click & escape
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setIsOpen(false);
+
+    updatePosition();
+
+    const handleScrollOrResize = () => {
+      updatePosition();
     };
+
+    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+
+    const handleClickOutside = (e) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+
+    return () => {
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, updatePosition]);
 
   const formatDisplayTime = (val) => {
     if (!val) return '';
     const { hour, minute, period } = parseTime(val);
-    return `${hour.padStart(2, '0')}:${minute} ${period}`;
+    return `${hour}:${minute} ${period}`;
   };
 
-  const emitTime = (h, m, p) => {
-    let hNum = parseInt(h, 10);
-    if (p === 'PM' && hNum < 12) hNum += 12;
-    if (p === 'AM' && hNum === 12) hNum = 0;
-    const time24 = `${String(hNum).padStart(2, '0')}:${m}`;
-    onChange(time24);
-  };
+  const emitTime = useCallback(
+    (h, m, p) => {
+      let hNum = parseInt(h, 10);
+      if (p === 'PM' && hNum < 12) hNum += 12;
+      if (p === 'AM' && hNum === 12) hNum = 0;
+      const time24 = `${String(hNum).padStart(2, '0')}:${m}`;
+      onChange(time24);
+    },
+    [onChange]
+  );
 
   const handleHourSelect = (h) => {
     setSelectedHour(h);
@@ -73,224 +431,130 @@ export default function VisualTimePicker({ value, onChange, label = 'Call Time',
     emitTime(selectedHour, selectedMinute, p);
   };
 
-  const handleQuickPreset = (h, m, p) => {
-    setSelectedHour(h);
-    setSelectedMinute(m);
-    setSelectedPeriod(p);
-    emitTime(h, m, p);
-    setIsOpen(false);
-  };
-
-  const handleRelativePreset = (minutesToAdd) => {
-    const d = new Date(Date.now() + minutesToAdd * 60000);
-    const pad = (n) => String(n).padStart(2, '0');
-    const time24 = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    onChange(time24);
-    setIsOpen(false);
-  };
-
   return (
-    <div>
+    <div className="relative w-full">
       <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
         {label} {required && <span className="text-rose-400">*</span>}
       </label>
 
-      {/* Interactive Trigger Button */}
+      {/* Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setIsOpen(true)}
-        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm text-left transition cursor-pointer ${
+        onClick={() => {
+          setIsOpen((prev) => !prev);
+        }}
+        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-sm text-left transition cursor-pointer select-none ${
           isOpen
-            ? 'border-zinc-500 ring-1 ring-zinc-500/30 bg-zinc-900 text-white shadow-inner'
+            ? 'border-indigo-500/80 ring-2 ring-indigo-500/20 bg-zinc-900 text-white shadow-inner'
             : 'border-zinc-800 bg-zinc-900/90 text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900 shadow-inner'
         }`}
       >
         <div className="flex items-center gap-2.5">
           <Clock className="w-4 h-4 text-zinc-400 shrink-0" />
-          <span className={value ? 'font-medium font-mono text-white text-sm' : 'text-zinc-500'}>
-            {value ? formatDisplayTime(value) : 'Click to select time...'}
+          <span className="font-mono font-bold text-white text-sm tracking-wide">
+            {formatDisplayTime(value) || `${selectedHour}:${selectedMinute} ${selectedPeriod}`}
           </span>
         </div>
-        <span className="text-xs text-zinc-300 font-mono bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
-          🕒 Pick Time
+
+        <span
+          className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition ${
+            isOpen
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700'
+          }`}
+        >
+          {isOpen ? 'Close' : 'Pick Time'}
         </span>
       </button>
 
       {timezoneHint && (
-        <p className="text-[11px] text-zinc-400 mt-1 font-mono">
+        <p className="text-[11px] text-zinc-500 mt-1 font-mono">
           {timezoneHint}
         </p>
       )}
 
-      {/* Visual Time Modal (Rendered via Portal to prevent modal clipping) */}
+      {/* Mobile-ready Sleek Dropdown (Rendered via Portal to avoid clipping) */}
       {isOpen &&
         createPortal(
-          <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
-            onClick={() => setIsOpen(false)}
-          >
+          <>
+            {/* Mobile backdrop to dismiss cleanly on outside tap without triggering background fields */}
             <div
-              className="w-full max-w-sm bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-3.5 backdrop-blur-2xl max-h-[92dvh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-0 z-[99998] sm:hidden"
+              onClick={() => setIsOpen(false)}
+            />
+
+            <div
+              ref={dropdownRef}
+              style={{
+                position: 'fixed',
+                top: `${dropdownCoords.top}px`,
+                left: `${dropdownCoords.left}px`,
+                width: `${dropdownCoords.width}px`,
+                zIndex: 99999,
+              }}
+              className="bg-[#121217] border border-zinc-800 rounded-xl shadow-xl p-2 select-none animate-fade-in space-y-1.5"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-                <div>
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-zinc-400" />
-                    <span>Select Call Time</span>
-                  </h4>
-                  {timezoneHint && (
-                    <p className="text-[11px] text-zinc-400 font-mono mt-0.5">{timezoneHint}</p>
-                  )}
+              {/* iOS Cylinder Wheel Drum (Compact 3 rows = 108px) */}
+              <div className="relative flex items-center justify-center bg-zinc-950/80 rounded-lg border border-zinc-800/80 overflow-hidden shadow-inner">
+                {/* Center Selection Highlight Bar */}
+                <div
+                  style={{ top: ITEM_HEIGHT, height: ITEM_HEIGHT }}
+                  className="absolute left-1 right-1 rounded-md bg-white/10 border border-white/20 pointer-events-none shadow-xs z-0"
+                />
+
+                {/* Column 1: Hours (01 to 12) */}
+                <WheelColumn
+                  items={HOURS}
+                  selectedValue={selectedHour}
+                  onSelect={handleHourSelect}
+                />
+
+                {/* Colon Divider */}
+                <div className="text-zinc-400 font-semibold text-xs px-0.5 z-10 pointer-events-none select-none">
+                  :
                 </div>
+
+                {/* Column 2: Minutes (00 to 59: 1-by-1 minute step) */}
+                <WheelColumn
+                  items={MINUTES}
+                  selectedValue={selectedMinute}
+                  onSelect={handleMinuteSelect}
+                />
+
+                {/* Column 3: AM / PM */}
+                <WheelColumn
+                  items={PERIODS}
+                  selectedValue={selectedPeriod}
+                  onSelect={handlePeriodSelect}
+                />
+
+                {/* Top 3D Vignette Fade */}
+                <div
+                  style={{ height: ITEM_HEIGHT }}
+                  className="absolute top-0 left-0 right-0 bg-gradient-to-b from-[#121217] via-[#121217]/80 to-transparent pointer-events-none z-10"
+                />
+
+                {/* Bottom 3D Vignette Fade */}
+                <div
+                  style={{ height: ITEM_HEIGHT }}
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#121217] via-[#121217]/80 to-transparent pointer-events-none z-10"
+                />
+              </div>
+
+              {/* Compact Bottom Confirm Action (Min 34px tap target on mobile) */}
+              <div className="flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer active:scale-90"
+                  className="w-full py-1.5 rounded-md bg-white hover:bg-zinc-200 text-zinc-950 text-[11px] font-bold transition cursor-pointer shadow-xs active:scale-95 flex items-center justify-center gap-1 min-h-[34px]"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Quick Presets */}
-              <div className="flex items-center gap-1.5 pb-1 text-xs overflow-x-auto touch-pan-x overscroll-x-contain scrollbar-none py-1">
-                <button
-                  type="button"
-                  onClick={() => handleRelativePreset(15)}
-                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  +15m
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRelativePreset(60)}
-                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  +1h
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickPreset('9', '00', 'AM')}
-                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  9:00 AM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickPreset('11', '30', 'AM')}
-                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  11:30 AM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickPreset('2', '00', 'PM')}
-                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  2:00 PM
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickPreset('4', '30', 'PM')}
-                  className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-medium cursor-pointer transition shrink-0 active:scale-95"
-                >
-                  4:30 PM
-                </button>
-              </div>
-
-              {/* Time Display and AM/PM Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/90 border border-zinc-800">
-                <span className="text-xl font-bold font-mono text-white tracking-wider">
-                  {selectedHour.padStart(2, '0')}:{selectedMinute}
-                </span>
-
-                <div className="flex items-center rounded-lg bg-zinc-950 p-1 border border-zinc-800">
-                  {['AM', 'PM'].map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => handlePeriodSelect(p)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition cursor-pointer active:scale-95 ${
-                        selectedPeriod === p
-                          ? 'bg-white text-zinc-950 shadow-xs'
-                          : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Hours Grid */}
-              <div>
-                <span className="block text-[11px] font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">
-                  Select Hour
-                </span>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {HOURS.map((h) => {
-                    const active = selectedHour === h;
-                    return (
-                      <button
-                        key={h}
-                        type="button"
-                        onClick={() => handleHourSelect(h)}
-                        className={`h-10 rounded-xl text-xs font-bold transition cursor-pointer active:scale-90 ${
-                          active
-                            ? 'bg-white text-zinc-950 shadow-md ring-2 ring-zinc-400/40'
-                            : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white border border-zinc-800/80'
-                        }`}
-                      >
-                        {h}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Minutes Grid */}
-              <div>
-                <span className="block text-[11px] font-semibold text-zinc-400 mb-1.5 uppercase tracking-wider">
-                  Select Minute
-                </span>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {MINUTES.map((m) => {
-                    const active = selectedMinute === m;
-                    return (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => handleMinuteSelect(m)}
-                        className={`h-9 rounded-xl text-xs font-mono font-bold transition cursor-pointer active:scale-90 ${
-                          active
-                            ? 'bg-emerald-500 text-zinc-950 font-bold shadow-md ring-2 ring-emerald-400/40'
-                            : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white border border-zinc-800/80'
-                        }`}
-                      >
-                        :{m}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
-                <span className="text-xs font-mono text-zinc-300 font-bold">
-                  {formatDisplayTime(value) || `${selectedHour.padStart(2, '0')}:${selectedMinute} ${selectedPeriod}`}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  className="px-5 py-2.5 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-xs active:scale-95"
-                >
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-3 h-3" />
                   <span>Done</span>
                 </button>
               </div>
             </div>
-          </div>,
+          </>,
           document.body
         )}
     </div>

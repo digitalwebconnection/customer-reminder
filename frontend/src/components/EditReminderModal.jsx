@@ -1,7 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X, User, Phone, Mail, MapPin, Check, Globe, Calendar, Clock, FileText } from 'lucide-react';
-import api from '../api/axios';
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import {
+  X,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Check,
+  Globe,
+  Calendar,
+  Clock,
+  FileText,
+} from "lucide-react";
+import api from "../api/axios";
 import {
   AUSTRALIAN_TIMEZONES,
   INDIAN_TIMEZONES,
@@ -9,36 +20,41 @@ import {
   combineDateAndTimeToUTC,
   getPartsInAustralianTimezone,
   formatInAustralianTime,
-} from '../utils/dateUtils';
-import VisualDatePicker from './VisualDatePicker';
-import VisualTimePicker from './VisualTimePicker';
+} from "../utils/dateUtils";
+import VisualDatePicker from "./VisualDatePicker";
+import VisualTimePicker from "./VisualTimePicker";
 import {
   validateEmail,
   validatePhone,
   sanitizePhoneInput,
-} from '../utils/validationUtils';
+} from "../utils/validationUtils";
 
-export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }) {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [address, setAddress] = useState('');
-  const [note, setNote] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+export default function EditReminderModal({
+  isOpen,
+  onClose,
+  reminder,
+  onSaved,
+}) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [note, setNote] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [timezone, setTimezone] = useState(DEFAULT_TIMEZONE);
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState("pending");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (reminder && isOpen) {
-      setName(reminder.name || '');
-      setPhone(reminder.phone || '');
-      setEmail(reminder.email || '');
-      setAddress(reminder.address || '');
-      setNote(reminder.note || '');
-      setStatus(reminder.status || 'pending');
+      setName(reminder.name || "");
+      setPhone(reminder.phone || "");
+      setEmail(reminder.email || "");
+      setAddress(reminder.address || "");
+      setNote(reminder.note || "");
+      setStatus(reminder.status || "pending");
 
       const tz = reminder.timezone || DEFAULT_TIMEZONE;
       setTimezone(tz);
@@ -46,7 +62,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
       const parts = getPartsInAustralianTimezone(reminder.dueAt, tz);
       setDate(parts.date);
       setTime(parts.time);
-      setError('');
+      setError("");
     }
   }, [reminder, isOpen]);
 
@@ -54,24 +70,24 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen || !reminder) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (!name.trim()) {
-      setError('Customer name is required');
+      setError("Customer name is required");
       return;
     }
 
-    const country = timezone === 'Asia/Kolkata' ? 'India' : 'Australia';
+    const country = timezone === "Asia/Kolkata" ? "India" : "Australia";
     const phoneCheck = validatePhone(phone, country, true);
     if (!phoneCheck.isValid) {
       setError(phoneCheck.error);
@@ -86,18 +102,23 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
       }
     }
     if (!date || !time) {
-      setError('Both call date and call time are required');
+      setError("Both call date and call time are required");
       return;
     }
 
     const dueAt = combineDateAndTimeToUTC(date, time, timezone);
     if (!dueAt) {
-      setError('Invalid date and time selected');
+      setError("Invalid date and time selected");
       return;
     }
 
-    if (status === 'pending' && new Date(dueAt).getTime() < Date.now() - 60000) {
-      setError('Scheduled call date and time cannot be in the past. Please choose a current or future time.');
+    if (
+      status === "pending" &&
+      new Date(dueAt).getTime() < Date.now() - 60000
+    ) {
+      setError(
+        "Scheduled call date and time cannot be in the past. Please choose a current or future time.",
+      );
       return;
     }
 
@@ -119,13 +140,14 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
       onSaved();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update reminder');
+      setError(err.response?.data?.message || "Failed to update reminder");
     } finally {
       setLoading(false);
     }
   };
 
-  const previewDueUTC = date && time ? combineDateAndTimeToUTC(date, time, timezone) : null;
+  const previewDueUTC =
+    date && time ? combineDateAndTimeToUTC(date, time, timezone) : null;
 
   return createPortal(
     <div
@@ -137,19 +159,13 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
         onClick={(e) => e.stopPropagation()}
       >
         {/* Pinned Header */}
-        <div className="shrink-0 px-5 sm:px-6 py-4 border-b border-zinc-800 bg-zinc-900/40 flex items-center justify-between">
+        <div className="shrink-0 px-5 sm:px-6 py-2 border-b border-zinc-800 bg-zinc-900/40 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
                 Edit Reminder
               </h3>
-              <span className="text-[10px] font-mono font-bold text-zinc-300 bg-zinc-800 border border-zinc-700 px-2 py-0.5 rounded-md">
-                AUSTRALIA
-              </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Update customer details, scheduled date/time, and status.
-            </p>
           </div>
           <button
             type="button"
@@ -162,7 +178,11 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
         </div>
 
         {/* Scrollable Form Body */}
-        <form id="edit-reminder-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+        <form
+          id="edit-reminder-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 pb-16"
+        >
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300">
               {error}
@@ -203,16 +223,20 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
                 value={phone}
                 onChange={(e) => {
                   setPhone(sanitizePhoneInput(e.target.value));
-                  if (error) setError('');
+                  if (error) setError("");
                 }}
-                placeholder={timezone === 'Asia/Kolkata' ? '+91 98765 43210' : '0412 345 678'}
+                placeholder={
+                  timezone === "Asia/Kolkata"
+                    ? "+91 98765 43210"
+                    : "0412 345 678"
+                }
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
               />
             </div>
             <p className="mt-1 text-[10px] text-zinc-500">
-              {timezone === 'Asia/Kolkata'
-                ? 'Indian 10-digit mobile number'
-                : 'Australian 9-10 digit mobile or landline'}
+              {timezone === "Asia/Kolkata"
+                ? "Indian 10-digit mobile number"
+                : "Australian 9-10 digit mobile or landline"}
             </p>
           </div>
 
@@ -232,7 +256,7 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    if (error) setError('');
+                    if (error) setError("");
                   }}
                   placeholder="name@example.com"
                   className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
@@ -270,16 +294,30 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
               onChange={(e) => setTimezone(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
             >
-              <optgroup label="🇦🇺 Australia" className="bg-slate-900 text-slate-300 font-semibold">
+              <optgroup
+                label="🇦🇺 Australia"
+                className="bg-slate-900 text-slate-300 font-semibold"
+              >
                 {AUSTRALIAN_TIMEZONES.map((tz) => (
-                  <option key={tz.value} value={tz.value} className="bg-slate-900 text-slate-100 font-normal">
+                  <option
+                    key={tz.value}
+                    value={tz.value}
+                    className="bg-slate-900 text-slate-100 font-normal"
+                  >
                     {tz.label} ({tz.offset})
                   </option>
                 ))}
               </optgroup>
-              <optgroup label="🇮🇳 India" className="bg-slate-900 text-slate-300 font-semibold">
+              <optgroup
+                label="🇮🇳 India"
+                className="bg-slate-900 text-slate-300 font-semibold"
+              >
                 {INDIAN_TIMEZONES.map((tz) => (
-                  <option key={tz.value} value={tz.value} className="bg-slate-900 text-slate-100 font-normal">
+                  <option
+                    key={tz.value}
+                    value={tz.value}
+                    className="bg-slate-900 text-slate-100 font-normal"
+                  >
                     {tz.label} ({tz.offset})
                   </option>
                 ))}
@@ -312,7 +350,9 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
           {/* Real-time Preview */}
           {previewDueUTC && (
             <div className="p-3 rounded-xl bg-linear-to-r from-indigo-950/70 to-purple-950/50 border border-indigo-500/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1 shadow-inner">
-              <span className="text-slate-400 font-medium">Scheduled In Zone:</span>
+              <span className="text-slate-400 font-medium">
+                Scheduled In Zone:
+              </span>
               <span className="font-mono text-indigo-300 font-bold">
                 {formatInAustralianTime(previewDueUTC, timezone)}
               </span>
@@ -321,14 +361,23 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
 
           {/* Status Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Status</label>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Status
+            </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
             >
-              <option value="pending" className="bg-slate-900 text-slate-100">Pending (Call Pending)</option>
-              <option value="completed" className="bg-slate-900 text-emerald-400">Completed (Finished)</option>
+              <option value="pending" className="bg-slate-900 text-slate-100">
+                Pending (Call Pending)
+              </option>
+              <option
+                value="completed"
+                className="bg-slate-900 text-emerald-400"
+              >
+                Completed (Finished)
+              </option>
             </select>
           </div>
 
@@ -349,7 +398,9 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
 
         {/* Pinned Footer */}
         <div
-          style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom, 0px))" }}
+          style={{
+            paddingBottom: "max(0.875rem, env(safe-area-inset-bottom, 0px))",
+          }}
           className="shrink-0 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-zinc-800 bg-zinc-900/60 flex items-center justify-end gap-2.5"
         >
           <button
@@ -366,11 +417,11 @@ export default function EditReminderModal({ isOpen, onClose, reminder, onSaved }
             className="px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 min-h-[40px]"
           >
             <Check className="w-4 h-4" />
-            <span>{loading ? 'Saving Changes...' : 'Update Reminder'}</span>
+            <span>{loading ? "Saving Changes..." : "Update Reminder"}</span>
           </button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

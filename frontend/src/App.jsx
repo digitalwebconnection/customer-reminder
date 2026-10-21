@@ -55,8 +55,6 @@ import MobileAlarmPermissionModal from './components/MobileAlarmPermissionModal'
 import MobileBottomNav from './components/MobileBottomNav';
 import { registerServiceWorker } from './utils/pushManager';
 import { initRenderKeepAlive } from './utils/renderKeepAlive';
-import { ReactLenis } from 'lenis/react';
-import 'lenis/dist/lenis.css';
 
 function Layout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => {
@@ -121,8 +119,7 @@ export default function App() {
   }, []);
 
   return (
-    <ReactLenis root options={{ lerp: 0.08, duration: 1.2, smoothWheel: true }}>
-      <AuthProvider>
+    <AuthProvider>
         <PwaProvider>
           <TimezoneProvider>
             <ToastProvider>
@@ -258,6 +255,5 @@ export default function App() {
           </TimezoneProvider>
         </PwaProvider>
       </AuthProvider>
-    </ReactLenis>
   );
 }
