@@ -88,6 +88,9 @@ function Layout({ children }) {
           return;
         }
         if (reminderId) {
+          if (String(reminderId).startsWith("test-") || reminderId === "test-alert") {
+            return;
+          }
           const target = `/reminders?alertId=${reminderId}`;
           if (
             location.pathname !== "/reminders" ||

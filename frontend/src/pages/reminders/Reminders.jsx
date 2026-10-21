@@ -218,6 +218,12 @@ export default function Reminders() {
       // Ensure alert is not marked as dismissed when explicitly opening URL or notification
       dismissedIdsRef.current.delete(alertId);
 
+      // If test alert ID (e.g. test-alarm-..., test-alert), clear immediately and NEVER call backend API
+      if (alertId === "test-alert" || String(alertId).startsWith("test-")) {
+        clearUrlAlertParams();
+        return;
+      }
+
       if (reminders.length > 0) {
         const target = reminders.find((r) => r._id === alertId);
         if (target) {
@@ -231,7 +237,9 @@ export default function Reminders() {
       }
 
       // If reminder was not found in the currently loaded list (cold start or filtered list), fetch directly
-      if (!loading) {
+      // ONLY fetch if alertId is a valid 24-character hexadecimal MongoDB ObjectId
+      const isValidMongoId = /^[0-9a-fA-F]{24}$/.test(alertId);
+      if (!loading && isValidMongoId) {
         api
           .get(`/reminders/${alertId}`)
           .then((res) => {
@@ -245,18 +253,11 @@ export default function Reminders() {
           .catch(() => {
             clearUrlAlertParams();
           });
+      } else if (!isValidMongoId) {
+        clearUrlAlertParams();
       }
-    } else if (testAlarm && !activeDueAlert) {
-      // Always allow test alarm to trigger when explicitly requested
-      dismissedIdsRef.current.delete("test-alert");
-      setActiveDueAlert({
-        _id: "test-alert",
-        name: "Test Customer (John Smith)",
-        phone: "+61 400 123 456",
-        dueAt: new Date().toISOString(),
-        note: "This is a live test of the phone alarm & ringtone system.",
-        status: "pending",
-      });
+    } else if (testAlarm) {
+      clearUrlAlertParams();
     }
   }, [searchParams, reminders, loading]);
 
