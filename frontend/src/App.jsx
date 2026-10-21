@@ -1,5 +1,5 @@
 import React, { useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import AustraliaTimezoneBar from './components/AustraliaTimezoneBar';
 
@@ -57,6 +57,10 @@ import { registerServiceWorker } from './utils/pushManager';
 import { initRenderKeepAlive } from './utils/renderKeepAlive';
 
 function Layout({ children }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => {
     try {
       return localStorage.getItem('remindiq_sidebar_collapsed') === 'true';
@@ -64,6 +68,33 @@ function Layout({ children }) {
       return false;
     }
   });
+
+  // Global listener: If push alarm is received or clicked while on any page, route to the ringing screen
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleSwMessage = (e) => {
+      if (!e.data) return;
+      if (
+        e.data.type === 'CALL_REMINDER_NOTIFICATION_CLICK' ||
+        e.data.type === 'PUSH_ALARM_RECEIVED'
+      ) {
+        const { reminderId, userId: msgUserId } = e.data.data || {};
+        if (msgUserId && user?._id && String(msgUserId) !== String(user._id)) {
+          return;
+        }
+        if (reminderId) {
+          const target = `/reminders?alertId=${reminderId}`;
+          if (location.pathname !== '/reminders' || !location.search.includes(reminderId)) {
+            navigate(target);
+          }
+        }
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+  }, [navigate, location, user]);
 
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => {

@@ -41,7 +41,7 @@ self.addEventListener('push', (event) => {
     tag: reminderId ? `remindiq-alarm-${reminderId}` : `remindiq-alarm-${Date.now()}`,
     timestamp: data.timestamp || Date.now(),
     data: {
-      url: data.url || '/reminders',
+      url: data.url || (reminderId ? `/reminders?alertId=${reminderId}` : '/reminders'),
       phone: phone,
       reminderId: reminderId,
       name: data.name || '',
@@ -152,9 +152,34 @@ self.addEventListener('notificationclick', (event) => {
   // 2. Action: Direct Dial Customer
   if (event.action === 'call' && phone) {
     const cleanPhone = phone.replace(/[^0-9+]/g, '');
-    event.waitUntil(
-      clients.openWindow(`tel:${cleanPhone}`).catch(() => {})
-    );
+    const callFlow = async () => {
+      // 1. Focus / open app first so incoming call reminder is visible on screen
+      const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+      let clientHandled = false;
+      for (const client of clientList) {
+        if (client.url && client.url.startsWith(self.location.origin)) {
+          try {
+            client.postMessage({ type: 'CALL_REMINDER_NOTIFICATION_CLICK', data });
+          } catch (e) {}
+          if ('navigate' in client) {
+            client.navigate(targetUrl).catch(() => {});
+          }
+          if ('focus' in client) {
+            await client.focus().catch(() => {});
+            clientHandled = true;
+            break;
+          }
+        }
+      }
+      if (!clientHandled && clients.openWindow) {
+        await clients.openWindow(targetUrl).catch(() => {});
+      }
+      // 2. Open phone dialer
+      if (clients.openWindow) {
+        await clients.openWindow(`tel:${cleanPhone}`).catch(() => {});
+      }
+    };
+    event.waitUntil(callFlow());
     return;
   }
 
@@ -186,20 +211,37 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  // 4. Action: Open / Focus RemindIQ Window
-  const targetUrl = data.url || '/reminders';
+  // 4. Action: Open / Focus RemindIQ Window to show active call alarm screen
+  const targetUrl =
+    data.url || (reminderId ? `/reminders?alertId=${reminderId}` : '/reminders');
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clientList) => {
+      // 1. Look for ANY existing client window of this origin
       for (const client of clientList) {
-        if (client.url.includes('/reminders') && 'focus' in client) {
+        if (client.url && client.url.startsWith(self.location.origin)) {
           try {
             client.postMessage({ type: 'CALL_REMINDER_NOTIFICATION_CLICK', data });
           } catch (e) {}
-          return client.focus();
+
+          // Navigate client window to target alarm URL
+          if ('navigate' in client && (!client.url.includes('alertId=') || client.url !== targetUrl)) {
+            try {
+              await client.navigate(targetUrl);
+            } catch (navErr) {
+              console.warn('[SW] Client navigate notice:', navErr);
+            }
+          }
+
+          if ('focus' in client) {
+            return await client.focus();
+          }
         }
       }
+
+      // 2. If no window is open, open a new window directly to the alarm URL
       if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+        return await clients.openWindow(targetUrl);
       }
     })
   );

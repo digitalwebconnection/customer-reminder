@@ -46,8 +46,8 @@ import { useToast } from "../context/ToastContext";
 import { usePwa } from "../context/PwaContext";
 import { useAuth } from "../context/AuthContext";
 import NumberTicker from "../components/ui/NumberTicker";
-
 import QuickSnoozePortal from "../components/QuickSnoozePortal";
+import IncomingCallOverlay from "../components/IncomingCallOverlay";
 
 export default function Reminders() {
   const toast = useToast();
@@ -185,7 +185,7 @@ export default function Reminders() {
     };
   }, [activeDueAlert]);
 
-  // Handle URL alert query (when opening notification directly from mobile push)
+  // Handle URL alert query (when opening notification directly from mobile push or deep link)
   useEffect(() => {
     const alertId = searchParams.get("alertId");
     const testAlarm = searchParams.get("testAlarm");
@@ -204,16 +204,32 @@ export default function Reminders() {
             markAlertHandled(target._id);
             setActiveDueAlert(target);
           } else {
-            // Already completed! Clean URL query immediately so it never rings
             clearUrlAlertParams();
           }
+          return;
         }
       }
-    } else if (testAlarm && !activeDueAlert) {
-      if (notifiedIdsRef.current.has("test-alert")) {
-        clearUrlAlertParams();
-        return;
+
+      // If reminder was not found in the currently loaded list (cold start or filtered list), fetch directly
+      if (!loading) {
+        api
+          .get(`/reminders/${alertId}`)
+          .then((res) => {
+            const r = res.data?.data;
+            if (r && r.status === "pending" && !notifiedIdsRef.current.has(r._id)) {
+              markAlertHandled(r._id);
+              setActiveDueAlert(r);
+            } else {
+              clearUrlAlertParams();
+            }
+          })
+          .catch(() => {
+            clearUrlAlertParams();
+          });
       }
+    } else if (testAlarm && !activeDueAlert) {
+      // Always allow test alarm to trigger when explicitly requested
+      notifiedIdsRef.current.delete("test-alert");
       setActiveDueAlert({
         _id: "test-alert",
         name: "Test Customer (John Smith)",
@@ -223,7 +239,23 @@ export default function Reminders() {
         status: "pending",
       });
     }
-  }, [searchParams, reminders]);
+  }, [searchParams, reminders, loading]);
+
+  // Mobile background-to-foreground instant wakeup handler:
+  // When mobile user wakes screen, unlocks phone, or switches back to RemindIQ from background, immediately check!
+  useEffect(() => {
+    const handleResume = () => {
+      if (document.visibilityState === "visible") {
+        fetchReminders(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleResume);
+    window.addEventListener("focus", handleResume);
+    return () => {
+      document.removeEventListener("visibilitychange", handleResume);
+      window.removeEventListener("focus", handleResume);
+    };
+  }, []);
 
   // Listen for Service Worker postMessage notification clicks (strictly for current user)
   useEffect(() => {
@@ -662,6 +694,33 @@ export default function Reminders() {
 
   return (
     <div className="max-w-7xl mx-auto py-2 sm:py-6 space-y-5">
+      {/* Full-Screen Mobile Incoming Call Ringing Overlay */}
+      <IncomingCallOverlay
+        alert={activeDueAlert}
+        secondsLeft={alertSecondsLeft}
+        isMuted={isRingtoneMuted}
+        isCompleting={isCompletingAlert}
+        onCall={() => {
+          stopCallRingtone();
+          if (activeDueAlert?.phone) {
+            const clean = activeDueAlert.phone.replace(/[^0-9+]/g, "");
+            window.location.href = `tel:${clean}`;
+          }
+        }}
+        onComplete={(alertItem) => handleCompleteAlert(alertItem)}
+        onSnooze={(alertItem, hours, label) => handleQuickSnooze(alertItem, hours, label)}
+        onToggleMute={() => {
+          if (isRingtoneMuted) {
+            startCallRingtone();
+            setIsRingtoneMuted(false);
+          } else {
+            stopCallRingtone();
+            setIsRingtoneMuted(true);
+          }
+        }}
+        onDismiss={(alertItem) => handleDismissAlert(alertItem)}
+      />
+
       {/* Active Call Due Alert Notification */}
       {activeDueAlert && (
         <div className="p-4 sm:p-5 rounded-xl bg-zinc-950 border border-rose-500/50 shadow-xl flex flex-col gap-3 relative overflow-hidden backdrop-blur-xl">

@@ -142,6 +142,9 @@ export function startCallRingtone() {
 
   // 2. Run High-Volume Web Audio Synthesizer (Loud Dual-Tone Phone Bell)
   startLoudWebAudioPhoneRing();
+
+  // 3. Start phone ringing vibration cadence on supported mobile devices
+  startMobileVibration();
 }
 
 /**
@@ -252,11 +255,47 @@ function startLoudWebAudioPhoneRing() {
   }
 }
 
+let vibrationInterval = null;
+
+function startMobileVibration() {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      // Urgent telephone ringing cadence: buzz-buzz ... buzz-buzz
+      navigator.vibrate([450, 180, 450, 1920]);
+      if (!vibrationInterval) {
+        vibrationInterval = setInterval(() => {
+          if (!isRingtoneActive) {
+            clearInterval(vibrationInterval);
+            vibrationInterval = null;
+            return;
+          }
+          try {
+            navigator.vibrate([450, 180, 450, 1920]);
+          } catch (e) {}
+        }, 3000);
+      }
+    } catch (e) {}
+  }
+}
+
+function stopMobileVibration() {
+  if (vibrationInterval) {
+    clearInterval(vibrationInterval);
+    vibrationInterval = null;
+  }
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate(0);
+    } catch (e) {}
+  }
+}
+
 /**
  * Stops ringtone immediately
  */
 export function stopCallRingtone() {
   isRingtoneActive = false;
+  stopMobileVibration();
 
   if (ringtoneAudioElement) {
     try {
