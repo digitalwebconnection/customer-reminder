@@ -14,27 +14,15 @@ import {
   Globe,
   Clock,
   Check,
-  Bell,
-  Volume2,
-  VolumeX,
-  Radio,
-  Zap,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useTimezone } from '../../context/TimezoneContext';
-import { usePwa } from '../../context/PwaContext';
 import { AUSTRALIAN_TIMEZONES, INDIAN_TIMEZONES } from '../../utils/dateUtils';
 import { validatePhone } from '../../utils/validationUtils';
 
 export default function Profile() {
   const { user, updateProfile, isSuperAdmin } = useAuth();
-  const {
-    permissions,
-    enableAllAlarmPermissions,
-    enableRingPermission,
-    toggleRingPermission,
-  } = usePwa();
   const { setTimezone: setGlobalTimezone } = useTimezone();
   const toast = useToast();
 
@@ -259,24 +247,6 @@ export default function Profile() {
         >
           <Shield className="w-4 h-4" />
           <span>Security & Password</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('alarms')}
-          className={`pb-3 text-sm font-medium transition-colors flex items-center gap-2 cursor-pointer border-b-2 -mb-px shrink-0 ${
-            activeTab === 'alarms'
-              ? 'border-white text-white font-semibold'
-              : 'border-transparent text-zinc-400 hover:text-zinc-200'
-          }`}
-        >
-          <Bell className="w-4 h-4" />
-          <span>Alarms & Ringtone</span>
-          {permissions.ringSound === 'granted' ? (
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-          ) : (
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-          )}
         </button>
       </div>
 
@@ -600,82 +570,6 @@ export default function Profile() {
               </button>
             </div>
           </form>
-        </div>
-      )}
-
-      {/* Tab 3: Alarms & Ringtone Settings */}
-      {activeTab === 'alarms' && (
-        <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 sm:p-7 shadow-xs space-y-6">
-          <div className="border-b border-zinc-800 pb-4">
-            <h2 className="text-base font-semibold text-white flex items-center gap-2">
-              <Volume2 className="w-5 h-5 text-amber-400" />
-              <span>Mobile Alarms & Ringtone Settings</span>
-            </h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Configure your device's audio ringtone and background push alarms for customer reminders.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {/* Setting: Lock Screen & Background Push Alarms */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3.5">
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                    permissions.notification === 'granted' && permissions.pushSubscribed
-                      ? 'bg-violet-500/15 text-violet-400 border-violet-500/30'
-                      : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                  }`}
-                >
-                  <Radio className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-white">
-                      Background Lock Screen Alarms
-                    </span>
-                    {permissions.notification === 'granted' && permissions.pushSubscribed ? (
-                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" /> Armed 🟢
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                        Setup Required
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-zinc-400 mt-1 max-w-lg">
-                    Wakes your phone and displays urgent call notifications even when the app is completely closed or your screen is locked.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                {permissions.notification === 'granted' && permissions.pushSubscribed ? (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Active on this device</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        await enableAllAlarmPermissions();
-                        toast.success('Alarms Enabled', 'Background notifications are now active.');
-                      } catch (e) {
-                        toast.error('Permission Error', e.message || 'Please enable notifications in your browser settings.');
-                      }
-                    }}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer active:scale-95 flex items-center gap-1.5 shadow-md shadow-indigo-600/30"
-                  >
-                    <Bell className="w-3.5 h-3.5" />
-                    <span>Enable Alarms</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

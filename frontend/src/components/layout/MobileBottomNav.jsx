@@ -131,40 +131,6 @@ export default function MobileBottomNav() {
           <span className="text-[10px] tracking-tight">Reminders</span>
         </NavLink>
 
-        {/* Mobile Alarms & Ringtone Hub */}
-        <button
-          type="button"
-          onClick={() => setShowAlarmModal(true)}
-          className={`flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-            isAlarmReady
-              ? "text-zinc-400 hover:text-emerald-400"
-              : "text-amber-400 font-bold hover:text-amber-300"
-          }`}
-          title="Mobile Alarms & Ringtone Permission"
-        >
-          <div className="relative mb-0.5">
-            {isAlarmReady ? (
-              <Bell className="w-5 h-5 text-emerald-400" />
-            ) : (
-              <BellRing className="w-5 h-5 text-amber-400 animate-bounce" />
-            )}
-            <span
-              className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
-                isAlarmReady
-                  ? "bg-emerald-400 ring-2 ring-[#09090b]"
-                  : "bg-amber-400 animate-ping ring-2 ring-[#09090b]"
-              }`}
-            />
-          </div>
-          <span className="text-[10px] tracking-tight">
-            {isAlarmReady
-              ? "Ring/Alarm"
-              : permissions.ringSound !== "granted"
-              ? "Set Ring"
-              : "Set Alarm"}
-          </span>
-        </button>
-
         {/* Elevated Add Reminder Button */}
         <NavLink
           to="/add"

@@ -290,12 +290,13 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                     <span>{isInstalled ? "App Installed" : "Download Mobile App"}</span>
                   </button>
 
-                  {/* Alarm Permissions */}
+                  {/* Notification Permissions */}
                   <button
                     type="button"
-                    onClick={() => {
-                      setMobileOpen(false);
-                      setShowAlarmModal(true);
+                    onClick={async () => {
+                      if (notificationState !== "granted") {
+                        await enableAllAlarmPermissions();
+                      }
                     }}
                     className={`flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-lg text-xs font-medium border transition cursor-pointer ${
                       notificationState === "granted"
@@ -308,52 +309,19 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                     {notificationState === "granted" ? (
                       <>
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                        <span>Alarms Active</span>
+                        <span>Notifications Active</span>
                       </>
                     ) : notificationState === "denied" ? (
                       <>
                         <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                        <span>Alarms Blocked</span>
+                        <span>Notifications Blocked</span>
                       </>
                     ) : (
                       <>
                         <BellRing className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span>Set Alarms</span>
+                        <span>Enable Notifications</span>
                       </>
                     )}
-                  </button>
-
-                  {/* Reminder Ringtone Permission Item */}
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (permissions?.ringSound === 'granted') {
-                        const res = await toggleRingPermission();
-                        if (res?.success) {
-                          toast.success("Ringtone Enabled 🔔", "Reminders will ring out loud.");
-                        } else {
-                          toast.info("Ringtone Muted 🔕", "Reminder ringtone silenced.");
-                        }
-                      } else {
-                        const res = await enableRingPermission();
-                        if (res?.success) {
-                          toast.success("Ringtone Permission Set! 🔊", "Phone ringtone is now active.");
-                        }
-                      }
-                    }}
-                    className={`flex items-center justify-between w-full text-left px-3 py-2 rounded-lg text-xs font-medium border transition cursor-pointer active:scale-95 ${
-                      permissions?.ringSound === 'granted'
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                        : "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Volume2 className="w-4 h-4 shrink-0" />
-                      <span>Reminder Ringtone</span>
-                    </div>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-950/80">
-                      {permissions?.ringSound === 'granted' ? "Ring Ready 🔊" : "Set Ring 🔔"}
-                    </span>
                   </button>
                 </div>
               </div>
