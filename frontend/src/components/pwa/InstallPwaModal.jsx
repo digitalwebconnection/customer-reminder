@@ -148,7 +148,7 @@ export default function InstallPwaModal() {
         {activeTab === "ios" ? (
           <div className="space-y-2.5 animate-slide-in-step">
             <div className="group flex items-center gap-3 p-3 rounded-2xl bg-slate-950/50 hover:bg-slate-900/80 border border-white/6 hover:border-indigo-500/35 hover:translate-x-1.5 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 ease-out text-xs text-slate-300">
-              <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
+              <span className="w-7 h-7 rounded-xl bg-linear-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
                 1
               </span>
               <span className="flex items-center gap-1.5 flex-1 leading-relaxed">
@@ -161,7 +161,7 @@ export default function InstallPwaModal() {
             </div>
 
             <div className="group flex items-center gap-3 p-3 rounded-2xl bg-slate-950/50 hover:bg-slate-900/80 border border-white/6 hover:border-indigo-500/35 hover:translate-x-1.5 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 ease-out text-xs text-slate-300">
-              <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
+              <span className="w-7 h-7 rounded-xl bg-linear-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
                 2
               </span>
               <span className="flex items-center gap-1.5 flex-1 leading-relaxed">
@@ -173,7 +173,7 @@ export default function InstallPwaModal() {
             </div>
 
             <div className="group flex items-center gap-3 p-3 rounded-2xl bg-slate-950/50 hover:bg-slate-900/80 border border-white/6 hover:border-indigo-500/35 hover:translate-x-1.5 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 ease-out text-xs text-slate-300">
-              <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
+              <span className="w-7 h-7 rounded-xl bg-linear-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
                 3
               </span>
               <span className="flex-1 leading-relaxed">
@@ -198,7 +198,7 @@ export default function InstallPwaModal() {
             ) : (
               <>
                 <div className="group flex items-center gap-3 p-3 rounded-2xl bg-slate-950/50 hover:bg-slate-900/80 border border-white/6 hover:border-indigo-500/35 hover:translate-x-1.5 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 ease-out text-xs text-slate-300">
-                  <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
+                  <span className="w-7 h-7 rounded-xl bg-linear-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
                     1
                   </span>
                   <span className="flex-1 leading-relaxed">
@@ -207,7 +207,7 @@ export default function InstallPwaModal() {
                 </div>
 
                 <div className="group flex items-center gap-3 p-3 rounded-2xl bg-slate-950/50 hover:bg-slate-900/80 border border-white/6 hover:border-indigo-500/35 hover:translate-x-1.5 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 ease-out text-xs text-slate-300">
-                  <span className="w-7 h-7 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
+                  <span className="w-7 h-7 rounded-xl bg-linear-to-tr from-indigo-500/20 to-violet-500/20 text-indigo-300 font-bold flex items-center justify-center shrink-0 border border-indigo-500/30 group-hover:scale-110 group-hover:bg-indigo-500/30 group-hover:text-white transition-all duration-300 shadow-sm">
                     2
                   </span>
                   <span className="flex-1 leading-relaxed">
