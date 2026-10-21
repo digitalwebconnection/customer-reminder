@@ -45,7 +45,7 @@ export default function AdminLayout({ children }) {
           {/* Logo & Super Admin Shield */}
           <div className="flex items-center gap-3">
             <Link to="/admin" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-zinc-950 font-bold shadow-lg shadow-amber-500/20">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-zinc-950 font-bold shadow-lg shadow-amber-500/20">
                 <Shield className="w-4 h-4 text-zinc-950" />
               </div>
               <div className="flex items-center gap-2">

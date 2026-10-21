@@ -86,7 +86,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       {/* Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-zinc-900 via-zinc-900 to-amber-950/30 border border-zinc-800 rounded-2xl p-4 sm:p-6 shadow-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-linear-to-r from-zinc-900 via-zinc-900 to-amber-950/30 border border-zinc-800 rounded-2xl p-4 sm:p-6 shadow-xl">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
@@ -103,14 +103,14 @@ export default function AdminDashboard() {
           <button
             type="button"
             onClick={fetchDashboardStats}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition cursor-pointer active:scale-95 min-h-[38px]"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition cursor-pointer active:scale-95 min-h-9.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
           <Link
             to="/admin/users"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-zinc-950 transition font-bold shadow-md shadow-amber-500/20 active:scale-95 min-h-[38px]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-zinc-950 transition shadow-md shadow-amber-500/20 active:scale-95 min-h-9.5"
           >
             <span>Manage Users</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -130,7 +130,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-medium text-zinc-400">{card.label}</span>
-                <div className={`p-2 rounded-xl bg-gradient-to-br ${card.color}`}>
+                <div className={`p-2 rounded-xl bg-linear-to-br ${card.color}`}>
                   <Icon className="w-4 h-4" />
                 </div>
               </div>

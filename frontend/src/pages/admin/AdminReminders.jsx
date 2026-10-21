@@ -296,7 +296,7 @@ export default function AdminReminders() {
                       <div className="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-[9px] text-zinc-300">
                         {ownerInitial}
                       </div>
-                      <span className="truncate max-w-[120px] text-zinc-300 text-[11px]">
+                      <span className="truncate max-w-30 text-zinc-300 text-[11px]">
                         {ownerName}
                       </span>
                     </div>
@@ -361,7 +361,7 @@ export default function AdminReminders() {
 
         {/* Desktop View: Table (>= md) */}
         <div className="hidden md:block overflow-x-auto touch-pan-x">
-          <table className="w-full text-left text-xs min-w-[680px]">
+          <table className="w-full text-left text-xs min-w-170">
             <thead>
               <tr className="bg-zinc-950/80 border-b border-zinc-800 text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
                 <th className="py-3.5 px-4">Client / Reminder</th>

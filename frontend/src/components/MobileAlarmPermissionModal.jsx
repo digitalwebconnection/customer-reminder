@@ -386,7 +386,7 @@ export default function MobileAlarmPermissionModal() {
               type="button"
               onClick={() => handleTestAlarm(5)}
               disabled={testingAlarm || countdown > 0}
-              className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-600/30 to-amber-500/20 hover:from-amber-600/40 hover:to-amber-500/30 border border-amber-500/30 text-amber-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
+              className="w-full py-2.5 px-3 rounded-xl bg-linear-to-r from-amber-600/30 to-amber-500/20 hover:from-amber-600/40 hover:to-amber-500/30 border border-amber-500/30 text-amber-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 active:scale-95"
             >
               <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
               <span>

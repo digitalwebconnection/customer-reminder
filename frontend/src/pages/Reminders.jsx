@@ -715,7 +715,7 @@ export default function Reminders() {
               <a
                 href={`tel:${activeDueAlert.phone}`}
                 onClick={() => stopCallRingtone()}
-                className="col-span-2 sm:col-span-1 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-zinc-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-500/20 min-h-[44px]"
+                className="col-span-2 sm:col-span-1 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-zinc-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-500/20 min-h-11"
               >
                 <Phone className="w-4 h-4" />
                 <span>Call Now ({activeDueAlert.phone})</span>
@@ -732,7 +732,7 @@ export default function Reminders() {
                     setIsRingtoneMuted(true);
                   }
                 }}
-                className="px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition border border-zinc-800 cursor-pointer min-h-[44px]"
+                className="px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition border border-zinc-800 cursor-pointer min-h-11"
               >
                 {isRingtoneMuted ? (
                   <>
@@ -751,7 +751,7 @@ export default function Reminders() {
                 type="button"
                 disabled={isCompletingAlert}
                 onClick={() => handleCompleteAlert(activeDueAlert)}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition border border-emerald-500/40 cursor-pointer shadow-md shadow-emerald-600/30 min-h-[44px] disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition border border-emerald-500/40 cursor-pointer shadow-md shadow-emerald-600/30 min-h-11 disabled:opacity-50"
               >
                 {isCompletingAlert ? (
                   <>
@@ -769,7 +769,7 @@ export default function Reminders() {
               <button
                 type="button"
                 onClick={() => handleDismissAlert(activeDueAlert)}
-                className="col-span-2 sm:col-span-1 px-3.5 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium flex items-center justify-center transition border border-zinc-800 cursor-pointer min-h-[38px]"
+                className="col-span-2 sm:col-span-1 px-3.5 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium flex items-center justify-center transition border border-zinc-800 cursor-pointer min-h-9.5"
               >
                 Dismiss
               </button>
@@ -780,7 +780,7 @@ export default function Reminders() {
 
       {/* Ringtone Audio Permission Banner (Allows loud phone ringing for due reminders) */}
       {permissions?.ringSound !== "granted" && (
-        <div className="p-3.5 sm:p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-zinc-900 to-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-linear-to-r from-amber-500/10 via-zinc-900 to-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
               <Volume2 className="w-4 h-4 animate-pulse" />
@@ -1024,7 +1024,7 @@ export default function Reminders() {
           {/* Mobile Sort & Refresh row side-by-side */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
             {/* Sort selector */}
-            <div className="flex-1 sm:flex-none flex items-center gap-1.5 bg-zinc-900/60 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-300 min-h-[40px]">
+            <div className="flex-1 sm:flex-none flex items-center gap-1.5 bg-zinc-900/60 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-300 min-h-10">
               <ArrowUpDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               <select
                 value={sortBy}
@@ -1048,7 +1048,7 @@ export default function Reminders() {
               type="button"
               onClick={handleManualRefresh}
               disabled={isRefreshing}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 min-h-[40px] shrink-0 active:scale-95"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition cursor-pointer disabled:opacity-50 min-h-10 shrink-0 active:scale-95"
               title="Refresh reminders"
             >
               <RefreshCw

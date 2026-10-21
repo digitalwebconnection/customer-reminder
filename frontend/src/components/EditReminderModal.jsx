@@ -151,7 +151,7 @@ export default function EditReminderModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center p-2.5 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-9998 flex items-center justify-center p-2.5 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <div
@@ -406,7 +406,7 @@ export default function EditReminderModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white transition cursor-pointer min-h-[40px] active:scale-95"
+            className="px-4 py-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white transition cursor-pointer min-h-10 active:scale-95"
           >
             Cancel
           </button>
@@ -414,7 +414,7 @@ export default function EditReminderModal({
             type="submit"
             form="edit-reminder-form"
             disabled={loading}
-            className="px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 min-h-[40px]"
+            className="px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 min-h-10"
           >
             <Check className="w-4 h-4" />
             <span>{loading ? "Saving Changes..." : "Update Reminder"}</span>

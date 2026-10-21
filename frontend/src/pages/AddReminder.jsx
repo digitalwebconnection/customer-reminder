@@ -462,7 +462,7 @@ export default function AddReminder() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full min-h-[48px] py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm sm:text-base transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
+                className="w-full min-h-12 py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm sm:text-base transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
               >
                 <CheckCircle2 className="w-5 h-5" />
                 <span>{loading ? "Saving Customer..." : "Create Customer"}</span>

@@ -6,11 +6,11 @@ const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')); // Every 1 minute: 00 to 59
 const PERIODS = ['AM', 'PM'];
 
-const ITEM_HEIGHT = 36; // Compact row height (px)
+const ITEM_HEIGHT = 38; // Height in px for each wheel row
 
 /**
  * Reusable vertical wheel column with PURE MOUSE WHEEL SCROLLING, DRAG, TOUCH & CLICK
- * Ultra-compact 3-row Apple style drum picker optimized for both Desktop and Mobile.
+ * Clearly displays upper number, selected center number, and lower number.
  */
 function WheelColumn({ items, selectedValue, onSelect, formatLabel }) {
   const containerRef = useRef(null);
@@ -72,13 +72,13 @@ function WheelColumn({ items, selectedValue, onSelect, formatLabel }) {
 
       const direction = e.deltaY > 0 ? 1 : -1;
       let delta = Math.abs(e.deltaY);
-      if (e.deltaMode === 1) delta *= 36; // DOM_DELTA_LINE
-      if (e.deltaMode === 2) delta *= 360; // DOM_DELTA_PAGE
+      if (e.deltaMode === 1) delta *= 38; // DOM_DELTA_LINE
+      if (e.deltaMode === 2) delta *= 380; // DOM_DELTA_PAGE
 
       let steps = 1;
       if (delta >= 180) {
         steps = Math.min(5, Math.floor(delta / 90));
-      } else if (delta < 36) {
+      } else if (delta < 38) {
         wheelAccumulatorRef.current += e.deltaY;
         if (Math.abs(wheelAccumulatorRef.current) >= 25) {
           steps = 1;
@@ -263,8 +263,8 @@ function WheelColumn({ items, selectedValue, onSelect, formatLabel }) {
             style={{ height: ITEM_HEIGHT }}
             className={`w-full flex items-center justify-center transition-all duration-150 select-none cursor-pointer outline-hidden ${
               isSelected
-                ? 'text-white text-sm sm:text-base font-bold tracking-tight'
-                : 'text-zinc-500 hover:text-zinc-300 text-[11px] sm:text-[12px] font-normal opacity-30 hover:opacity-60'
+                ? 'text-white text-base sm:text-lg font-extrabold tracking-tight scale-105'
+                : 'text-zinc-400 hover:text-zinc-200 text-xs sm:text-sm font-medium opacity-80 hover:opacity-100'
             }`}
           >
             {formatLabel ? formatLabel(item) : item}
@@ -291,7 +291,7 @@ export default function VisualTimePicker({
   const [dropdownCoords, setDropdownCoords] = useState({
     top: 0,
     left: 0,
-    width: 200,
+    width: 260,
     openUp: false,
   });
 
@@ -322,12 +322,18 @@ export default function VisualTimePicker({
     }
   }, [value]);
 
-  // Responsive floating position calculation (centers under button on mobile, right-aligns on desktop)
+  // Responsive floating position calculation (full width of button on mobile, aligned on desktop)
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const dropdownHeight = 158;
-    const dropdownWidth = 200;
+    const isMobile = window.innerWidth < 640;
+
+    // Full width of trigger button on mobile screen, or aligned width on desktop
+    const dropdownWidth = isMobile
+      ? Math.min(rect.width, window.innerWidth - 24)
+      : Math.max(220, Math.min(rect.width, 320));
+
+    const dropdownHeight = 172; // 38 * 3 (114px) + button (38px) + padding
 
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
@@ -338,19 +344,11 @@ export default function VisualTimePicker({
     let top = openUp ? rect.top - dropdownHeight - 6 : rect.bottom + 6;
     top = Math.max(8, Math.min(window.innerHeight - dropdownHeight - 8, top));
 
-    // Centered relative to trigger button on mobile, right-aligned on desktop
-    const isMobile = window.innerWidth < 640;
-    let left;
-    if (isMobile) {
-      left = rect.left + (rect.width - dropdownWidth) / 2;
-    } else {
-      left = rect.right - dropdownWidth;
-    }
-
-    // Clamp horizontally to stay within viewport
-    if (left < 10) left = 10;
-    if (left + dropdownWidth > window.innerWidth - 10) {
-      left = window.innerWidth - dropdownWidth - 10;
+    // On mobile, align left edge directly with trigger button (full width)
+    let left = isMobile ? rect.left : (rect.right - dropdownWidth);
+    if (left < 12) left = 12;
+    if (left + dropdownWidth > window.innerWidth - 12) {
+      left = window.innerWidth - dropdownWidth - 12;
     }
 
     setDropdownCoords({ top, left, width: dropdownWidth, openUp });
@@ -474,13 +472,13 @@ export default function VisualTimePicker({
         </p>
       )}
 
-      {/* Mobile-ready Sleek Dropdown (Rendered via Portal to avoid clipping) */}
+      {/* Full-width on mobile screen, with clearly visible upper and lower numbers */}
       {isOpen &&
         createPortal(
           <>
             {/* Mobile backdrop to dismiss cleanly on outside tap without triggering background fields */}
             <div
-              className="fixed inset-0 z-[99998] sm:hidden"
+              className="fixed inset-0 z-99998 sm:hidden"
               onClick={() => setIsOpen(false)}
             />
 
@@ -495,7 +493,7 @@ export default function VisualTimePicker({
               }}
               className="bg-[#121217] border border-zinc-800 rounded-xl shadow-xl p-2 select-none animate-fade-in space-y-1.5"
             >
-              {/* iOS Cylinder Wheel Drum (Compact 3 rows = 108px) */}
+              {/* iOS Cylinder Wheel Drum (3 rows = upper number, selected center number, lower number) */}
               <div className="relative flex items-center justify-center bg-zinc-950/80 rounded-lg border border-zinc-800/80 overflow-hidden shadow-inner">
                 {/* Center Selection Highlight Bar */}
                 <div
@@ -511,7 +509,7 @@ export default function VisualTimePicker({
                 />
 
                 {/* Colon Divider */}
-                <div className="text-zinc-400 font-semibold text-xs px-0.5 z-10 pointer-events-none select-none">
+                <div className="text-zinc-300 font-bold text-sm px-1 z-10 pointer-events-none select-none">
                   :
                 </div>
 
@@ -529,27 +527,27 @@ export default function VisualTimePicker({
                   onSelect={handlePeriodSelect}
                 />
 
-                {/* Top 3D Vignette Fade */}
+                {/* Subtle top edge fade that does NOT hide the upper number */}
                 <div
-                  style={{ height: ITEM_HEIGHT }}
-                  className="absolute top-0 left-0 right-0 bg-gradient-to-b from-[#121217] via-[#121217]/80 to-transparent pointer-events-none z-10"
+                  style={{ height: 8 }}
+                  className="absolute top-0 left-0 right-0 bg-linear-to-b from-[#121217]/50 to-transparent pointer-events-none z-10"
                 />
 
-                {/* Bottom 3D Vignette Fade */}
+                {/* Subtle bottom edge fade that does NOT hide the lower number */}
                 <div
-                  style={{ height: ITEM_HEIGHT }}
-                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#121217] via-[#121217]/80 to-transparent pointer-events-none z-10"
+                  style={{ height: 8 }}
+                  className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-[#121217]/50 to-transparent pointer-events-none z-10"
                 />
               </div>
 
-              {/* Compact Bottom Confirm Action (Min 34px tap target on mobile) */}
+              {/* Compact Bottom Confirm Action (Min 36px tap target on mobile) */}
               <div className="flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="w-full py-1.5 rounded-md bg-white hover:bg-zinc-200 text-zinc-950 text-[11px] font-bold transition cursor-pointer shadow-xs active:scale-95 flex items-center justify-center gap-1 min-h-[34px]"
+                  className="w-full py-1.5 rounded-md bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold transition cursor-pointer shadow-xs active:scale-95 flex items-center justify-center gap-1.5 min-h-9"
                 >
-                  <Check className="w-3 h-3" />
+                  <Check className="w-3.5 h-3.5" />
                   <span>Done</span>
                 </button>
               </div>

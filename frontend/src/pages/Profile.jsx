@@ -402,7 +402,7 @@ export default function Profile() {
                     </div>
                     {country === 'Australia' && (
                       <div className="w-5 h-5 rounded-full bg-white text-zinc-950 flex items-center justify-center shrink-0">
-                        <Check className="w-3 h-3 stroke-[3]" />
+                        <Check className="w-3 h-3 stroke-3" />
                       </div>
                     )}
                   </div>
@@ -429,7 +429,7 @@ export default function Profile() {
                     </div>
                     {country === 'India' && (
                       <div className="w-5 h-5 rounded-full bg-white text-zinc-950 flex items-center justify-center shrink-0">
-                        <Check className="w-3 h-3 stroke-[3]" />
+                        <Check className="w-3 h-3 stroke-3" />
                       </div>
                     )}
                   </div>
@@ -478,7 +478,7 @@ export default function Profile() {
               <button
                 type="submit"
                 disabled={savingProfile}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[46px] py-2.5 px-6 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-sm font-bold transition shadow-xs cursor-pointer disabled:opacity-50 active:scale-95"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-11.5 py-2.5 px-6 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-sm font-bold transition shadow-xs cursor-pointer disabled:opacity-50 active:scale-95"
               >
                 <Save className="w-4 h-4" />
                 <span>{savingProfile ? 'Saving...' : 'Save Profile Changes'}</span>
@@ -595,7 +595,7 @@ export default function Profile() {
               <button
                 type="submit"
                 disabled={savingPassword}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[46px] py-2.5 px-6 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-sm font-bold transition shadow-xs cursor-pointer disabled:opacity-50 active:scale-95"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-11.5 py-2.5 px-6 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-sm font-bold transition shadow-xs cursor-pointer disabled:opacity-50 active:scale-95"
               >
                 <KeyRound className="w-4 h-4" />
                 <span>{savingPassword ? 'Updating Password...' : 'Update Password'}</span>

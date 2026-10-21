@@ -213,7 +213,7 @@ export default function VisualDatePicker({
       {isOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
             onClick={() => setIsOpen(false)}
           >
             <div
@@ -336,7 +336,7 @@ export default function VisualDatePicker({
 
               {/* Footer */}
               <div className="mt-3 pt-2.5 border-t border-zinc-800 flex items-center justify-between text-[11px]">
-                <span className="text-zinc-400 font-mono text-xs truncate max-w-[200px]">
+                <span className="text-zinc-400 font-mono text-xs truncate max-w-50">
                   {value ? formatDisplayDate(value) : 'Select today or future date'}
                 </span>
                 <button

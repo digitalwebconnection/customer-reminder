@@ -19,7 +19,7 @@ export default function InstallPwaModal() {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-10001 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
       onClick={() => setShowIosModal(false)}
     >
       <div

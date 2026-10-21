@@ -645,7 +645,7 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
               </div>
               {!isCollapsed && (
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-zinc-200 truncate max-w-[120px]">
+                  <p className="text-xs font-semibold text-zinc-200 truncate max-w-30">
                     {user?.name || user?.email || "User"}
                   </p>
                   <p className="text-[10px] text-zinc-400 font-mono">

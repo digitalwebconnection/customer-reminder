@@ -106,7 +106,7 @@ export default function QuickSnoozePortal({
   // 1. MOBILE BOTTOM ACTION SHEET VIEW (< 640px)
   if (isMobile) {
     return createPortal(
-      <div className="fixed inset-0 z-[9999] flex flex-col justify-end">
+      <div className="fixed inset-0 z-9999 flex flex-col justify-end">
         {/* Backdrop overlay */}
         <div
           className="fixed inset-0 bg-black/75 backdrop-blur-xs transition-opacity duration-200"
@@ -129,7 +129,7 @@ export default function QuickSnoozePortal({
                 <CalendarClock className="w-4 h-4 text-amber-400" />
                 Quick Reschedule
               </span>
-              <p className="text-sm font-semibold text-white truncate max-w-[260px] mt-0.5">
+              <p className="text-sm font-semibold text-white truncate max-w-65 mt-0.5">
                 {reminder.name}
               </p>
             </div>

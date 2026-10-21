@@ -48,7 +48,7 @@ export default function MobileBottomNav() {
             to="/admin"
             end
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+              `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                 isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
               }`
             }
@@ -61,7 +61,7 @@ export default function MobileBottomNav() {
           <NavLink
             to="/admin/users"
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+              `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                 isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
               }`
             }
@@ -74,7 +74,7 @@ export default function MobileBottomNav() {
           <NavLink
             to="/admin/reminders"
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+              `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                 isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
               }`
             }
@@ -87,7 +87,7 @@ export default function MobileBottomNav() {
           <NavLink
             to="/admin/logs"
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+              `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                 isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
               }`
             }
@@ -100,7 +100,7 @@ export default function MobileBottomNav() {
           <NavLink
             to="/profile"
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+              `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                 isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
               }`
             }
@@ -124,7 +124,7 @@ export default function MobileBottomNav() {
         <NavLink
           to="/reminders"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+            `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
               isActive
                 ? "text-white font-bold"
                 : "text-zinc-400 hover:text-zinc-200"
@@ -139,7 +139,7 @@ export default function MobileBottomNav() {
         <button
           type="button"
           onClick={() => setShowAlarmModal(true)}
-          className={`flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+          className={`flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
             isAlarmReady
               ? "text-zinc-400 hover:text-emerald-400"
               : "text-amber-400 font-bold hover:text-amber-300"
@@ -186,7 +186,7 @@ export default function MobileBottomNav() {
         <NavLink
           to="/profile"
           className={({ isActive }) =>
-            `flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+            `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
               isActive ? "text-white font-bold" : "text-zinc-400 hover:text-zinc-200"
             }`
           }
@@ -200,7 +200,7 @@ export default function MobileBottomNav() {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex flex-col items-center justify-center min-h-[46px] min-w-[52px] py-1 px-2 rounded-xl text-zinc-400 hover:text-rose-400 transition-all active:scale-95 cursor-pointer"
+          className="flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl text-zinc-400 hover:text-rose-400 transition-all active:scale-95 cursor-pointer"
           title={`Log out (${user?.email})`}
         >
           <LogOut className="w-5 h-5 mb-0.5" />

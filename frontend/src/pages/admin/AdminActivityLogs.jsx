@@ -224,7 +224,7 @@ export default function AdminActivityLogs() {
 
         {/* Desktop View: Table (>= md) */}
         <div className="hidden md:block overflow-x-auto touch-pan-x">
-          <table className="w-full text-left text-xs min-w-[620px]">
+          <table className="w-full text-left text-xs min-w-155">
             <thead>
               <tr className="bg-zinc-950/80 border-b border-zinc-800 text-zinc-400 font-semibold uppercase tracking-wider text-[10px]">
                 <th className="py-3.5 px-4">Event Type</th>

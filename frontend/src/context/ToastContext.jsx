@@ -75,7 +75,7 @@ export function ToastProvider({ children }) {
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold text-white">{t.title}</p>
               {t.message && (
-                <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed break-words">
+                <p className="text-[11px] text-slate-300 mt-0.5 leading-relaxed wrap-break-word">
                   {t.message}
                 </p>
               )}
