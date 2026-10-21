@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { usePwa } from "../context/PwaContext";
 import { useToast } from "../context/ToastContext";
-import { playChimeSound } from "../utils/audioAlert";
 
 export default function MobileAlarmPermissionModal() {
   const {
@@ -52,12 +51,11 @@ export default function MobileAlarmPermissionModal() {
   const handleGrantPermissions = async () => {
     try {
       const res = await enableAllAlarmPermissions();
-      playChimeSound();
 
       if (res?.success) {
         toast.success(
-          "Permissions & Ringtone Armed! 🎉",
-          "Your phone is now configured to sound loud call alarms when reminders are due."
+          "Permissions Configured! 🎉",
+          "Your phone is now configured for notifications when reminders are due."
         );
       } else if (res?.permissions?.notification === "denied") {
         toast.error(
@@ -67,7 +65,7 @@ export default function MobileAlarmPermissionModal() {
       } else {
         toast.info(
           "Preferences Updated",
-          "Ringtone audio and alarm preferences have been synchronized."
+          "Alarm preferences have been synchronized."
         );
       }
     } catch (err) {
@@ -96,10 +94,9 @@ export default function MobileAlarmPermissionModal() {
 
         toast.call(
           `⏱️ ${delay}s Test Scheduled!`,
-          "Press your phone's Home button or lock your screen right now! Phone will ring in 5 seconds."
+          "Press your phone's Home button or lock your screen right now! Alert will appear in 5 seconds."
         );
       } else {
-        playChimeSound();
         toast.call(
           "🚨 Test Alarm Dispatched!",
           "Check your notification bar now."
@@ -296,45 +293,9 @@ export default function MobileAlarmPermissionModal() {
               </span>
 
               <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => playChimeSound()}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-white/10 transition cursor-pointer active:scale-95 flex items-center gap-1"
-                  title="Test Ringtone sound preview"
-                >
-                  <Volume2 className="w-3 h-3 text-indigo-400" />
-                  <span>Test Ring</span>
-                </button>
-
-                {isRingActive ? (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const res = await toggleRingPermission();
-                      if (res?.success) {
-                        toast.success("Ringtone Enabled! 🔔", "Audio alarms will ring.");
-                      } else {
-                        toast.info("Ringtone Muted 🔕", "Ringtone audio silenced.");
-                      }
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-rose-300 text-[11px] font-semibold border border-zinc-700 transition cursor-pointer active:scale-95 flex items-center gap-1"
-                  >
-                    <VolumeX className="w-3 h-3" />
-                    <span>Mute</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await enableRingPermission();
-                      toast.success("Ringtone Permission Set! 🔔", "Phone ringtone is now active.");
-                    }}
-                    className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-[11px] font-bold shadow-md shadow-amber-500/20 transition cursor-pointer active:scale-95 flex items-center gap-1"
-                  >
-                    <Volume2 className="w-3 h-3" />
-                    <span>Set Ringtone</span>
-                  </button>
-                )}
+                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  Ready
+                </span>
               </div>
             </div>
           </div>
@@ -360,26 +321,15 @@ export default function MobileAlarmPermissionModal() {
 
           {/* Test Background Alarm Buttons */}
           <div className="space-y-2 pt-1">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleTestAlarm(0)}
-                disabled={testingAlarm || countdown > 0}
-                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
-              >
-                <BellRing className="w-3.5 h-3.5 text-amber-400" />
-                <span>Test Alarm Now</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => playChimeSound()}
-                className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-slate-300 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-              >
-                <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Test Ringtone</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleTestAlarm(0)}
+              disabled={testingAlarm || countdown > 0}
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/10 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+            >
+              <BellRing className="w-3.5 h-3.5 text-amber-400" />
+              <span>Test Notification Now</span>
+            </button>
 
             {/* Test Alarm When App Closed */}
             <button

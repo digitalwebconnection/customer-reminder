@@ -27,7 +27,6 @@ import { useToast } from "../context/ToastContext";
 import { usePwa } from "../context/PwaContext";
 import { requestAndSubscribePush } from "../utils/pushManager";
 import { promptOneSignalPush } from "../utils/oneSignalManager";
-import { playChimeSound } from "../utils/audioAlert";
 import { subscribeKeepAlive, pingBackend } from "../utils/renderKeepAlive";
 import api from "../api/axios";
 
@@ -87,8 +86,6 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
   };
 
   const handleSendTestAlert = async () => {
-    playChimeSound();
-
     if ("Notification" in window && Notification.permission === "granted") {
       try {
         new Notification("🔔 RemindIQ Test Alert", {

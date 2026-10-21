@@ -36,18 +36,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import api from "../api/axios";
 import { formatInAustralianTime } from "../utils/dateUtils";
 import EditReminderModal from "../components/EditReminderModal";
-import {
-  playChimeSound,
-  startCallRingtone,
-  stopCallRingtone,
-  unlockRingAudio,
-} from "../utils/audioAlert";
 import { useToast } from "../context/ToastContext";
 import { usePwa } from "../context/PwaContext";
 import { useAuth } from "../context/AuthContext";
 import NumberTicker from "../components/ui/NumberTicker";
 import QuickSnoozePortal from "../components/QuickSnoozePortal";
-import IncomingCallOverlay from "../components/IncomingCallOverlay";
 
 export default function Reminders() {
   const toast = useToast();
@@ -98,7 +91,6 @@ export default function Reminders() {
   const [editingReminder, setEditingReminder] = useState(null);
   const [activeDueAlert, setActiveDueAlert] = useState(null);
   const [alertSecondsLeft, setAlertSecondsLeft] = useState(60);
-  const [isRingtoneMuted, setIsRingtoneMuted] = useState(false);
   const [isCompletingAlert, setIsCompletingAlert] = useState(false);
   const [activeSnooze, setActiveSnooze] = useState(null); // { reminder, anchorRect }
   const [copiedId, setCopiedId] = useState(null);
@@ -130,43 +122,27 @@ export default function Reminders() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeSnooze, search]);
 
-  // Transparently unlock mobile audio context on first touch/click
-  useEffect(() => {
-    const handleGestureUnlock = () => {
-      unlockRingAudio().catch(() => {});
-    };
-    window.addEventListener("click", handleGestureUnlock, { once: true });
-    window.addEventListener("touchstart", handleGestureUnlock, { once: true });
-    return () => {
-      window.removeEventListener("click", handleGestureUnlock);
-      window.removeEventListener("touchstart", handleGestureUnlock);
-    };
-  }, []);
-
-  // Smooth Call Ringtone & 60-Second Countdown Timer for due reminder banner
+  // Smooth 60-Second Countdown Timer for due reminder toaster
   useEffect(() => {
     if (!activeDueAlert) {
       document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
-      stopCallRingtone();
       return;
     }
 
     document.title = `🔔 CALL DUE: ${activeDueAlert.name} (${activeDueAlert.phone || ""}) — RemindIQ`;
     setAlertSecondsLeft(60);
-    setIsRingtoneMuted(false);
-    startCallRingtone();
 
     const timer = setInterval(() => {
       setAlertSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          stopCallRingtone();
           if (activeDueAlert?._id) {
             markAlertDismissed(activeDueAlert._id);
           }
           clearUrlAlertParams();
           setActiveDueAlert(null);
-          document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
+          document.title =
+            "RemindIQ — Customer Follow-up & Call Reminder System";
           return 0;
         }
         return prev - 1;
@@ -175,7 +151,6 @@ export default function Reminders() {
 
     return () => {
       clearInterval(timer);
-      stopCallRingtone();
       document.title = "RemindIQ — Customer Follow-up & Call Reminder System";
     };
   }, [activeDueAlert]);
@@ -259,9 +234,13 @@ export default function Reminders() {
           if (reminderId) {
             markAlertDismissed(reminderId);
             stopCallRingtone();
-            setActiveDueAlert((curr) => (curr?._id === reminderId ? null : curr));
+            setActiveDueAlert((curr) =>
+              curr?._id === reminderId ? null : curr,
+            );
             setReminders((prev) =>
-              prev.map((r) => (r._id === reminderId ? { ...r, status: "completed" } : r))
+              prev.map((r) =>
+                r._id === reminderId ? { ...r, status: "completed" } : r,
+              ),
             );
             fetchReminders();
           }
@@ -272,7 +251,9 @@ export default function Reminders() {
         if (e.data.type === "TEST_ALARM_COMPLETED") {
           markAlertDismissed("test-alert");
           stopCallRingtone();
-          setActiveDueAlert((curr) => (curr?._id?.startsWith("test-") ? null : curr));
+          setActiveDueAlert((curr) =>
+            curr?._id?.startsWith("test-") ? null : curr,
+          );
           clearUrlAlertParams();
           return;
         }
@@ -281,10 +262,19 @@ export default function Reminders() {
           e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK" ||
           e.data.type === "PUSH_ALARM_RECEIVED"
         ) {
-          const { reminderId, name, phone, userId: msgUserId } = e.data.data || {};
+          const {
+            reminderId,
+            name,
+            phone,
+            userId: msgUserId,
+          } = e.data.data || {};
 
           // User isolation guard: if alert is for another user, never display it here
-          if (msgUserId && user?._id && String(msgUserId) !== String(user._id)) {
+          if (
+            msgUserId &&
+            user?._id &&
+            String(msgUserId) !== String(user._id)
+          ) {
             return;
           }
 
@@ -296,7 +286,10 @@ export default function Reminders() {
               if (target.status === "pending") {
                 setActiveDueAlert(target);
               }
-            } else if (!msgUserId || (user?._id && String(msgUserId) === String(user._id))) {
+            } else if (
+              !msgUserId ||
+              (user?._id && String(msgUserId) === String(user._id))
+            ) {
               setActiveDueAlert({
                 _id: reminderId,
                 name: name || "Customer Call Due",
@@ -309,7 +302,8 @@ export default function Reminders() {
         }
       };
       navigator.serviceWorker.addEventListener("message", handleSwMessage);
-      return () => navigator.serviceWorker.removeEventListener("message", handleSwMessage);
+      return () =>
+        navigator.serviceWorker.removeEventListener("message", handleSwMessage);
     }
   }, [reminders, user]);
 
@@ -344,7 +338,10 @@ export default function Reminders() {
       checkDuePopups(sorted);
     } catch (err) {
       console.error("Failed to fetch reminders:", err);
-      toast.error("Network Error", "Could not synchronize reminders with server.");
+      toast.error(
+        "Network Error",
+        "Could not synchronize reminders with server.",
+      );
     } finally {
       setLoading(false);
       if (showSpinner) {
@@ -395,7 +392,11 @@ export default function Reminders() {
     const now = new Date();
     list.forEach((r) => {
       const isDueNow = r.status === "pending" && new Date(r.dueAt) <= now;
-      if (isDueNow && !dismissedIdsRef.current.has(r._id) && activeDueAlert?._id !== r._id) {
+      if (
+        isDueNow &&
+        !dismissedIdsRef.current.has(r._id) &&
+        activeDueAlert?._id !== r._id
+      ) {
         setActiveDueAlert(r);
 
         if ("Notification" in window && Notification.permission === "granted") {
@@ -432,8 +433,15 @@ export default function Reminders() {
     markAlertDismissed(alertId);
 
     // 5. Test alert handler: acknowledge without invalid database request
-    if (!alertId || alertId === "test-alert" || String(alertId).startsWith("test-")) {
-      toast.success("Test Alarm Completed ✅", "Alarm stopped and test notification cleared.");
+    if (
+      !alertId ||
+      alertId === "test-alert" ||
+      String(alertId).startsWith("test-")
+    ) {
+      toast.success(
+        "Test Alarm Completed ✅",
+        "Alarm stopped and test notification cleared.",
+      );
       setIsCompletingAlert(false);
       return;
     }
@@ -441,22 +449,23 @@ export default function Reminders() {
     // 6. Optimistic update: mark status 'completed' in local state immediately
     setReminders((prev) =>
       prev.map((r) =>
-        r._id === alertId
-          ? { ...r, status: "completed", isOverdue: false }
-          : r
-      )
+        r._id === alertId ? { ...r, status: "completed", isOverdue: false } : r,
+      ),
     );
 
     // 7. Explicitly set status: 'completed' in backend database
     try {
       await api.patch(`/reminders/${alertId}`, { status: "completed" });
-      toast.success("Completed ✅", `Marked follow-up with ${alertName} as finished.`);
+      toast.success(
+        "Completed ✅",
+        `Marked follow-up with ${alertName} as finished.`,
+      );
       fetchReminders();
     } catch (err) {
       console.error("[Reminders] Failed to mark completed:", err);
       toast.error(
         "Update Failed",
-        "Could not save completion status to server. Please check your connection."
+        "Could not save completion status to server. Please check your connection.",
       );
       fetchReminders();
     } finally {
@@ -466,11 +475,13 @@ export default function Reminders() {
 
   const handleDismissAlert = (alertItem) => {
     if (!alertItem) return;
-    stopCallRingtone();
     setActiveDueAlert(null);
     clearUrlAlertParams();
     markAlertDismissed(alertItem._id);
-    toast.info("Alert Dismissed", `Silenced alarm for ${alertItem.name || "call"}.`);
+    toast.info(
+      "Alert Dismissed",
+      `Silenced alarm for ${alertItem.name || "call"}.`,
+    );
   };
 
   const handleToggleCompleted = async (reminder) => {
@@ -478,8 +489,11 @@ export default function Reminders() {
     const reminderId = reminder._id;
 
     // Handle test reminders gracefully
-    if (!reminderId || reminderId === "test-alert" || String(reminderId).startsWith("test-")) {
-      stopCallRingtone();
+    if (
+      !reminderId ||
+      reminderId === "test-alert" ||
+      String(reminderId).startsWith("test-")
+    ) {
       if (activeDueAlert?._id === reminderId) setActiveDueAlert(null);
       clearUrlAlertParams();
       markAlertDismissed(reminderId);
@@ -489,9 +503,8 @@ export default function Reminders() {
 
     const newStatus = reminder.status === "completed" ? "pending" : "completed";
 
-    // If active alert is currently ringing for this reminder, stop ringtone and dismiss banner
+    // If active alert is currently showing for this reminder, dismiss toast
     if (activeDueAlert?._id === reminderId) {
-      stopCallRingtone();
       setActiveDueAlert(null);
       clearUrlAlertParams();
     }
@@ -512,27 +525,40 @@ export default function Reminders() {
               status: newStatus,
               isOverdue: newStatus === "completed" ? false : r.isOverdue,
             }
-          : r
-      )
+          : r,
+      ),
     );
 
     try {
       await api.patch(`/reminders/${reminderId}`, { status: newStatus });
       if (newStatus === "completed") {
-        toast.success("Completed ✅", `Marked follow-up with ${reminder.name} as finished.`);
+        toast.success(
+          "Completed ✅",
+          `Marked follow-up with ${reminder.name} as finished.`,
+        );
       } else {
-        toast.info("Marked Pending ⏳", `Call with ${reminder.name} reopened in queue.`);
+        toast.info(
+          "Marked Pending ⏳",
+          `Call with ${reminder.name} reopened in queue.`,
+        );
       }
       fetchReminders();
     } catch (err) {
       console.error("[Reminders] Toggle status error:", err);
-      toast.error("Update Failed", "Could not change status. Please check connection.");
+      toast.error(
+        "Update Failed",
+        "Could not change status. Please check connection.",
+      );
       fetchReminders();
     }
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete the reminder for ${name}?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete the reminder for ${name}?`,
+      )
+    ) {
       return;
     }
     try {
@@ -555,7 +581,6 @@ export default function Reminders() {
   const handleQuickSnooze = async (reminder, hoursToAdd, label) => {
     setActiveSnooze(null);
     if (activeDueAlert?._id === reminder._id) {
-      stopCallRingtone();
       setActiveDueAlert(null);
       clearUrlAlertParams();
     }
@@ -571,9 +596,14 @@ export default function Reminders() {
       setReminders((prev) =>
         prev.map((r) =>
           r._id === reminder._id
-            ? { ...r, dueAt: newDue.toISOString(), status: "pending", isOverdue: false }
-            : r
-        )
+            ? {
+                ...r,
+                dueAt: newDue.toISOString(),
+                status: "pending",
+                isOverdue: false,
+              }
+            : r,
+        ),
       );
 
       await api.patch(`/reminders/${reminder._id}`, {
@@ -585,8 +615,8 @@ export default function Reminders() {
         "Call Rescheduled ⏰",
         `Postponed ${reminder.name} to ${formatInAustralianTime(
           newDue.toISOString(),
-          reminder.timezone || "Australia/Sydney"
-        )} (${label})`
+          reminder.timezone || "Australia/Sydney",
+        )} (${label})`,
       );
       fetchReminders();
     } catch (err) {
@@ -598,11 +628,15 @@ export default function Reminders() {
   const counts = {
     all: reminders.length,
     pending: reminders.filter(
-      (r) => r.status === "pending" && !(r.isOverdue || new Date(r.dueAt) < new Date())
+      (r) =>
+        r.status === "pending" &&
+        !(r.isOverdue || new Date(r.dueAt) < new Date()),
     ).length,
     completed: reminders.filter((r) => r.status === "completed").length,
     overdue: reminders.filter(
-      (r) => r.status === "pending" && (r.isOverdue || new Date(r.dueAt) < new Date())
+      (r) =>
+        r.status === "pending" &&
+        (r.isOverdue || new Date(r.dueAt) < new Date()),
     ).length,
   };
 
@@ -631,9 +665,25 @@ export default function Reminders() {
       return [1, 2, 3, 4, 5, "...", totalPages];
     }
     if (currentPage >= totalPages - 3) {
-      return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+      return [
+        1,
+        "...",
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
     }
-    return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+    return [
+      1,
+      "...",
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      "...",
+      totalPages,
+    ];
   };
 
   const getStatusBadge = (r) => {
@@ -667,191 +717,6 @@ export default function Reminders() {
 
   return (
     <div className="max-w-7xl mx-auto py-2 sm:py-6 space-y-5">
-      {/* Full-Screen Mobile Incoming Call Ringing Overlay */}
-      <IncomingCallOverlay
-        alert={activeDueAlert}
-        secondsLeft={alertSecondsLeft}
-        isMuted={isRingtoneMuted}
-        isCompleting={isCompletingAlert}
-        onCall={() => {
-          stopCallRingtone();
-          if (activeDueAlert?.phone) {
-            const clean = activeDueAlert.phone.replace(/[^0-9+]/g, "");
-            window.location.href = `tel:${clean}`;
-          }
-        }}
-        onComplete={(alertItem) => handleCompleteAlert(alertItem)}
-        onSnooze={(alertItem, hours, label) => handleQuickSnooze(alertItem, hours, label)}
-        onToggleMute={() => {
-          if (isRingtoneMuted) {
-            startCallRingtone();
-            setIsRingtoneMuted(false);
-          } else {
-            stopCallRingtone();
-            setIsRingtoneMuted(true);
-          }
-        }}
-        onDismiss={(alertItem) => handleDismissAlert(alertItem)}
-      />
-
-      {/* Active Call Due Alert Notification */}
-      {activeDueAlert && (
-        <div className="p-4 sm:p-5 rounded-xl bg-zinc-950 border border-rose-500/50 shadow-xl flex flex-col gap-3 relative overflow-hidden backdrop-blur-xl">
-          {/* 60-Second Animated Progress Bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-800">
-            <div
-              className="h-full bg-linear-to-r from-rose-500 to-amber-400 transition-all duration-1000 ease-linear"
-              style={{ width: `${(alertSecondsLeft / 60) * 100}%` }}
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pt-1">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-rose-600 flex items-center justify-center text-white shrink-0 shadow-md shadow-rose-600/30">
-                <Phone className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
-                    Call Due Now
-                  </span>
-                  <span className="text-sm sm:text-base font-semibold text-white truncate">
-                    {activeDueAlert.name}
-                  </span>
-                  <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
-                    ⏱️ {alertSecondsLeft}s
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-300 mt-1 font-mono wrap-break-word">
-                  Phone:{" "}
-                  <span className="font-semibold text-rose-300">
-                    {activeDueAlert.phone}
-                  </span>{" "}
-                  | Scheduled:{" "}
-                  {formatInAustralianTime(
-                    activeDueAlert.dueAt,
-                    activeDueAlert.timezone || "Australia/Sydney"
-                  )}
-                </p>
-                {activeDueAlert.note && (
-                  <p className="text-xs text-zinc-400 italic mt-0.5 line-clamp-2">
-                    "{activeDueAlert.note}"
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Banner Action Buttons */}
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto shrink-0">
-              <a
-                href={`tel:${activeDueAlert.phone}`}
-                onClick={() => stopCallRingtone()}
-                className="col-span-2 sm:col-span-1 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-zinc-950 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-500/20 min-h-11"
-              >
-                <Phone className="w-4 h-4" />
-                <span>Call Now ({activeDueAlert.phone})</span>
-              </a>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (isRingtoneMuted) {
-                    startCallRingtone();
-                    setIsRingtoneMuted(false);
-                  } else {
-                    stopCallRingtone();
-                    setIsRingtoneMuted(true);
-                  }
-                }}
-                className="px-3.5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition border border-zinc-800 cursor-pointer min-h-11"
-              >
-                {isRingtoneMuted ? (
-                  <>
-                    <VolumeX className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Muted</span>
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
-                    <span>Mute Ring</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                disabled={isCompletingAlert}
-                onClick={() => handleCompleteAlert(activeDueAlert)}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition border border-emerald-500/40 cursor-pointer shadow-md shadow-emerald-600/30 min-h-11 disabled:opacity-50"
-              >
-                {isCompletingAlert ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-white" />
-                    <span>Complete</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDismissAlert(activeDueAlert)}
-                className="col-span-2 sm:col-span-1 px-3.5 py-2 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium flex items-center justify-center transition border border-zinc-800 cursor-pointer min-h-9.5"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Ringtone Audio Permission Banner (Allows loud phone ringing for due reminders) */}
-      {permissions?.ringSound !== "granted" && (
-        <div className="p-3.5 sm:p-4 rounded-xl bg-linear-to-r from-amber-500/10 via-zinc-900 to-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
-              <Volume2 className="w-4 h-4 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-bold text-white">
-                  Enable Ringtone Permission
-                </span>
-                <span className="text-[10px] font-mono uppercase bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">
-                  Mobile Alarm Sound
-                </span>
-              </div>
-              <p className="text-[11px] sm:text-xs text-zinc-400 mt-0.5">
-                Allow RemindIQ to play loud phone ringtone when customer reminders are due.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-            <button
-              type="button"
-              onClick={async () => {
-                const res = await enableRingPermission();
-                if (res?.success) {
-                  toast.success(
-                    "Ringtone Sound Enabled! 🔔",
-                    "Your device is now armed to ring out loud when reminders are due."
-                  );
-                }
-              }}
-              className="w-full sm:w-auto px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 active:scale-95 text-zinc-950 text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25 transition cursor-pointer"
-            >
-              <Volume2 className="w-3.5 h-3.5" />
-              <span>Allow Ring Sound</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Header with Original Titles & Image 2 Solid White Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -860,7 +725,8 @@ export default function Reminders() {
             All Reminders
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Manage client appointments and automated follow-ups across Australia.
+            Manage client appointments and automated follow-ups across
+            Australia.
           </p>
         </div>
 
@@ -892,7 +758,11 @@ export default function Reminders() {
                 All
               </span>
             </div>
-            <svg className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400" viewBox="0 0 80 28" fill="none">
+            <svg
+              className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400"
+              viewBox="0 0 80 28"
+              fill="none"
+            >
               <path
                 d="M2 22 C 20 22, 30 14, 45 16 C 60 18, 68 6, 78 2"
                 stroke="currentColor"
@@ -919,7 +789,11 @@ export default function Reminders() {
                 Queue
               </span>
             </div>
-            <svg className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400" viewBox="0 0 80 28" fill="none">
+            <svg
+              className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400"
+              viewBox="0 0 80 28"
+              fill="none"
+            >
               <path
                 d="M2 24 C 18 24, 28 16, 42 14 C 56 12, 66 18, 78 4"
                 stroke="currentColor"
@@ -942,13 +816,21 @@ export default function Reminders() {
               <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                 {counts.overdue.toLocaleString()}
               </span>
-              <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                counts.overdue > 0 ? "text-rose-400 bg-rose-500/10" : "text-emerald-400 bg-emerald-500/10"
-              }`}>
+              <span
+                className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                  counts.overdue > 0
+                    ? "text-rose-400 bg-rose-500/10"
+                    : "text-emerald-400 bg-emerald-500/10"
+                }`}
+              >
                 {counts.overdue > 0 ? "Urgent" : "0"}
               </span>
             </div>
-            <svg className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400" viewBox="0 0 80 28" fill="none">
+            <svg
+              className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400"
+              viewBox="0 0 80 28"
+              fill="none"
+            >
               <path
                 d="M2 24 C 22 24, 35 10, 50 14 C 65 18, 70 6, 78 2"
                 stroke="currentColor"
@@ -975,7 +857,11 @@ export default function Reminders() {
                 {completionPercentage}%
               </span>
             </div>
-            <svg className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400" viewBox="0 0 80 28" fill="none">
+            <svg
+              className="w-16 sm:w-20 h-7 shrink-0 text-cyan-400"
+              viewBox="0 0 80 28"
+              fill="none"
+            >
               <path
                 d="M2 22 C 20 22, 32 12, 48 16 C 62 20, 68 6, 78 2"
                 stroke="currentColor"
@@ -1011,7 +897,9 @@ export default function Reminders() {
               <span>{tab.label}</span>
               <span
                 className={`text-[11px] px-1.5 py-0.2 rounded-full font-mono ${
-                  isActive ? "bg-zinc-800 text-zinc-100" : "bg-zinc-900 text-zinc-500"
+                  isActive
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "bg-zinc-900 text-zinc-500"
                 }`}
               >
                 {tab.count}
@@ -1069,7 +957,10 @@ export default function Reminders() {
                 <option value="dueAt_asc" className="bg-zinc-900 text-zinc-200">
                   Call Due (Soonest)
                 </option>
-                <option value="dueAt_desc" className="bg-zinc-900 text-zinc-200">
+                <option
+                  value="dueAt_desc"
+                  className="bg-zinc-900 text-zinc-200"
+                >
                   Call Due (Latest)
                 </option>
               </select>
@@ -1104,7 +995,9 @@ export default function Reminders() {
             <Clock className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <p className="text-base font-semibold text-white">No reminders found</p>
+            <p className="text-base font-semibold text-white">
+              No reminders found
+            </p>
             <p className="text-xs text-zinc-400 max-w-sm mx-auto">
               {search
                 ? `No customers match "${search}". Try clearing search or filters.`
@@ -1212,7 +1105,9 @@ export default function Reminders() {
                               className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white transition"
                             >
                               <Mail className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                              <span className="truncate max-w-44">{r.email}</span>
+                              <span className="truncate max-w-44">
+                                {r.email}
+                              </span>
                             </a>
                             <button
                               type="button"
@@ -1226,7 +1121,9 @@ export default function Reminders() {
                         ) : r.address ? (
                           <div className="flex items-center gap-1.5 text-zinc-400">
                             <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                            <span className="truncate max-w-44">{r.address}</span>
+                            <span className="truncate max-w-44">
+                              {r.address}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-zinc-600">—</span>
@@ -1266,8 +1163,12 @@ export default function Reminders() {
                               if (activeSnooze?.reminder?._id === r._id) {
                                 setActiveSnooze(null);
                               } else {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                setActiveSnooze({ reminder: r, anchorRect: rect });
+                                const rect =
+                                  e.currentTarget.getBoundingClientRect();
+                                setActiveSnooze({
+                                  reminder: r,
+                                  anchorRect: rect,
+                                });
                               }
                             }}
                             className={`p-1.5 rounded-md text-xs transition border cursor-pointer ${
@@ -1289,7 +1190,9 @@ export default function Reminders() {
                                 : "text-emerald-400 hover:bg-zinc-800"
                             }`}
                             title={
-                              r.status === "completed" ? "Mark as Pending" : "Mark Completed"
+                              r.status === "completed"
+                                ? "Mark as Pending"
+                                : "Mark Completed"
                             }
                           >
                             <CheckCircle className="w-3.5 h-3.5" />
@@ -1344,7 +1247,9 @@ export default function Reminders() {
                         {initials}
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-white">{r.name}</h3>
+                        <h3 className="text-sm font-semibold text-white">
+                          {r.name}
+                        </h3>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <a
                             href={`tel:${r.phone}`}
@@ -1381,7 +1286,10 @@ export default function Reminders() {
                     {r.email && (
                       <div className="flex items-center gap-1.5 text-zinc-400">
                         <Mail className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                        <a href={`mailto:${r.email}`} className="hover:text-white truncate">
+                        <a
+                          href={`mailto:${r.email}`}
+                          className="hover:text-white truncate"
+                        >
                           {r.email}
                         </a>
                       </div>
@@ -1413,7 +1321,8 @@ export default function Reminders() {
                           if (activeSnooze?.reminder?._id === r._id) {
                             setActiveSnooze(null);
                           } else {
-                            const rect = e.currentTarget.getBoundingClientRect();
+                            const rect =
+                              e.currentTarget.getBoundingClientRect();
                             setActiveSnooze({ reminder: r, anchorRect: rect });
                           }
                         }}
@@ -1465,13 +1374,21 @@ export default function Reminders() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border border-zinc-800 bg-zinc-950/60 shadow-xs text-xs text-zinc-400">
               <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
                 <span>
-                  Showing <span className="font-semibold text-white">{startIndex + 1}</span> to{" "}
-                  <span className="font-semibold text-white">{endIndex}</span> of{" "}
-                  <span className="font-semibold text-white">{totalItems}</span> leads
+                  Showing{" "}
+                  <span className="font-semibold text-white">
+                    {startIndex + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold text-white">{endIndex}</span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-white">{totalItems}</span>{" "}
+                  leads
                 </span>
 
                 <div className="flex items-center gap-1.5">
-                  <span className="text-zinc-500 hidden sm:inline">Per page:</span>
+                  <span className="text-zinc-500 hidden sm:inline">
+                    Per page:
+                  </span>
                   <select
                     value={itemsPerPage}
                     onChange={(e) => {
@@ -1527,7 +1444,10 @@ export default function Reminders() {
                     {getPageNumbers().map((p, idx) => {
                       if (p === "...") {
                         return (
-                          <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-zinc-500 select-none">
+                          <span
+                            key={`ellipsis-${idx}`}
+                            className="px-1.5 py-1 text-zinc-500 select-none"
+                          >
                             …
                           </span>
                         );
@@ -1595,7 +1515,10 @@ export default function Reminders() {
           onClose={() => setEditingReminder(null)}
           onSaved={() => {
             fetchReminders();
-            toast.success("Updated ✨", "Reminder details updated successfully.");
+            toast.success(
+              "Updated ✨",
+              "Reminder details updated successfully.",
+            );
           }}
         />
       )}
