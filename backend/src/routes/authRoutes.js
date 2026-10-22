@@ -1,24 +1,24 @@
-import express from 'express';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import mongoose from 'mongoose';
-import User from '../models/User.js';
-import ActivityLog from '../models/ActivityLog.js';
-import { auth, optionalAuth } from '../middleware/auth.js';
-import { createTransporter } from '../services/emailService.js';
-import { validateEmail, validatePhone } from '../utils/validation.js';
+import express from "express";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import mongoose from "mongoose";
+import User from "../models/User.js";
+import ActivityLog from "../models/ActivityLog.js";
+import { auth, optionalAuth } from "../middleware/auth.js";
+import { validateEmail, validatePhone } from "../utils/validation.js";
 
 const router = express.Router();
 
 const isMongoActive = () => mongoose.connection.readyState === 1;
 
 const getJwtSecret = () =>
-  process.env.JWT_SECRET || 'super_secret_dev_jwt_key_remindiq_secure_auth_session';
+  process.env.JWT_SECRET ||
+  "super_secret_dev_jwt_key_remindiq_secure_auth_session";
 
 const getCookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
 });
 
@@ -31,11 +31,17 @@ const generateToken = (user) => {
       role: user.role,
     },
     getJwtSecret(),
-    { expiresIn: '30d' }
+    { expiresIn: "30d" },
   );
 };
 
-const logActivity = async (userId, action, details = '', req = null, targetUserId = null) => {
+const logActivity = async (
+  userId,
+  action,
+  details = "",
+  req = null,
+  targetUserId = null,
+) => {
   try {
     if (!isMongoActive()) return;
     await ActivityLog.create({
@@ -43,11 +49,11 @@ const logActivity = async (userId, action, details = '', req = null, targetUserI
       action,
       details,
       targetUserId,
-      ipAddress: req ? (req.headers['x-forwarded-for'] || req.ip || '') : '',
-      userAgent: req ? (req.headers['user-agent'] || '') : '',
+      ipAddress: req ? req.headers["x-forwarded-for"] || req.ip || "" : "",
+      userAgent: req ? req.headers["user-agent"] || "" : "",
     });
   } catch (err) {
-    console.warn('[ActivityLog] Error logging activity:', err.message);
+    console.warn("[ActivityLog] Error logging activity:", err.message);
   }
 };
 
@@ -55,8 +61,10 @@ const logActivity = async (userId, action, details = '', req = null, targetUserI
 export async function ensureOwnerExists() {
   if (!isMongoActive()) return;
 
-  const superAdminEmail = (process.env.SUPERADMIN_EMAIL || 'vaibhavdigitalwebconnection@gmail.com').toLowerCase();
-  const superAdminPassword = process.env.SUPERADMIN_PASSWORD || 'Admin@123';
+  const superAdminEmail = (
+    process.env.SUPERADMIN_EMAIL || "vaibhavdigitalwebconnection@gmail.com"
+  ).toLowerCase();
+  const superAdminPassword = process.env.SUPERADMIN_PASSWORD || "Admin@123";
 
   try {
     const existing = await User.findOne({ email: superAdminEmail });
@@ -64,23 +72,29 @@ export async function ensureOwnerExists() {
       const hash = await User.hashPassword(superAdminPassword);
       await User.create({
         email: superAdminEmail,
-        name: 'Super Admin',
+        name: "Super Admin",
         passwordHash: hash,
-        role: 'superadmin',
+        role: "superadmin",
         isActive: true,
       });
       console.log(`[Auth] Seeded super admin account: ${superAdminEmail}`);
-    } else if (existing.role !== 'superadmin') {
+    } else if (existing.role !== "superadmin") {
       // Upgrade existing user to superadmin
-      existing.role = 'superadmin';
+      existing.role = "superadmin";
       await existing.save();
-      console.log(`[Auth] Upgraded existing user to super admin: ${superAdminEmail}`);
+      console.log(
+        `[Auth] Upgraded existing user to super admin: ${superAdminEmail}`,
+      );
     }
 
     // Ensure authorized emails maintain superadmin role
     await User.updateMany(
-      { email: { $in: [superAdminEmail,  'vaibhavdigitalwebconnection@gmail.com'] } },
-      { $set: { role: 'superadmin', isActive: true } }
+      {
+        email: {
+          $in: [superAdminEmail, "vaibhavdigitalwebconnection@gmail.com"],
+        },
+      },
+      { $set: { role: "superadmin", isActive: true } },
     );
   } catch (err) {
     console.warn(`[Auth] Could not seed super admin: ${err.message}`);
@@ -88,13 +102,15 @@ export async function ensureOwnerExists() {
 
   // Migrate any other old 'owner' accounts to 'user' role
   try {
-    const ownerCount = await User.countDocuments({ role: 'owner' });
+    const ownerCount = await User.countDocuments({ role: "owner" });
     if (ownerCount > 0) {
       await User.updateMany(
-        { role: 'owner', email: { $ne: superAdminEmail } },
-        { $set: { role: 'user' } }
+        { role: "owner", email: { $ne: superAdminEmail } },
+        { $set: { role: "user" } },
       );
-      console.log(`[Auth] Migrated ${ownerCount} old 'owner' accounts to 'user' role`);
+      console.log(
+        `[Auth] Migrated ${ownerCount} old 'owner' accounts to 'user' role`,
+      );
     }
   } catch (err) {
     console.warn(`[Auth] Migration warning: ${err.message}`);
@@ -102,17 +118,22 @@ export async function ensureOwnerExists() {
 }
 
 // POST /register - Register a new user account
-router.post('/register', async (req, res, next) => {
+router.post("/register", async (req, res, next) => {
   try {
-    const { name, email, password, confirmPassword, phone, country, timezone } = req.body;
+    const { name, email, password, confirmPassword, phone, country, timezone } =
+      req.body;
 
     if (!name || !name.trim()) {
-      return res.status(400).json({ success: false, message: 'Name is required' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Name is required" });
     }
 
     const emailCheck = validateEmail(email, true);
     if (!emailCheck.isValid) {
-      return res.status(400).json({ success: false, message: emailCheck.error });
+      return res
+        .status(400)
+        .json({ success: false, message: emailCheck.error });
     }
     const trimmedEmail = emailCheck.email;
 
@@ -120,24 +141,40 @@ router.post('/register', async (req, res, next) => {
     if (phone && phone.trim()) {
       const phoneCheck = validatePhone(phone, country, false);
       if (!phoneCheck.isValid) {
-        return res.status(400).json({ success: false, message: phoneCheck.error });
+        return res
+          .status(400)
+          .json({ success: false, message: phoneCheck.error });
       }
     }
 
     if (!password) {
-      return res.status(400).json({ success: false, message: 'Password is required' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Password is required" });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long' });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Password must be at least 6 characters long",
+        });
     }
 
     if (confirmPassword && password !== confirmPassword) {
-      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match" });
     }
 
     if (!isMongoActive()) {
-      return res.status(503).json({ success: false, message: 'Database is unavailable. Please try again later.' });
+      return res
+        .status(503)
+        .json({
+          success: false,
+          message: "Database is unavailable. Please try again later.",
+        });
     }
 
     // Check for duplicate email
@@ -145,37 +182,45 @@ router.post('/register', async (req, res, next) => {
     if (existing) {
       return res.status(409).json({
         success: false,
-        message: 'An account with this email address already exists. Please sign in.',
+        message:
+          "An account with this email address already exists. Please sign in.",
       });
     }
 
     // Determine country and timezone
-    const userCountry = (country && country.trim()) || 'Australia';
-    const userTimezone = (timezone && timezone.trim()) || (userCountry === 'India' ? 'Asia/Kolkata' : 'Australia/Sydney');
+    const userCountry = (country && country.trim()) || "Australia";
+    const userTimezone =
+      (timezone && timezone.trim()) ||
+      (userCountry === "India" ? "Asia/Kolkata" : "Australia/Sydney");
 
     // Never allow signup as superadmin
     const hash = await User.hashPassword(password);
     const newUser = await User.create({
       email: trimmedEmail,
       name: name.trim(),
-      phone: phone ? phone.trim() : '',
+      phone: phone ? phone.trim() : "",
       country: userCountry,
       timezone: userTimezone,
       passwordHash: hash,
-      role: 'user', // Always 'user' on signup
+      role: "user", // Always 'user' on signup
       isActive: true,
     });
 
     // Log activity
-    await logActivity(newUser._id, 'signup', `New user registered: ${trimmedEmail} (${userCountry} / ${userTimezone})`, req);
+    await logActivity(
+      newUser._id,
+      "signup",
+      `New user registered: ${trimmedEmail} (${userCountry} / ${userTimezone})`,
+      req,
+    );
 
     const token = generateToken(newUser);
-    const cookieName = process.env.COOKIE_NAME || 'customer_session';
+    const cookieName = process.env.COOKIE_NAME || "customer_session";
     res.cookie(cookieName, token, getCookieOptions());
 
     return res.status(201).json({
       success: true,
-      message: 'Account created successfully',
+      message: "Account created successfully",
       token,
       user: {
         id: newUser._id.toString(),
@@ -193,29 +238,40 @@ router.post('/register', async (req, res, next) => {
 });
 
 // POST /login - User / Super Admin Login
-router.post('/login', async (req, res, next) => {
+router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body || {};
     const emailCheck = validateEmail(email, true);
     if (!emailCheck.isValid) {
-      return res.status(400).json({ success: false, message: emailCheck.error });
+      return res
+        .status(400)
+        .json({ success: false, message: emailCheck.error });
     }
     const inputEmail = emailCheck.email;
 
     if (!password) {
-      return res.status(400).json({ success: false, message: 'Password is required' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Password is required" });
     }
 
     if (!isMongoActive()) {
-      return res.status(503).json({ success: false, message: 'Database is unavailable. Please try again later.' });
+      return res
+        .status(503)
+        .json({
+          success: false,
+          message: "Database is unavailable. Please try again later.",
+        });
     }
 
     // Find user with password hash
-    const user = await User.findOne({ email: inputEmail }).select('+passwordHash');
+    const user = await User.findOne({ email: inputEmail }).select(
+      "+passwordHash",
+    );
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password. Please check your credentials.',
+        message: "Invalid email or password. Please check your credentials.",
       });
     }
 
@@ -223,14 +279,14 @@ router.post('/login', async (req, res, next) => {
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
-        message: 'Your account has been blocked. Contact the administrator.',
+        message: "Your account has been blocked. Contact the administrator.",
       });
     }
 
     // Verify password - support both bcrypt and argon2 hashes during migration
     let isValid = false;
     try {
-      const bcrypt = (await import('bcrypt')).default;
+      const bcrypt = (await import("bcrypt")).default;
       isValid = await bcrypt.compare(password, user.passwordHash);
     } catch (e) {
       isValid = false;
@@ -239,7 +295,7 @@ router.post('/login', async (req, res, next) => {
     // Fallback: try argon2 for old hashes
     if (!isValid) {
       try {
-        const argon2 = (await import('argon2')).default;
+        const argon2 = (await import("argon2")).default;
         isValid = await argon2.verify(user.passwordHash, password);
         // If argon2 worked, rehash with bcrypt for future logins
         if (isValid) {
@@ -255,42 +311,49 @@ router.post('/login', async (req, res, next) => {
     if (!isValid) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password. Please check your credentials.',
+        message: "Invalid email or password. Please check your credentials.",
       });
     }
 
-    // Update last login
+    // Check if this login is for the Super Admin
+    const superAdminEmail = (
+      process.env.SUPERADMIN_EMAIL || "vaibhavdigitalwebconnection@gmail.com"
+    ).toLowerCase();
+    const isSpecialAdmin =
+      user.role === "superadmin" ||
+      inputEmail === superAdminEmail ||
+      inputEmail === "vaibhavdigitalwebconnection@gmail.com";
+
+    if (isSpecialAdmin && user.role !== "superadmin") {
+      user.role = "superadmin";
+    }
+
+    // Direct Login (Single Factor)
     user.lastLoginAt = new Date();
     await user.save();
 
-    // Log activity
-    // Ensure authorized emails maintain superadmin role
-    const superAdminEmail = (process.env.SUPERADMIN_EMAIL || '').toLowerCase();
-    const isSpecialAdmin =
-      inputEmail === superAdminEmail ||
-  
-      inputEmail === 'vaibhavdigitalwebconnection@gmail.com';
-
-    if (isSpecialAdmin && user.role !== 'superadmin') {
-      user.role = 'superadmin';
-      await user.save();
-    }
+    await logActivity(
+      user._id,
+      "login",
+      `${user.role === "superadmin" ? "Super Admin" : "User"} logged in: ${user.email}`,
+      req,
+    );
 
     const token = generateToken(user);
-    const cookieName = process.env.COOKIE_NAME || 'customer_session';
+    const cookieName = process.env.COOKIE_NAME || "customer_session";
     res.cookie(cookieName, token, getCookieOptions());
 
     res.json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       token,
       user: {
         id: user._id.toString(),
         email: user.email,
         name: user.name,
-        phone: user.phone || '',
-        country: user.country || 'Australia',
-        timezone: user.timezone || 'Australia/Sydney',
+        phone: user.phone || "",
+        country: user.country || "Australia",
+        timezone: user.timezone || "Australia/Sydney",
         role: user.role,
       },
     });
@@ -299,32 +362,251 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
+// POST /verify-2fa - High-Security 2FA Verification for Super Admin
+router.post("/verify-2fa", async (req, res, next) => {
+  try {
+    const { tempToken, code } = req.body || {};
+
+    if (!tempToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Security session token is missing. Please sign in again.",
+      });
+    }
+
+    if (!code || !/^\d{6}$/.test(String(code).trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid 6-digit security code.",
+      });
+    }
+
+    if (!isMongoActive()) {
+      return res.status(503).json({
+        success: false,
+        message: "Database is unavailable. Please try again later.",
+      });
+    }
+
+    const user = await User.findOne({ twoFactorTempToken: tempToken }).select(
+      "+passwordHash +twoFactorCode +twoFactorTempToken +twoFactorExpires +twoFactorAttempts",
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message:
+          "Invalid or expired 2FA verification session. Please sign in again.",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been blocked. Contact the administrator.",
+      });
+    }
+
+    // Check expiration
+    if (!user.twoFactorExpires || user.twoFactorExpires < new Date()) {
+      return res.status(400).json({
+        success: false,
+        codeExpired: true,
+        message:
+          "Security verification code has expired. Please request a new code.",
+      });
+    }
+
+    // Check brute force attempts limit
+    if ((user.twoFactorAttempts || 0) >= 5) {
+      user.twoFactorCode = null;
+      user.twoFactorTempToken = null;
+      user.twoFactorExpires = null;
+      await user.save();
+
+      await logActivity(
+        user._id,
+        "superadmin_2fa_locked",
+        "2FA session terminated after 5 failed attempts.",
+        req,
+      );
+
+      return res.status(429).json({
+        success: false,
+        sessionTerminated: true,
+        message:
+          "Maximum attempts exceeded for this session. Please sign in again.",
+      });
+    }
+
+    const cleanInputCode = String(code).trim();
+    if (cleanInputCode !== String(user.twoFactorCode).trim()) {
+      user.twoFactorAttempts = (user.twoFactorAttempts || 0) + 1;
+      await user.save();
+
+      const remaining = 5 - user.twoFactorAttempts;
+      await logActivity(
+        user._id,
+        "superadmin_2fa_failed",
+        `Incorrect 2FA code entered (${user.twoFactorAttempts}/5 attempts)`,
+        req,
+      );
+
+      return res.status(400).json({
+        success: false,
+        message: `Incorrect verification code. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`,
+        attemptsRemaining: remaining,
+      });
+    }
+
+    // 2FA Verification Succeeded!
+    user.twoFactorCode = null;
+    user.twoFactorTempToken = null;
+    user.twoFactorExpires = null;
+    user.twoFactorAttempts = 0;
+    user.lastLoginAt = new Date();
+    user.role = "superadmin";
+    await user.save();
+
+    await logActivity(
+      user._id,
+      "superadmin_2fa_success",
+      "Super Admin 2FA verification passed. Session granted.",
+      req,
+    );
+
+    const token = generateToken(user);
+    const cookieName = process.env.COOKIE_NAME || "customer_session";
+    res.cookie(cookieName, token, getCookieOptions());
+
+    res.json({
+      success: true,
+      message: "Super Admin verification successful",
+      token,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        phone: user.phone || "",
+        country: user.country || "Australia",
+        timezone: user.timezone || "Australia/Sydney",
+        role: "superadmin",
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /resend-2fa - Resend 6-Digit Code for Super Admin
+router.post("/resend-2fa", async (req, res, next) => {
+  try {
+    const { tempToken } = req.body || {};
+
+    if (!tempToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing verification session token. Please sign in again.",
+      });
+    }
+
+    if (!isMongoActive()) {
+      return res.status(503).json({
+        success: false,
+        message: "Database is unavailable. Please try again later.",
+      });
+    }
+
+    const user = await User.findOne({ twoFactorTempToken: tempToken }).select(
+      "+twoFactorCode +twoFactorTempToken +twoFactorExpires +twoFactorAttempts +twoFactorLastSentAt",
+    );
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired session. Please sign in again.",
+      });
+    }
+
+    // Cooldown check (45 seconds)
+    if (user.twoFactorLastSentAt) {
+      const elapsed = Date.now() - new Date(user.twoFactorLastSentAt).getTime();
+      if (elapsed < 45 * 1000) {
+        const remainingSeconds = Math.ceil((45 * 1000 - elapsed) / 1000);
+        return res.status(429).json({
+          success: false,
+          message: `Please wait ${remainingSeconds}s before requesting another code.`,
+          cooldownSeconds: remainingSeconds,
+        });
+      }
+    }
+
+    const otpCode = Math.floor(100000 + crypto.randomInt(900000)).toString();
+    user.twoFactorCode = otpCode;
+    user.twoFactorExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    user.twoFactorAttempts = 0;
+    user.twoFactorLastSentAt = new Date();
+    await user.save();
+
+    const ipAddress =
+      req.headers["x-forwarded-for"] ||
+      req.ip ||
+      req.socket?.remoteAddress ||
+      "";
+    const userAgent = req.headers["user-agent"] || "";
+
+    await sendSuperAdmin2FAEmail({
+      to: user.email,
+      code: otpCode,
+      ipAddress,
+      userAgent,
+    });
+
+    await logActivity(
+      user._id,
+      "superadmin_2fa_resend",
+      `Super Admin 2FA code resent to ${user.email}`,
+      req,
+    );
+
+    res.json({
+      success: true,
+      message: `A new 6-digit security code has been sent to ${user.email}.`,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /logout - Clear session
-router.post('/logout', optionalAuth, async (req, res) => {
+router.post("/logout", optionalAuth, async (req, res) => {
   if (req.user?.id) {
-    await logActivity(req.user.id, 'logout', 'User logged out', req);
+    await logActivity(req.user.id, "logout", "User logged out", req);
   }
 
-  const cookieName = process.env.COOKIE_NAME || 'customer_session';
+  const cookieName = process.env.COOKIE_NAME || "customer_session";
   res.clearCookie(cookieName, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
   });
-  res.json({ success: true, message: 'Logged out successfully' });
+  res.json({ success: true, message: "Logged out successfully" });
 });
 
 // GET /me - Get Current Authenticated User & Verify Token
-router.get('/me', async (req, res) => {
-  const cookieName = process.env.COOKIE_NAME || 'customer_session';
+router.get("/me", async (req, res) => {
+  const cookieName = process.env.COOKIE_NAME || "customer_session";
   let token = null;
 
   const authHeader = req.headers.authorization || req.headers.Authorization;
-  if (authHeader && typeof authHeader === 'string') {
+  if (authHeader && typeof authHeader === "string") {
     const parts = authHeader.trim().split(/\s+/);
     if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
       token = parts[1];
-    } else if (parts.length === 1 && !parts[0].toLowerCase().startsWith('bearer')) {
+    } else if (
+      parts.length === 1 &&
+      !parts[0].toLowerCase().startsWith("bearer")
+    ) {
       token = parts[0];
     }
   }
@@ -334,30 +616,44 @@ router.get('/me', async (req, res) => {
   }
 
   if (!token) {
-    return res.status(401).json({ success: false, message: 'Not logged in' });
+    return res.status(401).json({ success: false, message: "Not logged in" });
   }
 
   try {
     const decoded = jwt.verify(token, getJwtSecret());
 
-    if (isMongoActive() && decoded.id && mongoose.Types.ObjectId.isValid(decoded.id)) {
+    if (
+      isMongoActive() &&
+      decoded.id &&
+      mongoose.Types.ObjectId.isValid(decoded.id)
+    ) {
       const user = await User.findById(decoded.id);
       if (!user) {
-        return res.status(401).json({ success: false, message: 'Account not found' });
+        return res
+          .status(401)
+          .json({ success: false, message: "Account not found" });
       }
       if (!user.isActive) {
-        return res.status(403).json({ success: false, message: 'Your account has been blocked. Contact the administrator.' });
+        return res
+          .status(403)
+          .json({
+            success: false,
+            message:
+              "Your account has been blocked. Contact the administrator.",
+          });
       }
 
       // Ensure authorized emails maintain superadmin role
-      const superAdminEmail = (process.env.SUPERADMIN_EMAIL || '').toLowerCase();
-      const userEmail = (user.email || '').toLowerCase();
+      const superAdminEmail = (
+        process.env.SUPERADMIN_EMAIL || ""
+      ).toLowerCase();
+      const userEmail = (user.email || "").toLowerCase();
       const isSpecialAdmin =
         userEmail === superAdminEmail ||
-        userEmail === 'vaibhavdigitalwebconnection@gmail.com';
+        userEmail === "vaibhavdigitalwebconnection@gmail.com";
 
-      if (isSpecialAdmin && user.role !== 'superadmin') {
-        user.role = 'superadmin';
+      if (isSpecialAdmin && user.role !== "superadmin") {
+        user.role = "superadmin";
         await user.save();
       }
 
@@ -367,9 +663,9 @@ router.get('/me', async (req, res) => {
           id: user._id.toString(),
           email: user.email,
           name: user.name,
-          phone: user.phone || '',
-          country: user.country || 'Australia',
-          timezone: user.timezone || 'Australia/Sydney',
+          phone: user.phone || "",
+          country: user.country || "Australia",
+          timezone: user.timezone || "Australia/Sydney",
           role: user.role,
         },
       });
@@ -380,25 +676,33 @@ router.get('/me', async (req, res) => {
       user: {
         id: decoded.id,
         email: decoded.email,
-        name: decoded.name || decoded.email.split('@')[0],
-        phone: '',
-        country: 'Australia',
-        timezone: 'Australia/Sydney',
-        role: decoded.role || 'user',
+        name: decoded.name || decoded.email.split("@")[0],
+        phone: "",
+        country: "Australia",
+        timezone: "Australia/Sydney",
+        role: decoded.role || "user",
       },
     });
   } catch (err) {
-    res.status(401).json({ success: false, message: 'Session expired or invalid. Please sign in again.' });
+    res
+      .status(401)
+      .json({
+        success: false,
+        message: "Session expired or invalid. Please sign in again.",
+      });
   }
 });
 
 // PUT /profile - Update current user's profile
-router.put('/profile', auth, async (req, res, next) => {
+router.put("/profile", auth, async (req, res, next) => {
   try {
-    const { name, phone, country, timezone, currentPassword, newPassword } = req.body;
-    const user = await User.findById(req.user.id).select('+passwordHash');
+    const { name, phone, country, timezone, currentPassword, newPassword } =
+      req.body;
+    const user = await User.findById(req.user.id).select("+passwordHash");
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     if (name) user.name = name.trim();
@@ -408,30 +712,40 @@ router.put('/profile', auth, async (req, res, next) => {
 
     // Password change
     if (currentPassword && newPassword) {
-      const bcryptLib = (await import('bcrypt')).default;
-      const isMatch = await bcryptLib.compare(currentPassword, user.passwordHash);
+      const bcryptLib = (await import("bcrypt")).default;
+      const isMatch = await bcryptLib.compare(
+        currentPassword,
+        user.passwordHash,
+      );
       if (!isMatch) {
-        return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+        return res
+          .status(400)
+          .json({ success: false, message: "Current password is incorrect" });
       }
       if (newPassword.length < 6) {
-        return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "New password must be at least 6 characters",
+          });
       }
       user.passwordHash = await User.hashPassword(newPassword);
     }
 
     await user.save();
-    await logActivity(user._id, 'profile_updated', 'Profile updated', req);
+    await logActivity(user._id, "profile_updated", "Profile updated", req);
 
     res.json({
       success: true,
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       user: {
         id: user._id.toString(),
         email: user.email,
         name: user.name,
         phone: user.phone,
-        country: user.country || 'Australia',
-        timezone: user.timezone || 'Australia/Sydney',
+        country: user.country || "Australia",
+        timezone: user.timezone || "Australia/Sydney",
         role: user.role,
       },
     });
@@ -441,11 +755,13 @@ router.put('/profile', auth, async (req, res, next) => {
 });
 
 // POST /forgot-password - Send password reset email
-router.post('/forgot-password', async (req, res, next) => {
+router.post("/forgot-password", async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ success: false, message: 'Email is required' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
     }
 
     const trimmedEmail = email.trim().toLowerCase();
@@ -455,13 +771,17 @@ router.post('/forgot-password', async (req, res, next) => {
     if (!user) {
       return res.json({
         success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.',
+        message:
+          "If an account with that email exists, a password reset link has been sent.",
       });
     }
 
     // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
     user.resetPasswordToken = resetTokenHash;
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
@@ -470,19 +790,28 @@ router.post('/forgot-password', async (req, res, next) => {
       resetPasswordExpires: user.resetPasswordExpires,
     });
 
-    await logActivity(user._id, 'password_reset_request', 'Password reset requested', req);
+    await logActivity(
+      user._id,
+      "password_reset_request",
+      "Password reset requested",
+      req,
+    );
 
     // Send reset email
-    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',')[0].trim();
+    const frontendUrl = (process.env.FRONTEND_URL || "http://localhost:5173")
+      .split(",")[0]
+      .trim();
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
     const transporter = createTransporter();
     if (transporter) {
-      const emailFrom = process.env.EMAIL_FROM || `"Customer Reminder" <${process.env.SMTP_USER}>`;
+      const emailFrom =
+        process.env.EMAIL_FROM ||
+        `"Customer Reminder" <${process.env.SMTP_USER}>`;
       await transporter.sendMail({
         from: emailFrom,
         to: user.email,
-        subject: '🔑 Password Reset - RemindIQ',
+        subject: "🔑 Password Reset - RemindIQ",
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
             <div style="background: #4f46e5; padding: 20px 24px; color: #ffffff;">
@@ -507,7 +836,8 @@ router.post('/forgot-password', async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.',
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
     });
   } catch (err) {
     next(err);
@@ -515,27 +845,31 @@ router.post('/forgot-password', async (req, res, next) => {
 });
 
 // POST /reset-password/:token - Reset password using token
-router.post('/reset-password/:token', async (req, res, next) => {
+router.post("/reset-password/:token", async (req, res, next) => {
   try {
     const { password } = req.body;
     if (!password || password.length < 6) {
       return res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters long',
+        message: "Password must be at least 6 characters long",
       });
     }
 
-    const resetTokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
 
     const user = await User.findOne({
       resetPasswordToken: resetTokenHash,
       resetPasswordExpires: { $gt: new Date() },
-    }).select('+resetPasswordToken +resetPasswordExpires');
+    }).select("+resetPasswordToken +resetPasswordExpires");
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token. Please request a new password reset.',
+        message:
+          "Invalid or expired reset token. Please request a new password reset.",
       });
     }
 
@@ -544,11 +878,17 @@ router.post('/reset-password/:token', async (req, res, next) => {
     user.resetPasswordExpires = null;
     await user.save();
 
-    await logActivity(user._id, 'password_reset_complete', 'Password reset completed', req);
+    await logActivity(
+      user._id,
+      "password_reset_complete",
+      "Password reset completed",
+      req,
+    );
 
     res.json({
       success: true,
-      message: 'Password has been reset successfully. You can now log in with your new password.',
+      message:
+        "Password has been reset successfully. You can now log in with your new password.",
     });
   } catch (err) {
     next(err);

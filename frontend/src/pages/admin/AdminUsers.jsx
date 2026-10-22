@@ -22,6 +22,7 @@ import {
 import api from "../../api/axios";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
+import DeleteReminderModal from "../../components/modals/DeleteReminderModal";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -38,6 +39,8 @@ export default function AdminUsers() {
   const [viewDetailsModal, setViewDetailsModal] = useState(false);
   const [userDetailsData, setUserDetailsData] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [reminderToDelete, setReminderToDelete] = useState(null);
+  const [isDeletingReminder, setIsDeletingReminder] = useState(false);
 
   // Edit User (Name, Phone)
   const [editUserModal, setEditUserModal] = useState(false);
@@ -348,7 +351,10 @@ export default function AdminUsers() {
   };
 
   // Delete Reminder from User Modal
-  const handleDeleteReminder = async (reminderId) => {
+  const handleConfirmDeleteReminder = async () => {
+    if (!reminderToDelete) return;
+    const reminderId = reminderToDelete._id;
+    setIsDeletingReminder(true);
     try {
       const res = await api.delete(`/admin/reminders/${reminderId}`);
       if (res.data?.success) {
@@ -376,12 +382,15 @@ export default function AdminUsers() {
           };
         });
         fetchUsers();
+        setReminderToDelete(null);
       }
     } catch (err) {
       toast.error(
-        "Delete failed",
+        "Delete Failed",
         err.response?.data?.message || "Server error",
       );
+    } finally {
+      setIsDeletingReminder(false);
     }
   };
 
@@ -1166,7 +1175,7 @@ export default function AdminUsers() {
                               {/* Delete Reminder */}
                               <button
                                 type="button"
-                                onClick={() => handleDeleteReminder(r._id)}
+                                onClick={() => setReminderToDelete(r)}
                                 className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
                                 title="Delete Reminder"
                               >
@@ -1569,6 +1578,17 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
+
+      {/* Delete Reminder Confirmation Modal */}
+      <DeleteReminderModal
+        isOpen={!!reminderToDelete}
+        reminder={reminderToDelete}
+        onClose={() => {
+          if (!isDeletingReminder) setReminderToDelete(null);
+        }}
+        onConfirm={handleConfirmDeleteReminder}
+        isDeleting={isDeletingReminder}
+      />
     </div>
   );
 }

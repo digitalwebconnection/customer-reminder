@@ -19,8 +19,7 @@ import {
   combineDateAndTimeToUTC,
   formatInAustralianTime,
 } from "../../utils/dateUtils";
-import VisualDatePicker from "../../components/forms/VisualDatePicker";
-import VisualTimePicker from "../../components/forms/VisualTimePicker";
+import VisualDateTimePicker from "../../components/forms/VisualDateTimePicker";
 import { useTimezone } from "../../context/TimezoneContext";
 import { useToast } from "../../context/ToastContext";
 import {
@@ -374,7 +373,7 @@ export default function AddReminder() {
               <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/80 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                  
                     <span>Country & Regional Timezone</span>
                   </label>
                 </div>
@@ -405,56 +404,31 @@ export default function AddReminder() {
                 </p>
               </div>
 
-              {/* Visual Calendar & Visual Time Selectors */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Visual Calendar */}
-                <VisualDatePicker
-                  value={date}
-                  onChange={setDate}
-                  label="Call Date"
-                  required={true}
-                  timezone={timezone}
-                />
+              {/* Unified Date & Time Selection */}
+              <VisualDateTimePicker
+                date={date}
+                time={time}
+                onDateChange={setDate}
+                onTimeChange={setTime}
+                label="Select Date & Time"
+                required={true}
+                timezone={timezone}
+              />
 
-                {/* Visual Time Selector */}
-                <VisualTimePicker
-                  value={time}
-                  onChange={setTime}
-                  label="Call Time"
-                  required={true}
-                  timezoneHint={`Scheduled in ${currentZoneObj.short} time`}
-                />
-              </div>
-
-              {/* Real-time Schedule Preview Pill */}
+              {/* Real-time Schedule Preview (Slim & Compact) */}
               {previewDueUTC ? (
-                <div className="p-4 rounded-xl bg-zinc-900/70 border border-zinc-800 flex items-center justify-between gap-3 text-xs shadow-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-200 flex items-center justify-center shrink-0">
-                      <Clock className="w-4.5 h-4.5 text-zinc-300" />
-                    </div>
-                    <div>
-                      <span className="text-[11px] text-zinc-400 uppercase tracking-wider block font-semibold">
-                        Scheduled Call Time ({currentZoneObj.short})
-                      </span>
-                      <span className="font-bold text-zinc-100 font-mono text-xs sm:text-sm">
-                        {formatInAustralianTime(previewDueUTC, timezone)}
-                      </span>
-                    </div>
+                <div className="px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80 flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <span className="text-[11px] text-zinc-400">
+                      Scheduled ({currentZoneObj.short}):
+                    </span>
                   </div>
-                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md font-medium whitespace-nowrap">
-                    Active Time
+                  <span className="font-mono font-semibold text-zinc-200 text-xs">
+                    {formatInAustralianTime(previewDueUTC, timezone)}
                   </span>
                 </div>
-              ) : (
-                <div className="p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-800/80 text-xs text-zinc-400 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-zinc-500 shrink-0" />
-                  <span>
-                    Select both a date and time above to view the exact
-                    scheduled appointment preview.
-                  </span>
-                </div>
-              )}
+              ) : null}
             </div>
 
             {/* Save Reminder Button */}

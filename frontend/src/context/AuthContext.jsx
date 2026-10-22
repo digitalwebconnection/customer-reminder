@@ -69,6 +69,27 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
+  const verify2FA = async (tempToken, code) => {
+    const res = await api.post('/auth/verify-2fa', { tempToken, code });
+    if (res.data?.token) {
+      localStorage.setItem('remindiq_token', res.data.token);
+    }
+    if (res.data?.user) {
+      setUser(res.data.user);
+      localStorage.setItem('remindiq_user', JSON.stringify(res.data.user));
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        requestAndSubscribePush().catch(() => {});
+      }
+      setOneSignalUser(res.data.user.id || res.data.user._id);
+    }
+    return res.data;
+  };
+
+  const resend2FA = async (tempToken) => {
+    const res = await api.post('/auth/resend-2fa', { tempToken });
+    return res.data;
+  };
+
   const register = async (payload, maybeEmail, maybePassword, maybePhone, maybeConfirmPassword) => {
     // Accepts either object { name, email, phone, password, confirmPassword } or positional args for backwards compat
     let body = {};
@@ -162,6 +183,8 @@ export function AuthProvider({ children }) {
         isLoggingOut,
         updateProfile,
         refreshUser,
+        verify2FA,
+        resend2FA,
       }}
     >
       {children}

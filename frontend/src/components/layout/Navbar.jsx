@@ -147,6 +147,7 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
           to: "/reminders",
           label: "All Reminders",
           icon: ListTodo,
+          end: true,
         },
         {
           to: "/add",
@@ -159,6 +160,29 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
           icon: UserIcon,
         },
       ];
+
+  const isNavActive = (itemTo, defaultActive) => {
+    if (defaultActive) return true;
+    if (
+      itemTo === "/add" &&
+      (location.pathname === "/reminders/add" || location.pathname === "/add-reminder")
+    ) {
+      return true;
+    }
+    if (itemTo === "/admin" && location.pathname === "/admin/dashboard") {
+      return true;
+    }
+    if (itemTo === "/admin/logs" && location.pathname === "/admin/activity-logs") {
+      return true;
+    }
+    if (
+      itemTo === "/profile" &&
+      (location.pathname === "/settings" || location.pathname === "/account")
+    ) {
+      return true;
+    }
+    return false;
+  };
 
   return (
     <>
@@ -247,27 +271,28 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                   Navigation
                 </p>
                 <div className="flex flex-col gap-1">
-                  {navItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        end={item.end}
-                        onClick={() => setMobileOpen(false)}
-                        className={({ isActive }) =>
-                          `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                            isActive
-                              ? "bg-zinc-800 text-white shadow-xs border border-zinc-700/60"
-                              : "text-zinc-300 hover:text-white hover:bg-zinc-900"
-                          }`
-                        }
-                      >
-                        <Icon className="w-4 h-4 shrink-0 text-zinc-400" />
-                        <span>{item.label}</span>
-                      </NavLink>
-                    );
-                  })}
+                    {navItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          end={item.end}
+                          onClick={() => setMobileOpen(false)}
+                          className={({ isActive }) => {
+                            const active = isNavActive(item.to, isActive);
+                            return `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                              active
+                                ? "bg-zinc-800 text-white shadow-xs border border-zinc-700/60"
+                                : "text-zinc-300 hover:text-white hover:bg-zinc-900"
+                            }`;
+                          }}
+                        >
+                          <Icon className="w-4 h-4 shrink-0 text-zinc-400" />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      );
+                    })}
                 </div>
               </div>
 
@@ -449,13 +474,14 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                     to={item.to}
                     end={item.end}
                     title={item.label}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
-                        isActive
+                    className={({ isActive }) => {
+                      const active = isNavActive(item.to, isActive);
+                      return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
+                        active
                           ? "bg-zinc-800 text-white shadow-xs border border-zinc-700/60 font-semibold"
                           : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/60"
-                      } ${isCollapsed ? "justify-center px-0 py-2.5" : ""}`
-                    }
+                      } ${isCollapsed ? "justify-center px-0 py-2.5" : ""}`;
+                    }}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     {!isCollapsed && <span>{item.label}</span>}

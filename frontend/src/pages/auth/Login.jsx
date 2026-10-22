@@ -57,6 +57,7 @@ export default function Login() {
     try {
       const trimmedEmail = email.trim().toLowerCase();
       const res = await login(trimmedEmail, password);
+
       toast.success(
         "Welcome back!",
         `Signed in as ${res?.user?.name || email}`,
@@ -84,7 +85,7 @@ export default function Login() {
       {/* Subtle background grid pattern */}
       <div className="fixed inset-0 bg-grid-pattern pointer-events-none opacity-20" />
 
-      <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 p-7 sm:p-9 rounded-2xl shadow-2xl">
+      <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 p-7 sm:p-9 rounded-2xl shadow-2xl transition-all duration-300">
         {/* Logo & Header */}
         <div className="text-center space-y-2 mb-6">
           <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-200 shadow-sm">
@@ -118,9 +119,13 @@ export default function Login() {
               {email && (
                 <span className="text-[10px]">
                   {emailValidation.isValid ? (
-                    <span className="text-emerald-400 font-medium">Valid email</span>
+                    <span className="text-emerald-400 font-medium">
+                      Valid email
+                    </span>
                   ) : emailTouched ? (
-                    <span className="text-rose-400 font-medium">Invalid email format</span>
+                    <span className="text-rose-400 font-medium">
+                      Invalid email format
+                    </span>
                   ) : null}
                 </span>
               )}
@@ -140,7 +145,9 @@ export default function Login() {
                 onBlur={() => setEmailTouched(true)}
                 placeholder="name@company.com"
                 className={`w-full pl-10 pr-4 py-2.5 bg-zinc-900 border ${
-                  showEmailError ? 'border-rose-500/70 focus:border-rose-400' : 'border-zinc-800 focus:border-zinc-500'
+                  showEmailError
+                    ? "border-rose-500/70 focus:border-rose-400"
+                    : "border-zinc-800 focus:border-zinc-500"
                 } rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition shadow-inner`}
               />
             </div>

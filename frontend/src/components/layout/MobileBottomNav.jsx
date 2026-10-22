@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   ListTodo,
   Plus,
@@ -19,6 +19,7 @@ export default function MobileBottomNav() {
   const { permissions, setShowAlarmModal } = usePwa();
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     openLogoutModal();
@@ -82,11 +83,13 @@ export default function MobileBottomNav() {
           {/* Audit Logs */}
           <NavLink
             to="/admin/logs"
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
-              }`
-            }
+            className={({ isActive }) => {
+              const active =
+                isActive || location.pathname === "/admin/activity-logs";
+              return `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                active ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+              }`;
+            }}
           >
             <History className="w-5 h-5 mb-0.5" />
             <span className="text-[10px] tracking-tight">Logs</span>
@@ -95,11 +98,15 @@ export default function MobileBottomNav() {
           {/* Profile */}
           <NavLink
             to="/profile"
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
-              }`
-            }
+            className={({ isActive }) => {
+              const active =
+                isActive ||
+                location.pathname === "/settings" ||
+                location.pathname === "/account";
+              return `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                active ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+              }`;
+            }}
           >
             <UserIcon className="w-5 h-5 mb-0.5" />
             <span className="text-[10px] tracking-tight">Profile</span>
@@ -119,6 +126,7 @@ export default function MobileBottomNav() {
         {/* All Reminders Tab */}
         <NavLink
           to="/reminders"
+          end
           className={({ isActive }) =>
             `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
               isActive
@@ -134,11 +142,15 @@ export default function MobileBottomNav() {
         {/* Elevated Add Reminder Button */}
         <NavLink
           to="/add"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-2xl bg-white text-zinc-950 shadow-xl shadow-black/50 border-2 border-[#09090b] active:scale-90 transition-all cursor-pointer ${
-              isActive ? "ring-2 ring-white ring-offset-2 ring-offset-[#09090b]" : ""
-            }`
-          }
+          className={({ isActive }) => {
+            const active =
+              isActive ||
+              location.pathname === "/reminders/add" ||
+              location.pathname === "/add-reminder";
+            return `flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-2xl bg-white text-zinc-950 shadow-xl shadow-black/50 border-2 border-[#09090b] active:scale-90 transition-all cursor-pointer ${
+              active ? "ring-2 ring-white ring-offset-2 ring-offset-[#09090b]" : ""
+            }`;
+          }}
           title="Add Customer Reminder"
         >
           <Plus className="w-6 h-6 stroke-[2.5]" />
@@ -147,11 +159,15 @@ export default function MobileBottomNav() {
         {/* Profile */}
         <NavLink
           to="/profile"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-              isActive ? "text-white font-bold" : "text-zinc-400 hover:text-zinc-200"
-            }`
-          }
+          className={({ isActive }) => {
+            const active =
+              isActive ||
+              location.pathname === "/settings" ||
+              location.pathname === "/account";
+            return `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+              active ? "text-white font-bold" : "text-zinc-400 hover:text-zinc-200"
+            }`;
+          }}
           title="My Profile"
         >
           <UserIcon className="w-5 h-5 mb-0.5" />

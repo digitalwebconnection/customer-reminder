@@ -62,6 +62,31 @@ const userSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
+    twoFactorCode: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    twoFactorTempToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    twoFactorExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+    twoFactorAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
+    twoFactorLastSentAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
     lastLoginAt: {
       type: Date,
       default: null,
@@ -74,6 +99,11 @@ const userSchema = new mongoose.Schema(
         delete ret.passwordHash;
         delete ret.resetPasswordToken;
         delete ret.resetPasswordExpires;
+        delete ret.twoFactorCode;
+        delete ret.twoFactorTempToken;
+        delete ret.twoFactorExpires;
+        delete ret.twoFactorAttempts;
+        delete ret.twoFactorLastSentAt;
         delete ret.__v;
         return ret;
       },

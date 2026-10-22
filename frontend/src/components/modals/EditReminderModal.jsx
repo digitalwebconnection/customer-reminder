@@ -18,8 +18,7 @@ import {
   getPartsInAustralianTimezone,
   formatInAustralianTime,
 } from "../../utils/dateUtils";
-import VisualDatePicker from "../forms/VisualDatePicker";
-import VisualTimePicker from "../forms/VisualTimePicker";
+import VisualDateTimePicker from "../forms/VisualDateTimePicker";
 import {
   validateEmail,
   validatePhone,
@@ -282,7 +281,7 @@ export default function EditReminderModal({
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
               <span className="flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-indigo-400" />
+             
                 <span>Country & Regional Timezone</span>
               </span>
             </label>
@@ -322,35 +321,24 @@ export default function EditReminderModal({
             </select>
           </div>
 
-          {/* Call Date & Call Time (2-Column Grid) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <VisualDatePicker
-                value={date}
-                onChange={setDate}
-                label="Call Date"
-                required={true}
-                timezone={timezone}
-              />
-            </div>
-            <div>
-              <VisualTimePicker
-                value={time}
-                onChange={setTime}
-                label="Call Time"
-                timezone={timezone}
-                required={true}
-              />
-            </div>
-          </div>
+          {/* Select Date & Time (Unified visual calendar & time selector) */}
+          <VisualDateTimePicker
+            date={date}
+            time={time}
+            onDateChange={setDate}
+            onTimeChange={setTime}
+            label="Select Date & Time"
+            required={true}
+            timezone={timezone}
+          />
 
-          {/* Real-time Preview */}
+          {/* Real-time Preview (Slim) */}
           {previewDueUTC && (
-            <div className="p-3 rounded-xl bg-linear-to-r from-slate-800/70 to-slate-700/50 border border-indigo-500/30 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1 shadow-inner">
-              <span className="text-slate-400 font-medium">
+            <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-indigo-500/30 text-xs flex items-center justify-between gap-1 shadow-inner">
+              <span className="text-[11px] text-slate-400">
                 Scheduled In Zone:
               </span>
-              <span className="font-mono text-indigo-300 font-bold">
+              <span className="font-mono text-indigo-300 font-bold text-xs">
                 {formatInAustralianTime(previewDueUTC, timezone)}
               </span>
             </div>

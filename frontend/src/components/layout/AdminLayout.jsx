@@ -1,5 +1,4 @@
-import React from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -20,6 +19,7 @@ export default function AdminLayout({ children }) {
   const { user, openLogoutModal } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     openLogoutModal();
@@ -88,13 +88,17 @@ export default function AdminLayout({ children }) {
                   key={item.to}
                   to={item.to}
                   end={item.end}
-                  className={({ isActive }) =>
-                    `inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
-                      isActive
+                  className={({ isActive }) => {
+                    const active =
+                      isActive ||
+                      (item.to === '/admin' && location.pathname === '/admin/dashboard') ||
+                      (item.to === '/admin/logs' && location.pathname === '/admin/activity-logs');
+                    return `inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                      active
                         ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-xs'
                         : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
-                    }`
-                  }
+                    }`;
+                  }}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" />
                   <span>{item.label}</span>

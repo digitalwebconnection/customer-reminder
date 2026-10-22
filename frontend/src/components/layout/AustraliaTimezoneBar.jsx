@@ -111,7 +111,7 @@ export default function AustraliaTimezoneBar() {
 
   return (
     <div className="bg-[#09090b]/95 backdrop-blur-xl border-b border-zinc-800/80 px-3 sm:px-6 py-1.5 sm:py-2 text-[11px] select-none shadow-xs">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3 min-w-0 w-full">
         {/* Profile Country Indicator (Set from user profile, not changed manually) */}
         <div className="flex items-center gap-1.5 shrink-0">
           <div
@@ -124,7 +124,7 @@ export default function AustraliaTimezoneBar() {
         </div>
 
         {/* Live Regional Clocks: Filtered by active country */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5 touch-pan-x overscroll-x-contain">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5 touch-pan-x overscroll-x-contain min-w-0 flex-1 justify-end">
           {visibleZones.map((zone) => {
             const isSelected = selectedTimezone === zone.id;
             const data = clockData[zone.id] || { time: "Loading...", code: "" };

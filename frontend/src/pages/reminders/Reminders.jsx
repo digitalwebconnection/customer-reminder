@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   Phone,
@@ -37,10 +37,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import api from "../../api/axios";
 import { formatInAustralianTime } from "../../utils/dateUtils";
 import EditReminderModal from "../../components/modals/EditReminderModal";
+import DeleteReminderModal from "../../components/modals/DeleteReminderModal";
 import { useToast } from "../../context/ToastContext";
 import { usePwa } from "../../context/PwaContext";
 import { useAuth } from "../../context/AuthContext";
-import NumberTicker from "../../components/ui/NumberTicker";
 import QuickSnoozePortal from "../../components/modals/QuickSnoozePortal";
 
 export default function Reminders() {
@@ -143,6 +143,8 @@ export default function Reminders() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [editingReminder, setEditingReminder] = useState(null);
+  const [reminderToDelete, setReminderToDelete] = useState(null);
+  const [isDeletingReminder, setIsDeletingReminder] = useState(false);
   const [activeDueAlert, setActiveDueAlert] = useState(null);
   const [alertSecondsLeft, setAlertSecondsLeft] = useState(60);
   const [isCompletingAlert, setIsCompletingAlert] = useState(false);
@@ -651,14 +653,19 @@ export default function Reminders() {
     }
   };
 
-  const handleDelete = async (id, name) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete the reminder for ${name}?`,
-      )
-    ) {
-      return;
-    }
+  const handleOpenDelete = (reminder) => {
+    setReminderToDelete(reminder);
+  };
+
+  const handleDelete = (id, name) => {
+    const target = reminders.find((r) => r._id === id) || { _id: id, name };
+    setReminderToDelete(target);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!reminderToDelete) return;
+    const { _id: id, name } = reminderToDelete;
+    setIsDeletingReminder(true);
     closeNotificationForReminder(id);
     if (activeDueAlert?._id === id || searchParams.get("alertId") === id) {
       setActiveDueAlert(null);
@@ -667,10 +674,16 @@ export default function Reminders() {
     }
     try {
       await api.delete(`/reminders/${id}`);
-      toast.info("Reminder Deleted", `Removed record for ${name}.`);
+      toast.info("Reminder Deleted", `Removed record for ${name || "customer"}.`);
+      setReminderToDelete(null);
       fetchReminders();
     } catch (err) {
-      toast.error("Delete Failed", "Could not remove reminder from database.");
+      toast.error(
+        "Delete Failed",
+        err.response?.data?.message || "Could not remove reminder from database."
+      );
+    } finally {
+      setIsDeletingReminder(false);
     }
   };
 
@@ -828,21 +841,21 @@ export default function Reminders() {
     <div className="max-w-7xl mx-auto pt-2 pb-28 sm:py-6 space-y-5">
 
       {/* Header with Original Titles & Image 2 Solid White Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0 w-full">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">
             All Reminders
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1 truncate sm:whitespace-normal">
             Manage client appointments and automated follow-ups across
             Australia.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
           <Link
             to="/add"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-medium text-xs sm:text-sm transition shadow-xs active:scale-98 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-medium text-xs sm:text-sm transition shadow-xs active:scale-98 cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Add Reminder</span>
@@ -1150,14 +1163,14 @@ export default function Reminders() {
         <>
           {/* Desktop Table View WITH REAL WEBSITE FIELDS ONLY (No demo Orders, Total spend, Avg. order value) */}
           <div className="hidden md:block overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/60 shadow-xs">
-            <table className="w-full text-left border-collapse min-w-220">
+            <table className="w-full text-left border-collapse min-w-155 xl:min-w-220">
               <thead>
                 <tr className="border-b border-zinc-800 bg-zinc-900/40 text-xs font-medium text-zinc-400">
-                  <th className="py-3 pl-5 pr-4">Customer</th>
-                  <th className="py-3 px-4">Contact</th>
-                  <th className="py-3 px-4">Due Date & Time (AU)</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 pl-4 pr-5 text-right">Quick Actions</th>
+                  <th className="py-3 pl-4 sm:pl-5 pr-3">Customer</th>
+                  <th className="hidden xl:table-cell py-3 px-4">Contact</th>
+                  <th className="py-3 px-2.5 sm:px-4">Due Date & Time (AU)</th>
+                  <th className="py-3 px-2.5 sm:px-4">Status</th>
+                  <th className="py-3 pl-2 pr-3 sm:pl-4 sm:pr-5 text-right">Quick Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/60 text-xs">
@@ -1176,28 +1189,28 @@ export default function Reminders() {
                       key={r._id}
                       className="hover:bg-zinc-900/40 transition-colors group"
                     >
-                      {/* Customer: Name, Notes, and Initial Icon Avatar */}
-                      <td className="py-3.5 pl-5 pr-4">
-                        <div className="flex items-center gap-3">
+                      {/* Customer: Name, Notes, Phone, and (on tablet) inline Email */}
+                      <td className="py-3.5 pl-4 sm:pl-5 pr-3">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
                           <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-xs font-semibold text-zinc-200 shrink-0">
                             {initials}
                           </div>
-                          <div>
-                            <div className="font-medium text-sm text-zinc-100 group-hover:text-white transition flex items-center gap-2">
-                              <span>{r.name}</span>
+                          <div className="min-w-0">
+                            <div className="font-medium text-xs sm:text-sm text-zinc-100 group-hover:text-white transition flex items-center gap-1.5">
+                              <span className="truncate max-w-32.5 sm:max-w-none">{r.name}</span>
                               {r.note && (
                                 <span
-                                  className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 truncate max-w-48"
+                                  className="hidden xl:inline text-[10px] px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 truncate max-w-48"
                                   title={r.note}
                                 >
                                   {r.note}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1.5 mt-0.5">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                               <a
                                 href={`tel:${r.phone}`}
-                                className="inline-flex items-center gap-1 font-mono text-xs text-zinc-400 hover:text-white transition"
+                                className="inline-flex items-center gap-1 font-mono text-[11px] sm:text-xs text-zinc-400 hover:text-white transition"
                                 title="Click to call customer"
                               >
                                 <Phone className="w-3 h-3 text-zinc-500" />
@@ -1215,13 +1228,20 @@ export default function Reminders() {
                                   <Copy className="w-3 h-3" />
                                 )}
                               </button>
+                              {/* On tablet (< xl screens), show email right here so Contact column isn't required */}
+                              {r.email && (
+                                <span className="xl:hidden inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200 truncate max-w-37.5">
+                                  <Mail className="w-3 h-3 text-zinc-500 shrink-0" />
+                                  <span className="truncate">{r.email}</span>
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* Contact: Email & Address */}
-                      <td className="py-3.5 px-4 text-zinc-300">
+                      {/* Contact: Email & Address (Visible on large screens >= xl) */}
+                      <td className="hidden xl:table-cell py-3.5 px-4 text-zinc-300">
                         {r.email ? (
                           <div className="flex items-center gap-1.5">
                             <a
@@ -1255,20 +1275,20 @@ export default function Reminders() {
                       </td>
 
                       {/* Due Date & Time in AU timezone */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 font-mono text-xs text-zinc-300">
-                          <Clock className="w-3.5 h-3.5 text-zinc-500" />
+                      <td className="py-3.5 px-2.5 sm:px-4 whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 font-mono text-[11px] sm:text-xs text-zinc-300">
+                          <Clock className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                           <span>{formatInAustralianTime(r.dueAt, tz)}</span>
                         </div>
                       </td>
 
                       {/* Status */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-2.5 sm:px-4 whitespace-nowrap">
                         {getStatusBadge(r)}
                       </td>
 
                       {/* Quick Actions */}
-                      <td className="py-3.5 pl-4 pr-5 text-right whitespace-nowrap">
+                      <td className="py-3.5 pl-2 pr-3 sm:pl-4 sm:pr-5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
                           {/* Quick Phone Call Button */}
                           <a
@@ -1341,7 +1361,7 @@ export default function Reminders() {
 
                           {/* Delete */}
                           <button
-                            onClick={() => handleDelete(r._id, r.name)}
+                            onClick={() => handleOpenDelete(r)}
                             className="p-1.5 rounded-md text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition cursor-pointer"
                             title="Delete Reminder"
                           >
@@ -1507,7 +1527,7 @@ export default function Reminders() {
                       </button>
 
                       <button
-                        onClick={() => handleDelete(r._id, r.name)}
+                        onClick={() => handleOpenDelete(r)}
                         className="w-9 h-9 rounded-xl text-zinc-400 hover:text-rose-400 bg-zinc-900 hover:bg-rose-950/30 border border-zinc-800 hover:border-rose-900/50 transition flex items-center justify-center active:scale-90 cursor-pointer"
                         title="Delete"
                       >
@@ -1682,6 +1702,17 @@ export default function Reminders() {
         reminder={activeSnooze?.reminder}
         onSnooze={handleQuickSnooze}
         onOpenCustomEdit={(rem) => setEditingReminder(rem)}
+      />
+
+      {/* Delete Reminder Confirmation Modal */}
+      <DeleteReminderModal
+        isOpen={!!reminderToDelete}
+        reminder={reminderToDelete}
+        onClose={() => {
+          if (!isDeletingReminder) setReminderToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeletingReminder}
       />
     </div>
   );

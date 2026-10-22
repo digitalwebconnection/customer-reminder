@@ -29,6 +29,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       devOptions: {
         enabled: true,
+        suppressWarnings: true,
       },
       includeAssets: ['favicon.svg', 'app-icon.png', 'icon-192.png', 'icon-512.png', 'badge.png'],
       manifest: {
@@ -88,6 +89,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,

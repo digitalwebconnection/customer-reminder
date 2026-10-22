@@ -67,11 +67,28 @@ function Layout({ children }) {
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => {
     try {
-      return localStorage.getItem("remindiq_sidebar_collapsed") === "true";
+      const saved = localStorage.getItem("remindiq_sidebar_collapsed");
+      if (saved !== null) return saved === "true";
+      // Auto-collapse sidebar on tablet screens (< 1024px) for full responsiveness
+      return typeof window !== "undefined" && window.innerWidth < 1024;
     } catch (e) {
       return false;
     }
   });
+
+  // Adjust on resize if no manual preference saved
+  useEffect(() => {
+    const handleResize = () => {
+      try {
+        const saved = localStorage.getItem("remindiq_sidebar_collapsed");
+        if (saved === null) {
+          setIsSidebarCollapsed(window.innerWidth < 1024);
+        }
+      } catch (e) {}
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Global listener: If push alarm is received or clicked while on any page, route to the ringing screen
   useEffect(() => {
@@ -130,7 +147,7 @@ function Layout({ children }) {
 
       {/* Main Content Area: Offset by sidebar width on desktop */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+        className={`flex-1 flex flex-col transition-all duration-300 ease-in-out min-w-0 w-full ${
           isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
         }`}
       >
@@ -139,7 +156,7 @@ function Layout({ children }) {
           <AustraliaTimezoneBar />
         </div>
 
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto relative z-10 pb-28 sm:pb-32 md:pb-8">
+        <main className="flex-1 p-3 sm:p-5 lg:p-8 max-w-7xl w-full min-w-0 mx-auto relative z-10 pb-28 sm:pb-32 md:pb-8">
           {children}
         </main>
       </div>
@@ -188,7 +205,39 @@ export default function App() {
                     }
                   />
                   <Route
+                    path="/signin"
+                    element={
+                      <GuestRoute>
+                        <Login />
+                      </GuestRoute>
+                    }
+                  />
+                  <Route
+                    path="/sign-in"
+                    element={
+                      <GuestRoute>
+                        <Login />
+                      </GuestRoute>
+                    }
+                  />
+                  <Route
                     path="/signup"
+                    element={
+                      <GuestRoute>
+                        <SignUp />
+                      </GuestRoute>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
+                      <GuestRoute>
+                        <SignUp />
+                      </GuestRoute>
+                    }
+                  />
+                  <Route
+                    path="/sign-up"
                     element={
                       <GuestRoute>
                         <SignUp />
@@ -211,6 +260,13 @@ export default function App() {
                       </GuestRoute>
                     }
                   />
+                  <Route
+                    path="/reset-password"
+                    element={<Navigate to="/forgot-password" replace />}
+                  />
+
+                  {/* Standard Dashboard Route (Routes by Role) */}
+                  <Route path="/dashboard" element={<RoleBasedHome />} />
 
                   {/* Authenticated User Workspace Routes */}
                   <Route
@@ -226,7 +282,31 @@ export default function App() {
                     }
                   />
                   <Route
+                    path="/reminders/add"
+                    element={
+                      <ProtectedRoute>
+                        <UserOnlyRoute>
+                          <Layout>
+                            <AddReminder />
+                          </Layout>
+                        </UserOnlyRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/add"
+                    element={
+                      <ProtectedRoute>
+                        <UserOnlyRoute>
+                          <Layout>
+                            <AddReminder />
+                          </Layout>
+                        </UserOnlyRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/add-reminder"
                     element={
                       <ProtectedRoute>
                         <UserOnlyRoute>
@@ -247,10 +327,40 @@ export default function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Profile />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/account"
+                    element={
+                      <ProtectedRoute>
+                        <Layout>
+                          <Profile />
+                        </Layout>
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Super Admin Protected Routes */}
                   <Route
                     path="/admin"
+                    element={
+                      <AdminRoute>
+                        <AdminLayout>
+                          <AdminDashboard />
+                        </AdminLayout>
+                      </AdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/dashboard"
                     element={
                       <AdminRoute>
                         <AdminLayout>
@@ -289,9 +399,20 @@ export default function App() {
                       </AdminRoute>
                     }
                   />
+                  <Route
+                    path="/admin/activity-logs"
+                    element={
+                      <AdminRoute>
+                        <AdminLayout>
+                          <AdminActivityLogs />
+                        </AdminLayout>
+                      </AdminRoute>
+                    }
+                  />
 
                   {/* Default Navigation Fallbacks */}
                   <Route path="/" element={<RoleBasedHome />} />
+                  <Route path="/home" element={<RoleBasedHome />} />
                   <Route path="*" element={<RoleBasedHome />} />
                 </Routes>
               </Suspense>
