@@ -229,7 +229,9 @@ export default function AdminActivityLogs() {
                     {log.targetUserId && (
                       <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
                         Target:{" "}
-                        {log.targetUserId?.name || log.targetUserId?.email || "User"}
+                        {log.targetUserId?.name ||
+                          log.targetUserId?.email ||
+                          "User"}
                       </p>
                     )}
                   </div>
@@ -307,7 +309,9 @@ export default function AdminActivityLogs() {
                         {log.targetUserId && (
                           <p className="text-[10px] text-zinc-500 mt-0.5">
                             Target:{" "}
-                            {log.targetUserId?.name || log.targetUserId?.email || "User"}
+                            {log.targetUserId?.name ||
+                              log.targetUserId?.email ||
+                              "User"}
                           </p>
                         )}
                       </td>
