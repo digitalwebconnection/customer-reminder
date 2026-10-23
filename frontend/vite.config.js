@@ -29,6 +29,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       devOptions: {
         enabled: true,
+        type: 'module',
         suppressWarnings: true,
       },
       includeAssets: ['favicon.svg', 'app-icon.png', 'icon-192.png', 'icon-512.png', 'badge.png'],
@@ -127,6 +128,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  optimizeDeps: {
+    include: ['workbox-window'],
   },
   build: {
     chunkSizeWarningLimit: 1000,

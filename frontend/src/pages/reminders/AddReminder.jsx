@@ -31,10 +31,17 @@ import { requestAndSubscribePush } from "../../services/pushManager";
 
 export default function AddReminder() {
   const toast = useToast();
-  const { selectedTimezone, selectedCountry, setTimezone: setGlobalTimezone } = useTimezone();
+  const {
+    selectedTimezone,
+    selectedCountry,
+    setTimezone: setGlobalTimezone,
+  } = useTimezone();
 
   const [name, setName] = useState("");
-  const defaultPhone = selectedCountry === "India" || selectedTimezone === "Asia/Kolkata" ? "+91 " : "+61 ";
+  const defaultPhone =
+    selectedCountry === "India" || selectedTimezone === "Asia/Kolkata"
+      ? "+91 "
+      : "+61 ";
   const [phone, setPhone] = useState(defaultPhone);
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
@@ -71,7 +78,10 @@ export default function AddReminder() {
       return;
     }
 
-    const activeCountry = selectedCountry === 'India' || timezone === 'Asia/Kolkata' ? 'India' : 'Australia';
+    const activeCountry =
+      selectedCountry === "India" || timezone === "Asia/Kolkata"
+        ? "India"
+        : "Australia";
     const phoneCheck = validatePhone(phone, activeCountry, true);
     if (!phoneCheck.isValid) {
       setError(phoneCheck.error);
@@ -103,7 +113,9 @@ export default function AddReminder() {
     }
 
     if (new Date(dueAt).getTime() < Date.now() - 60000) {
-      setError("Scheduled call date and time cannot be in the past. Please choose a current or future time.");
+      setError(
+        "Scheduled call date and time cannot be in the past. Please choose a current or future time.",
+      );
       return;
     }
 
@@ -113,7 +125,10 @@ export default function AddReminder() {
       // Ensure mobile push subscription is armed and associated with user on this device
       try {
         if (typeof window !== "undefined" && "Notification" in window) {
-          if (Notification.permission === "granted" || Notification.permission === "default") {
+          if (
+            Notification.permission === "granted" ||
+            Notification.permission === "default"
+          ) {
             requestAndSubscribePush().catch(() => {});
           }
         }
@@ -139,7 +154,7 @@ export default function AddReminder() {
 
       toast.success(
         "Reminder Scheduled! 🚀",
-        `Call with ${payload.name} booked for ${formattedTime}.`
+        `Call with ${payload.name} booked for ${formattedTime}.`,
       );
 
       // Clear the form after saving
@@ -171,8 +186,7 @@ export default function AddReminder() {
   const previewDueUTC =
     date && time ? combineDateAndTimeToUTC(date, time, timezone) : null;
   const currentZoneObj =
-    ALL_TIMEZONES.find((z) => z.value === timezone) ||
-    ALL_TIMEZONES[0];
+    ALL_TIMEZONES.find((z) => z.value === timezone) || ALL_TIMEZONES[0];
 
   return (
     <div className="max-w-6xl mx-auto py-4 sm:py-8 space-y-6">
@@ -184,7 +198,9 @@ export default function AddReminder() {
               Add Reminder
             </h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-zinc-900 text-zinc-300 border border-zinc-800 shadow-xs">
-              {currentZoneObj?.country === "India" ? "🇮🇳 India (IST)" : "🇦🇺 Australia"}
+              {currentZoneObj?.country === "India"
+                ? "🇮🇳 India (IST)"
+                : "🇦🇺 Australia"}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
@@ -286,7 +302,11 @@ export default function AddReminder() {
                     setPhone(clean);
                     if (error) setError("");
                   }}
-                  placeholder={selectedCountry === "India" || timezone === "Asia/Kolkata" ? "+91 98765 43210" : "+61 412 345 678"}
+                  placeholder={
+                    selectedCountry === "India" || timezone === "Asia/Kolkata"
+                      ? "+91 98765 43210"
+                      : "+61 412 345 678"
+                  }
                   className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 transition font-mono shadow-inner"
                 />
               </div>
@@ -373,7 +393,6 @@ export default function AddReminder() {
               <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/80 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                  
                     <span>Country & Regional Timezone</span>
                   </label>
                 </div>
@@ -383,24 +402,38 @@ export default function AddReminder() {
                   onChange={(e) => handleTimezoneChange(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-zinc-900 border border-zinc-700/80 rounded-xl text-xs sm:text-sm text-zinc-100 focus:outline-none focus:border-zinc-500 transition cursor-pointer"
                 >
-                  <optgroup label="🇦🇺 Australia" className="bg-zinc-900 text-zinc-300 font-semibold">
+                  <optgroup
+                    label="🇦🇺 Australia"
+                    className="bg-zinc-900 text-zinc-300 font-semibold"
+                  >
                     {AUSTRALIAN_TIMEZONES.map((tz) => (
-                      <option key={tz.value} value={tz.value} className="bg-zinc-900 text-zinc-100 font-normal">
+                      <option
+                        key={tz.value}
+                        value={tz.value}
+                        className="bg-zinc-900 text-zinc-100 font-normal"
+                      >
                         {tz.label}
                       </option>
                     ))}
                   </optgroup>
-                  <optgroup label="🇮🇳 India" className="bg-zinc-900 text-zinc-300 font-semibold">
+                  <optgroup
+                    label="🇮🇳 India"
+                    className="bg-zinc-900 text-zinc-300 font-semibold"
+                  >
                     {INDIAN_TIMEZONES.map((tz) => (
-                      <option key={tz.value} value={tz.value} className="bg-zinc-900 text-zinc-100 font-normal">
+                      <option
+                        key={tz.value}
+                        value={tz.value}
+                        className="bg-zinc-900 text-zinc-100 font-normal"
+                      >
                         {tz.label}
                       </option>
                     ))}
                   </optgroup>
                 </select>
                 <p className="text-[11px] text-zinc-500">
-                  Tip: Click any Australian or Indian city clock in the top bar to
-                  synchronize this timezone automatically.
+                  Tip: Click any Australian or Indian city clock in the top bar
+                  to synchronize this timezone automatically.
                 </p>
               </div>
 
@@ -439,10 +472,13 @@ export default function AddReminder() {
                 className="w-full min-h-12 py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm sm:text-base transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
               >
                 <CheckCircle2 className="w-5 h-5" />
-                <span>{loading ? "Saving Customer..." : "Create Customer"}</span>
+                <span>
+                  {loading ? "Saving Customer..." : "Create Customer"}
+                </span>
               </button>
               <p className="text-[11px] text-zinc-500 text-center mt-2">
-                Stored with automated desktop alert and audio chime when call is due.
+                Stored with automated desktop alert and audio chime when call is
+                due.
               </p>
             </div>
           </div>

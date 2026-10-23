@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ListTodo,
   Search,
@@ -20,27 +20,34 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-} from 'lucide-react';
-import api from '../../api/axios';
-import { useToast } from '../../context/ToastContext';
-import { formatInAustralianTime } from '../../utils/dateUtils';
+} from "lucide-react";
+import api from "../../api/axios";
+import { useToast } from "../../context/ToastContext";
+import { formatInAustralianTime } from "../../utils/dateUtils";
 
 export default function AdminReminders() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialStatus = searchParams.get('status') || '';
+  const initialStatus = searchParams.get("status") || "";
 
   const [reminders, setReminders] = useState([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [loading, setLoading] = useState(true);
 
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState(null);
-  const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', note: '', dueAt: '', status: 'pending' });
+  const [editForm, setEditForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    note: "",
+    dueAt: "",
+    status: "pending",
+  });
   const [savingEdit, setSavingEdit] = useState(false);
 
   // Delete State
@@ -54,10 +61,10 @@ export default function AdminReminders() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (search.trim()) params.append('search', search.trim());
-      if (statusFilter) params.append('status', statusFilter);
-      params.append('page', String(page));
-      params.append('limit', '10');
+      if (search.trim()) params.append("search", search.trim());
+      if (statusFilter) params.append("status", statusFilter);
+      params.append("page", String(page));
+      params.append("limit", "10");
 
       const res = await api.get(`/admin/reminders?${params.toString()}`);
       if (res.data?.success) {
@@ -66,7 +73,10 @@ export default function AdminReminders() {
         setPages(res.data.pages || 1);
       }
     } catch (err) {
-      toast.error('Failed to load reminders', err.response?.data?.message || 'Server error');
+      toast.error(
+        "Failed to load reminders",
+        err.response?.data?.message || "Server error",
+      );
     } finally {
       setLoading(false);
     }
@@ -78,20 +88,29 @@ export default function AdminReminders() {
 
   // Toggle Complete / Pending
   const handleToggleStatus = async (r) => {
-    const nextStatus = r.status === 'completed' ? 'pending' : 'completed';
+    const nextStatus = r.status === "completed" ? "pending" : "completed";
     try {
-      const res = await api.patch(`/admin/reminders/${r._id}`, { status: nextStatus });
+      const res = await api.patch(`/admin/reminders/${r._id}`, {
+        status: nextStatus,
+      });
       if (res.data?.success) {
         toast.success(
-          nextStatus === 'completed' ? 'Marked Completed ✅' : 'Marked Pending ⏳',
-          `Reminder for ${r.name} updated.`
+          nextStatus === "completed"
+            ? "Marked Completed ✅"
+            : "Marked Pending ⏳",
+          `Reminder for ${r.name} updated.`,
         );
         setReminders((prev) =>
-          prev.map((item) => (item._id === r._id ? { ...item, status: nextStatus } : item))
+          prev.map((item) =>
+            item._id === r._id ? { ...item, status: nextStatus } : item,
+          ),
         );
       }
     } catch (err) {
-      toast.error('Update failed', err.response?.data?.message || 'Server error');
+      toast.error(
+        "Update failed",
+        err.response?.data?.message || "Server error",
+      );
     }
   };
 
@@ -99,18 +118,20 @@ export default function AdminReminders() {
   const handleOpenEdit = (r) => {
     setEditingReminder(r);
     // Format date for datetime-local
-    let dt = '';
+    let dt = "";
     if (r.dueAt) {
       const d = new Date(r.dueAt);
-      dt = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      dt = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16);
     }
     setEditForm({
-      name: r.name || '',
-      phone: r.phone || '',
-      email: r.email || '',
-      note: r.note || '',
+      name: r.name || "",
+      phone: r.phone || "",
+      email: r.email || "",
+      note: r.note || "",
       dueAt: dt,
-      status: r.status || 'pending',
+      status: r.status || "pending",
     });
     setEditModalOpen(true);
   };
@@ -130,14 +151,17 @@ export default function AdminReminders() {
         payload.dueAt = new Date(editForm.dueAt).toISOString();
       }
 
-      const res = await api.patch(`/admin/reminders/${editingReminder._id}`, payload);
+      const res = await api.patch(
+        `/admin/reminders/${editingReminder._id}`,
+        payload,
+      );
       if (res.data?.success) {
-        toast.success('Reminder Updated', 'Changes saved successfully.');
+        toast.success("Reminder Updated", "Changes saved successfully.");
         setEditModalOpen(false);
         fetchReminders();
       }
     } catch (err) {
-      toast.error('Save failed', err.response?.data?.message || 'Server error');
+      toast.error("Save failed", err.response?.data?.message || "Server error");
     } finally {
       setSavingEdit(false);
     }
@@ -153,12 +177,20 @@ export default function AdminReminders() {
     setDeleting(true);
     try {
       await api.delete(`/admin/reminders/${reminderToDelete._id}`);
-      toast.success('Reminder Deleted', 'The reminder has been permanently removed.');
+      toast.success(
+        "Reminder Deleted",
+        "The reminder has been permanently removed.",
+      );
       setDeleteModalOpen(false);
-      setReminders((prev) => prev.filter((item) => item._id !== reminderToDelete._id));
+      setReminders((prev) =>
+        prev.filter((item) => item._id !== reminderToDelete._id),
+      );
       setTotal((t) => Math.max(0, t - 1));
     } catch (err) {
-      toast.error('Delete failed', err.response?.data?.message || 'Server error');
+      toast.error(
+        "Delete failed",
+        err.response?.data?.message || "Server error",
+      );
     } finally {
       setDeleting(false);
     }
@@ -169,12 +201,12 @@ export default function AdminReminders() {
       return Array.from({ length: pages }, (_, i) => i + 1);
     }
     if (page <= 4) {
-      return [1, 2, 3, 4, 5, '...', pages];
+      return [1, 2, 3, 4, 5, "...", pages];
     }
     if (page >= pages - 3) {
-      return [1, '...', pages - 4, pages - 3, pages - 2, pages - 1, pages];
+      return [1, "...", pages - 4, pages - 3, pages - 2, pages - 1, pages];
     }
-    return [1, '...', page - 1, page, page + 1, '...', pages];
+    return [1, "...", page - 1, page, page + 1, "...", pages];
   };
 
   return (
@@ -187,7 +219,8 @@ export default function AdminReminders() {
             <span>Global Reminders Monitor</span>
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Real-time feed of all customer calls and follow-ups across all tenant accounts ({total} total).
+            Real-time feed of all customer calls and follow-ups across all
+            tenant accounts ({total} total).
           </p>
         </div>
 
@@ -196,7 +229,9 @@ export default function AdminReminders() {
           onClick={fetchReminders}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+          />
           <span>Refresh</span>
         </button>
       </div>
@@ -241,15 +276,23 @@ export default function AdminReminders() {
           {reminders.length > 0 ? (
             reminders.map((r) => {
               const now = new Date();
-              const isOverdue = r.status === 'pending' && new Date(r.dueAt) < now;
-              const ownerName = r.userId?.name || r.userName || r.userId?.email || r.userEmail || 'Unknown';
-              const ownerInitial = (ownerName || 'U').charAt(0).toUpperCase();
+              const isOverdue =
+                r.status === "pending" && new Date(r.dueAt) < now;
+              const ownerName =
+                r.userId?.name ||
+                r.userName ||
+                r.userId?.email ||
+                r.userEmail ||
+                "Unknown";
+              const ownerInitial = (ownerName || "U").charAt(0).toUpperCase();
 
               return (
                 <div key={r._id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2.5">
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-sm text-zinc-100 truncate">{r.name}</h3>
+                      <h3 className="font-semibold text-sm text-zinc-100 truncate">
+                        {r.name}
+                      </h3>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <a
                           href={`tel:${r.phone}`}
@@ -264,23 +307,27 @@ export default function AdminReminders() {
                     {/* Status Badge */}
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
-                        r.status === 'completed'
-                          ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                        r.status === "completed"
+                          ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
                           : isOverdue
-                          ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                          : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                            ? "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                            : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          r.status === 'completed'
-                            ? 'bg-emerald-400'
+                          r.status === "completed"
+                            ? "bg-emerald-400"
                             : isOverdue
-                            ? 'bg-rose-400'
-                            : 'bg-amber-400'
+                              ? "bg-rose-400"
+                              : "bg-amber-400"
                         }`}
                       />
-                      {r.status === 'completed' ? 'Completed' : isOverdue ? 'Overdue' : 'Pending'}
+                      {r.status === "completed"
+                        ? "Completed"
+                        : isOverdue
+                          ? "Overdue"
+                          : "Pending"}
                     </span>
                   </div>
 
@@ -303,7 +350,12 @@ export default function AdminReminders() {
 
                     <div className="flex items-center gap-1 text-[11px] text-zinc-300">
                       <Clock className="w-3.5 h-3.5 text-zinc-500" />
-                      <span>{formatInAustralianTime(r.dueAt, r.timezone || 'Asia/Kolkata')}</span>
+                      <span>
+                        {formatInAustralianTime(
+                          r.dueAt,
+                          r.timezone || "Asia/Kolkata",
+                        )}
+                      </span>
                     </div>
                   </div>
 
@@ -322,12 +374,12 @@ export default function AdminReminders() {
                         type="button"
                         onClick={() => handleToggleStatus(r)}
                         className={`h-9 px-3 rounded-xl text-xs font-semibold border transition active:scale-90 cursor-pointer ${
-                          r.status === 'completed'
-                            ? 'bg-zinc-800 text-amber-300 border-zinc-700'
-                            : 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                          r.status === "completed"
+                            ? "bg-zinc-800 text-amber-300 border-zinc-700"
+                            : "bg-zinc-800 text-zinc-300 border-zinc-700"
                         }`}
                       >
-                        {r.status === 'completed' ? 'Pending' : 'Done'}
+                        {r.status === "completed" ? "Pending" : "Done"}
                       </button>
 
                       <button
@@ -354,7 +406,7 @@ export default function AdminReminders() {
             })
           ) : (
             <div className="py-12 text-center text-xs text-zinc-500">
-              {loading ? 'Loading reminders...' : 'No reminders found.'}
+              {loading ? "Loading reminders..." : "No reminders found."}
             </div>
           )}
         </div>
@@ -375,14 +427,17 @@ export default function AdminReminders() {
               {reminders.length > 0 ? (
                 reminders.map((r) => {
                   const now = new Date();
-                  const isOverdue = r.status === 'pending' && new Date(r.dueAt) < now;
+                  const isOverdue =
+                    r.status === "pending" && new Date(r.dueAt) < now;
 
                   return (
                     <tr key={r._id} className="hover:bg-zinc-800/40 transition">
                       {/* Customer / Reminder Details */}
                       <td className="py-3 px-4">
                         <div className="min-w-0">
-                          <p className="font-semibold text-zinc-100 truncate">{r.name}</p>
+                          <p className="font-semibold text-zinc-100 truncate">
+                            {r.name}
+                          </p>
                           <p className="text-[11px] text-zinc-400 font-mono flex items-center gap-1">
                             <Phone className="w-3 h-3 text-zinc-500" />
                             <span>{r.phone}</span>
@@ -399,14 +454,22 @@ export default function AdminReminders() {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-[10px] text-zinc-300 shrink-0">
-                            {(r.userId?.name || r.userName || r.userId?.email || r.userEmail || 'U').charAt(0).toUpperCase()}
+                            {(
+                              r.userId?.name ||
+                              r.userName ||
+                              r.userId?.email ||
+                              r.userEmail ||
+                              "U"
+                            )
+                              .charAt(0)
+                              .toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-zinc-300 truncate">
-                              {r.userId?.name || r.userName || 'Account'}
+                              {r.userId?.name || r.userName || "Account"}
                             </p>
                             <p className="text-[10px] text-zinc-500 font-mono truncate">
-                              {r.userId?.email || r.userEmail || ''}
+                              {r.userId?.email || r.userEmail || ""}
                             </p>
                           </div>
                         </div>
@@ -417,7 +480,10 @@ export default function AdminReminders() {
                         <div className="flex items-center gap-1.5 text-zinc-300">
                           <Calendar className="w-3.5 h-3.5 text-zinc-500" />
                           <span>
-                            {formatInAustralianTime(r.dueAt, r.timezone || 'Asia/Kolkata')}
+                            {formatInAustralianTime(
+                              r.dueAt,
+                              r.timezone || "Asia/Kolkata",
+                            )}
                           </span>
                         </div>
                       </td>
@@ -426,27 +492,27 @@ export default function AdminReminders() {
                       <td className="py-3 px-4">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
-                            r.status === 'completed'
-                              ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                            r.status === "completed"
+                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
                               : isOverdue
-                              ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                              : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                ? "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                                : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              r.status === 'completed'
-                                ? 'bg-emerald-400'
+                              r.status === "completed"
+                                ? "bg-emerald-400"
                                 : isOverdue
-                                ? 'bg-rose-400'
-                                : 'bg-amber-400'
+                                  ? "bg-rose-400"
+                                  : "bg-amber-400"
                             }`}
                           />
-                          {r.status === 'completed'
-                            ? 'Completed'
+                          {r.status === "completed"
+                            ? "Completed"
                             : isOverdue
-                            ? 'Overdue'
-                            : 'Pending'}
+                              ? "Overdue"
+                              : "Pending"}
                         </span>
                       </td>
 
@@ -458,11 +524,15 @@ export default function AdminReminders() {
                             type="button"
                             onClick={() => handleToggleStatus(r)}
                             className={`p-1.5 rounded-lg transition cursor-pointer ${
-                              r.status === 'completed'
-                                ? 'text-emerald-400 hover:bg-emerald-500/10'
-                                : 'text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800'
+                              r.status === "completed"
+                                ? "text-emerald-400 hover:bg-emerald-500/10"
+                                : "text-zinc-400 hover:text-emerald-400 hover:bg-zinc-800"
                             }`}
-                            title={r.status === 'completed' ? 'Mark as Pending' : 'Mark as Completed'}
+                            title={
+                              r.status === "completed"
+                                ? "Mark as Pending"
+                                : "Mark as Completed"
+                            }
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
@@ -494,7 +564,7 @@ export default function AdminReminders() {
               ) : (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-zinc-500">
-                    {loading ? 'Loading reminders...' : 'No reminders found.'}
+                    {loading ? "Loading reminders..." : "No reminders found."}
                   </td>
                 </tr>
               )}
@@ -506,9 +576,16 @@ export default function AdminReminders() {
         {total > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-zinc-800 bg-zinc-950/40 text-xs text-zinc-400">
             <div>
-              Showing <span className="font-semibold text-white">{total === 0 ? 0 : (page - 1) * 10 + 1}</span> to{' '}
-              <span className="font-semibold text-white">{Math.min(page * 10, total)}</span> of{' '}
-              <span className="font-semibold text-white">{total}</span> reminders (10 per page)
+              Showing{" "}
+              <span className="font-semibold text-white">
+                {total === 0 ? 0 : (page - 1) * 10 + 1}
+              </span>{" "}
+              to{" "}
+              <span className="font-semibold text-white">
+                {Math.min(page * 10, total)}
+              </span>{" "}
+              of <span className="font-semibold text-white">{total}</span>{" "}
+              reminders (10 per page)
             </div>
 
             {pages > 1 && (
@@ -535,9 +612,12 @@ export default function AdminReminders() {
 
                 <div className="flex items-center gap-1">
                   {getPageNumbers().map((p, idx) => {
-                    if (p === '...') {
+                    if (p === "...") {
                       return (
-                        <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-zinc-500 select-none">
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="px-1.5 py-1 text-zinc-500 select-none"
+                        >
                           …
                         </span>
                       );
@@ -550,8 +630,8 @@ export default function AdminReminders() {
                         onClick={() => setPage(p)}
                         className={`min-w-7 h-7 sm:min-w-8 sm:h-8 px-2 rounded-lg text-xs font-semibold transition cursor-pointer ${
                           isCurrent
-                            ? 'bg-amber-400 text-zinc-950 shadow-xs'
-                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60'
+                            ? "bg-amber-400 text-zinc-950 shadow-xs"
+                            : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/60"
                         }`}
                       >
                         {p}
@@ -607,53 +687,73 @@ export default function AdminReminders() {
 
             <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-zinc-300 font-semibold mb-1">Customer Name</label>
+                <label className="block text-zinc-300 font-semibold mb-1">
+                  Customer Name
+                </label>
                 <input
                   type="text"
                   required
                   value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 focus:outline-none focus:border-amber-400"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-semibold mb-1">Customer Phone</label>
+                <label className="block text-zinc-300 font-semibold mb-1">
+                  Customer Phone
+                </label>
                 <input
                   type="text"
                   required
                   value={editForm.phone}
-                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, phone: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 focus:outline-none focus:border-amber-400"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-semibold mb-1">Customer Email</label>
+                <label className="block text-zinc-300 font-semibold mb-1">
+                  Customer Email
+                </label>
                 <input
                   type="email"
                   value={editForm.email}
-                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, email: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 focus:outline-none focus:border-amber-400"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-semibold mb-1">Due Date & Time</label>
+                <label className="block text-zinc-300 font-semibold mb-1">
+                  Due Date & Time
+                </label>
                 <input
                   type="datetime-local"
                   required
                   value={editForm.dueAt}
-                  onChange={(e) => setEditForm({ ...editForm, dueAt: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, dueAt: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 focus:outline-none focus:border-amber-400"
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-semibold mb-1">Status</label>
+                <label className="block text-zinc-300 font-semibold mb-1">
+                  Status
+                </label>
                 <select
                   value={editForm.status}
-                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, status: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 focus:outline-none focus:border-amber-400"
                 >
                   <option value="pending">Pending</option>
@@ -662,11 +762,15 @@ export default function AdminReminders() {
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-semibold mb-1">Note / Agenda</label>
+                <label className="block text-zinc-300 font-semibold mb-1">
+                  Note / Agenda
+                </label>
                 <textarea
                   rows={3}
                   value={editForm.note}
-                  onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, note: e.target.value })
+                  }
                   className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-zinc-100 focus:outline-none focus:border-amber-400"
                 />
               </div>
@@ -685,7 +789,7 @@ export default function AdminReminders() {
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold transition shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  <span>{savingEdit ? 'Saving...' : 'Save Changes'}</span>
+                  <span>{savingEdit ? "Saving..." : "Save Changes"}</span>
                 </button>
               </div>
             </form>
@@ -704,9 +808,15 @@ export default function AdminReminders() {
             </div>
 
             <div className="text-center space-y-2">
-              <h3 className="text-base font-bold text-white">Delete Reminder?</h3>
+              <h3 className="text-base font-bold text-white">
+                Delete Reminder?
+              </h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Permanently delete reminder for <span className="text-white font-semibold">{reminderToDelete.name}</span> ({reminderToDelete.phone})?
+                Permanently delete reminder for{" "}
+                <span className="text-white font-semibold">
+                  {reminderToDelete.name}
+                </span>{" "}
+                ({reminderToDelete.phone})?
               </p>
             </div>
 
@@ -724,7 +834,7 @@ export default function AdminReminders() {
                 onClick={handleExecuteDelete}
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-md shadow-rose-600/20 cursor-pointer disabled:opacity-50"
               >
-                {deleting ? 'Deleting...' : 'Delete'}
+                {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

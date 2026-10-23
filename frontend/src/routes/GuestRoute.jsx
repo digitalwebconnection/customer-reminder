@@ -1,5 +1,5 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function GuestRoute({ children }) {
   const { isAuthenticated, user, loading } = useAuth();
@@ -16,7 +16,7 @@ export default function GuestRoute({ children }) {
   }
 
   if (isAuthenticated) {
-    if (user?.role === 'superadmin') {
+    if (user?.role === "superadmin") {
       return <Navigate to="/admin" replace />;
     }
     return <Navigate to="/reminders" replace />;

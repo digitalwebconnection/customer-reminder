@@ -17,11 +17,15 @@ import {
   LayoutDashboard,
   Users,
   History,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { usePwa } from "../../context/PwaContext";
-import { subscribeKeepAlive, pingBackend } from "../../services/renderKeepAlive";
+import {
+  subscribeKeepAlive,
+  pingBackend,
+} from "../../services/renderKeepAlive";
 import api from "../../api/axios";
 
 export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
@@ -67,12 +71,15 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
   }, [location.pathname]);
 
   const handleManualPing = async () => {
-    toast.info("Pinging Render...", "Sending 14-minute keep-alive ping to backend.");
+    toast.info(
+      "Pinging Render...",
+      "Sending 14-minute keep-alive ping to backend.",
+    );
     const data = await pingBackend();
     if (data) {
       toast.success(
         "Render Server Active 🟢",
-        `Response in ${keepAlive.latencyMs || 100}ms. Database: ${data.database || "connected"}`
+        `Response in ${keepAlive.latencyMs || 100}ms. Database: ${data.database || "connected"}`,
       );
     } else {
       toast.warning("Server Cold Start", "Ping queued. Render is waking up.");
@@ -84,7 +91,8 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
       try {
         new Notification("🔔 RemindIQ Test Alert", {
           body: "Desktop notifications are active on this PC!",
-          icon: "/favicon.svg",
+          icon: "/icon-192.png",
+          badge: "/badge.png",
         });
       } catch (e) {}
     }
@@ -98,7 +106,7 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
     setTestSent(true);
     toast.call(
       "Test Alert Sent 🔔",
-      "A 60-second test chime was dispatched to your PC & browser."
+      "A 60-second test chime was dispatched to your PC & browser.",
     );
     setTimeout(() => setTestSent(false), 3000);
   };
@@ -108,7 +116,9 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
     openLogoutModal();
   };
 
-  const userInitial = (user?.name || user?.email || "U").charAt(0).toUpperCase();
+  const userInitial = (user?.name || user?.email || "U")
+    .charAt(0)
+    .toUpperCase();
 
   const isSuperAdmin = user?.role === "superadmin";
 
@@ -165,14 +175,18 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
     if (defaultActive) return true;
     if (
       itemTo === "/add" &&
-      (location.pathname === "/reminders/add" || location.pathname === "/add-reminder")
+      (location.pathname === "/reminders/add" ||
+        location.pathname === "/add-reminder")
     ) {
       return true;
     }
     if (itemTo === "/admin" && location.pathname === "/admin/dashboard") {
       return true;
     }
-    if (itemTo === "/admin/logs" && location.pathname === "/admin/activity-logs") {
+    if (
+      itemTo === "/admin/logs" &&
+      location.pathname === "/admin/activity-logs"
+    ) {
       return true;
     }
     if (
@@ -192,8 +206,8 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
       <header
         className="md:hidden sticky top-0 z-40 bg-[#09090b]/95 backdrop-blur-xl border-b border-zinc-800 px-4 flex items-center justify-between shadow-xs transition-all"
         style={{
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          minHeight: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
         }}
       >
         <div className="flex items-center gap-3">
@@ -208,17 +222,13 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
 
           <NavLink
             to={isSuperAdmin ? "/admin" : "/reminders"}
-            className="flex items-center gap-2 font-bold text-white text-base"
+            className="flex items-center font-bold text-white text-base"
           >
-            <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-white">
-              <Bell className="w-3.5 h-3.5 text-zinc-100" />
-            </div>
-            <span className="font-bold text-zinc-100 tracking-tight text-sm">
+            <span className="font-extrabold text-white tracking-tight text-base">
               Remind<span className="text-zinc-400">IQ</span>
             </span>
           </NavLink>
         </div>
-
       </header>
 
       {/* ======================================================== */}
@@ -236,8 +246,8 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
           <div
             className="relative w-72 max-w-[82vw] bg-[#09090b] border-r border-zinc-800 px-4 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-250 overflow-y-auto"
             style={{
-              paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
-              paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 0px))',
+              paddingTop: "max(1rem, env(safe-area-inset-top, 0px))",
+              paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
             }}
           >
             <div>
@@ -246,12 +256,9 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                 <NavLink
                   to={isSuperAdmin ? "/admin" : "/reminders"}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2.5"
+                  className="flex items-center"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-white">
-                    <Bell className="w-4 h-4 text-zinc-100" />
-                  </div>
-                  <span className="font-bold text-zinc-100 tracking-tight text-base">
+                  <span className="font-extrabold text-white tracking-tight text-lg">
                     Remind<span className="text-zinc-400">IQ</span>
                   </span>
                 </NavLink>
@@ -271,28 +278,28 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                   Navigation
                 </p>
                 <div className="flex flex-col gap-1">
-                    {navItems.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <NavLink
-                          key={item.to}
-                          to={item.to}
-                          end={item.end}
-                          onClick={() => setMobileOpen(false)}
-                          className={({ isActive }) => {
-                            const active = isNavActive(item.to, isActive);
-                            return `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                              active
-                                ? "bg-zinc-800 text-white shadow-xs border border-zinc-700/60"
-                                : "text-zinc-300 hover:text-white hover:bg-zinc-900"
-                            }`;
-                          }}
-                        >
-                          <Icon className="w-4 h-4 shrink-0 text-zinc-400" />
-                          <span>{item.label}</span>
-                        </NavLink>
-                      );
-                    })}
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        onClick={() => setMobileOpen(false)}
+                        className={({ isActive }) => {
+                          const active = isNavActive(item.to, isActive);
+                          return `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                            active
+                              ? "bg-zinc-800 text-white shadow-xs border border-zinc-700/60"
+                              : "text-zinc-300 hover:text-white hover:bg-zinc-900"
+                          }`;
+                        }}
+                      >
+                        <Icon className="w-4 h-4 shrink-0 text-zinc-400" />
+                        <span>{item.label}</span>
+                      </NavLink>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -312,7 +319,9 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                     className="flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 transition cursor-pointer"
                   >
                     <Smartphone className="w-4 h-4 text-zinc-400 shrink-0" />
-                    <span>{isInstalled ? "App Installed" : "Download Mobile App"}</span>
+                    <span>
+                      {isInstalled ? "App Installed" : "Download Mobile App"}
+                    </span>
                   </button>
 
                   {/* Notification Permissions */}
@@ -327,8 +336,8 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                       notificationState === "granted"
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                         : notificationState === "denied"
-                        ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
-                        : "bg-zinc-900 text-amber-300 border-amber-500/30"
+                          ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                          : "bg-zinc-900 text-amber-300 border-amber-500/30"
                     }`}
                   >
                     {notificationState === "granted" ? (
@@ -375,7 +384,9 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                   </p>
                   <p className="text-[10px] text-zinc-400">
                     {user?.role === "superadmin" ? (
-                      <span className="text-amber-400 font-semibold">Super Admin</span>
+                      <span className="text-amber-400 font-semibold">
+                        Super Admin
+                      </span>
                     ) : (
                       "User"
                     )}
@@ -409,24 +420,32 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
           <div className="flex items-center justify-between pb-4 border-b border-zinc-800/80">
             <NavLink
               to={isSuperAdmin ? "/admin" : "/reminders"}
-              className={`flex items-center gap-3 font-bold text-white tracking-tight group overflow-hidden ${
-                isCollapsed ? "justify-center w-full" : ""
+              className={`flex items-center font-bold text-white tracking-tight group overflow-hidden ${
+                isCollapsed ? "justify-center w-full py-1 text-center" : ""
               }`}
-              title={isSuperAdmin ? "Super Admin Control Center" : "RemindIQ Dashboard"}
+              title={
+                isSuperAdmin
+                  ? "Super Admin Control Center"
+                  : "RemindIQ Dashboard"
+              }
             >
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-white shadow-xs group-hover:border-zinc-500 transition shrink-0">
-                <Bell className="w-4 h-4 text-zinc-100" />
-              </div>
-              {!isCollapsed && (
-                <div className="flex flex-col">
-                  <span className="font-bold text-zinc-100 tracking-tight text-base leading-tight">
-                    Remind<span className="text-zinc-400">IQ</span>
+              <div className="flex flex-col">
+                <span
+                  className={`font-extrabold text-white tracking-tight leading-tight ${
+                    isCollapsed ? "text-base tracking-wider" : "text-xl"
+                  }`}
+                >
+                  {isCollapsed ? "R" : "Remind"}
+                  <span className="text-zinc-400">
+                    {isCollapsed ? "IQ" : "IQ"}
                   </span>
+                </span>
+                {!isCollapsed && (
                   <span className="text-[10px] text-zinc-400 font-mono">
                     {isSuperAdmin ? "Super Admin" : "Customer Calls"}
                   </span>
-                </div>
-              )}
+                )}
+              </div>
             </NavLink>
 
             {/* Slider Collapse / Expand Button */}
@@ -504,7 +523,11 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
               <button
                 type="button"
                 onClick={() => promptInstall()}
-                title={isInstalled ? "App Installed on PC/Device" : "Download & Install Mobile Web App"}
+                title={
+                  isInstalled
+                    ? "App Installed on PC/Device"
+                    : "Download & Install Mobile Web App"
+                }
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border border-zinc-800/80 transition cursor-pointer shadow-xs ${
                   isCollapsed ? "justify-center px-0" : ""
                 }`}
@@ -528,9 +551,11 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                   }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  {!isCollapsed && <span className="truncate">Alarms Active</span>}
+                  {!isCollapsed && (
+                    <span className="truncate">Alarms Active</span>
+                  )}
                 </button>
-              ) : notificationState ===    "denied" ? (
+              ) : notificationState === "denied" ? (
                 <button
                   type="button"
                   onClick={() => setShowAlarmModal(true)}
@@ -540,7 +565,9 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                   }`}
                 >
                   <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Alarms Blocked</span>}
+                  {!isCollapsed && (
+                    <span className="truncate">Alarms Blocked</span>
+                  )}
                 </button>
               ) : (
                 <button
@@ -556,8 +583,6 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                   {!isCollapsed && <span className="truncate">Set Alarms</span>}
                 </button>
               )}
-
-            
             </div>
           </div>
         </div>
@@ -592,7 +617,9 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                   </p>
                   <p className="text-[10px] text-zinc-400 font-mono">
                     {user?.role === "superadmin" ? (
-                      <span className="text-amber-400 font-semibold">Super Admin</span>
+                      <span className="text-amber-400 font-semibold">
+                        Super Admin
+                      </span>
                     ) : (
                       "User"
                     )}

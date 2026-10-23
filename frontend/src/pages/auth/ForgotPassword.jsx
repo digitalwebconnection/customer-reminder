@@ -1,30 +1,40 @@
-import React, { useState } from 'react';
-import { Mail, ArrowRight, ArrowLeft, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import api from '../../api/axios';
+import React, { useState } from "react";
+import {
+  Mail,
+  ArrowRight,
+  ArrowLeft,
+  KeyRound,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import api from "../../api/axios";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim()) {
-      setError('Please provide your email address.');
+      setError("Please provide your email address.");
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      await api.post('/auth/forgot-password', { email: email.trim().toLowerCase() });
+      await api.post("/auth/forgot-password", {
+        email: email.trim().toLowerCase(),
+      });
       setSubmitted(true);
     } catch (err) {
       setError(
-        err.response?.data?.message || 'Something went wrong. Please check your email and try again.'
+        err.response?.data?.message ||
+          "Something went wrong. Please check your email and try again.",
       );
     } finally {
       setLoading(false);
@@ -41,9 +51,12 @@ export default function ForgotPassword() {
           <div className="w-14 h-14 rounded-2xl bg-linear-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center mx-auto text-white shadow-xl shadow-indigo-600/35 border border-white/20">
             <KeyRound className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Reset Password</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            Reset Password
+          </h1>
           <p className="text-xs text-zinc-400">
-            Enter your registered email and we'll send you a password recovery link
+            Enter your registered email and we'll send you a password recovery
+            link
           </p>
         </div>
 
@@ -53,14 +66,18 @@ export default function ForgotPassword() {
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">Reset Link Dispatched</h3>
+              <h3 className="text-base font-semibold text-white">
+                Reset Link Dispatched
+              </h3>
               <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                If an account exists for <span className="text-indigo-300 font-mono">{email}</span>,
-                you will receive an email with reset instructions shortly.
+                If an account exists for{" "}
+                <span className="text-indigo-300 font-mono">{email}</span>, you
+                will receive an email with reset instructions shortly.
               </p>
             </div>
             <p className="text-[11px] text-zinc-500">
-              Link expires in 60 minutes. Check your spam folder if it doesn't appear.
+              Link expires in 60 minutes. Check your spam folder if it doesn't
+              appear.
             </p>
             <div className="pt-2">
               <Link
@@ -103,7 +120,7 @@ export default function ForgotPassword() {
               disabled={loading}
               className="w-full min-h-11.5 py-3 px-4 rounded-xl bg-linear-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:brightness-110 text-white text-sm font-bold transition shadow-lg shadow-indigo-600/35 flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-95"
             >
-              <span>{loading ? 'Sending link...' : 'Send Reset Link'}</span>
+              <span>{loading ? "Sending link..." : "Send Reset Link"}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
 

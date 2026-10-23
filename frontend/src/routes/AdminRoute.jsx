@@ -1,7 +1,7 @@
-import React from 'react';
-import { Navigate, useLocation, Link } from 'react-router-dom';
-import { ShieldAlert, ArrowLeft } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React from "react";
+import { Navigate, useLocation, Link } from "react-router-dom";
+import { ShieldAlert, ArrowLeft } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export default function AdminRoute({ children }) {
   const { isAuthenticated, isSuperAdmin, loading } = useAuth();
@@ -31,7 +31,8 @@ export default function AdminRoute({ children }) {
           </div>
           <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
           <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
-            This area requires Super Administrator privileges. Your account does not have authorization to view this section.
+            This area requires Super Administrator privileges. Your account does
+            not have authorization to view this section.
           </p>
           <Link
             to="/reminders"

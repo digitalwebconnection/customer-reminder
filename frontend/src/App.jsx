@@ -8,7 +8,12 @@ import {
   useLocation,
 } from "react-router-dom";
 // Layout Components
-import { Navbar, AustraliaTimezoneBar, MobileBottomNav, AdminLayout } from "./components/layout";
+import {
+  Navbar,
+  AustraliaTimezoneBar,
+  MobileBottomNav,
+  AdminLayout,
+} from "./components/layout";
 
 // Lazy-loaded Domain Pages (Code-splitting for faster initial page load & mobile performance)
 const AddReminder = lazy(() => import("./pages/reminders/AddReminder"));
@@ -105,7 +110,10 @@ function Layout({ children }) {
           return;
         }
         if (reminderId) {
-          if (String(reminderId).startsWith("test-") || reminderId === "test-alert") {
+          if (
+            String(reminderId).startsWith("test-") ||
+            reminderId === "test-alert"
+          ) {
             return;
           }
           const target = `/reminders?alertId=${reminderId}`;

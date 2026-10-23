@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   History,
   RefreshCw,
@@ -12,16 +12,16 @@ import {
   Trash2,
   Calendar,
   Globe,
-} from 'lucide-react';
-import api from '../../api/axios';
-import { useToast } from '../../context/ToastContext';
+} from "lucide-react";
+import api from "../../api/axios";
+import { useToast } from "../../context/ToastContext";
 
 export default function AdminActivityLogs() {
   const [logs, setLogs] = useState([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
-  const [actionFilter, setActionFilter] = useState('');
+  const [actionFilter, setActionFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
   const toast = useToast();
@@ -30,9 +30,9 @@ export default function AdminActivityLogs() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (actionFilter) params.append('action', actionFilter);
-      params.append('page', String(page));
-      params.append('limit', '50');
+      if (actionFilter) params.append("action", actionFilter);
+      params.append("page", String(page));
+      params.append("limit", "50");
 
       const res = await api.get(`/admin/activity?${params.toString()}`);
       if (res.data?.success) {
@@ -41,7 +41,10 @@ export default function AdminActivityLogs() {
         setPages(res.data.pages || 1);
       }
     } catch (err) {
-      toast.error('Failed to load audit logs', err.response?.data?.message || 'Server error');
+      toast.error(
+        "Failed to load audit logs",
+        err.response?.data?.message || "Server error",
+      );
     } finally {
       setLoading(false);
     }
@@ -54,55 +57,55 @@ export default function AdminActivityLogs() {
   // Action Badge styling helper
   const getActionBadge = (action) => {
     switch (action) {
-      case 'login':
+      case "login":
         return {
           icon: LogIn,
-          label: 'Login',
-          style: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+          label: "Login",
+          style: "bg-blue-500/15 text-blue-300 border-blue-500/30",
         };
-      case 'signup':
+      case "signup":
         return {
           icon: UserPlus,
-          label: 'Signup',
-          style: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+          label: "Signup",
+          style: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
         };
-      case 'logout':
+      case "logout":
         return {
           icon: LogOut,
-          label: 'Logout',
-          style: 'bg-zinc-800 text-zinc-400 border-zinc-700',
+          label: "Logout",
+          style: "bg-zinc-800 text-zinc-400 border-zinc-700",
         };
-      case 'user_blocked':
+      case "user_blocked":
         return {
           icon: UserX,
-          label: 'User Blocked',
-          style: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
+          label: "User Blocked",
+          style: "bg-rose-500/15 text-rose-300 border-rose-500/30",
         };
-      case 'user_unblocked':
+      case "user_unblocked":
         return {
           icon: UserCheck,
-          label: 'User Unblocked',
-          style: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+          label: "User Unblocked",
+          style: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
         };
-      case 'user_deleted':
+      case "user_deleted":
         return {
           icon: Trash2,
-          label: 'User Deleted',
-          style: 'bg-red-500/20 text-red-300 border-red-500/40',
+          label: "User Deleted",
+          style: "bg-red-500/20 text-red-300 border-red-500/40",
         };
-      case 'admin_password_reset':
-      case 'password_reset_complete':
-      case 'password_reset_request':
+      case "admin_password_reset":
+      case "password_reset_complete":
+      case "password_reset_request":
         return {
           icon: Lock,
-          label: 'Password Action',
-          style: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+          label: "Password Action",
+          style: "bg-amber-500/15 text-amber-300 border-amber-500/30",
         };
       default:
         return {
           icon: Shield,
-          label: action || 'Event',
-          style: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+          label: action || "Event",
+          style: "bg-zinc-800 text-zinc-300 border-zinc-700",
         };
     }
   };
@@ -117,7 +120,8 @@ export default function AdminActivityLogs() {
             <span>Security & Activity Audit Logs</span>
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Immutable system event trail recording authentication events, administrative actions, and status updates ({total} total entries).
+            Immutable system event trail recording authentication events,
+            administrative actions, and status updates ({total} total entries).
           </p>
         </div>
 
@@ -126,7 +130,9 @@ export default function AdminActivityLogs() {
           onClick={fetchLogs}
           className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+          />
           <span>Refresh Logs</span>
         </button>
       </div>
@@ -174,22 +180,22 @@ export default function AdminActivityLogs() {
                     </span>
 
                     <span className="text-[11px] text-zinc-400 font-mono">
-                      {new Date(log.createdAt).toLocaleDateString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        month: 'short',
-                        day: 'numeric',
-                      })}{' '}
-                      {new Date(log.createdAt).toLocaleTimeString('en-IN', {
-                        timeZone: 'Asia/Kolkata',
-                        hour: '2-digit',
-                        minute: '2-digit',
+                      {new Date(log.createdAt).toLocaleDateString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        month: "short",
+                        day: "numeric",
+                      })}{" "}
+                      {new Date(log.createdAt).toLocaleTimeString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </span>
                   </div>
 
                   <div>
                     <p className="text-xs font-semibold text-zinc-200">
-                      {log.userId?.name || 'System'}
+                      {log.userId?.name || "System"}
                       {log.userId?.email && (
                         <span className="text-zinc-500 font-mono font-normal ml-1.5 text-[11px]">
                           ({log.userId.email})
@@ -197,11 +203,14 @@ export default function AdminActivityLogs() {
                       )}
                     </p>
                     {log.details && (
-                      <p className="text-xs text-zinc-400 mt-0.5">{log.details}</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        {log.details}
+                      </p>
                     )}
                     {log.targetUserId && (
                       <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                        Target: {log.targetUserId.name || log.targetUserId.email}
+                        Target:{" "}
+                        {log.targetUserId.name || log.targetUserId.email}
                       </p>
                     )}
                   </div>
@@ -209,7 +218,7 @@ export default function AdminActivityLogs() {
                   <div className="flex items-center justify-between text-[11px] text-zinc-500 font-mono pt-1 border-t border-zinc-800/60">
                     <span className="flex items-center gap-1">
                       <Globe className="w-3 h-3 text-zinc-600" />
-                      <span>{log.ipAddress || '127.0.0.1'}</span>
+                      <span>{log.ipAddress || "127.0.0.1"}</span>
                     </span>
                   </div>
                 </div>
@@ -217,7 +226,7 @@ export default function AdminActivityLogs() {
             })
           ) : (
             <div className="py-12 text-center text-xs text-zinc-500">
-              {loading ? 'Loading audit records...' : 'No activity logs found.'}
+              {loading ? "Loading audit records..." : "No activity logs found."}
             </div>
           )}
         </div>
@@ -241,7 +250,10 @@ export default function AdminActivityLogs() {
                   const Icon = badge.icon;
 
                   return (
-                    <tr key={log._id} className="hover:bg-zinc-800/40 transition">
+                    <tr
+                      key={log._id}
+                      className="hover:bg-zinc-800/40 transition"
+                    >
                       {/* Action Badge */}
                       <td className="py-3 px-4">
                         <span
@@ -257,23 +269,26 @@ export default function AdminActivityLogs() {
                         {log.userId ? (
                           <div>
                             <p className="font-semibold text-zinc-200">
-                              {log.userId.name || 'User'}
+                              {log.userId.name || "User"}
                             </p>
                             <p className="text-[11px] text-zinc-500 font-mono">
                               {log.userId.email}
                             </p>
                           </div>
                         ) : (
-                          <span className="text-zinc-500 font-mono text-[11px]">System</span>
+                          <span className="text-zinc-500 font-mono text-[11px]">
+                            System
+                          </span>
                         )}
                       </td>
 
                       {/* Details */}
                       <td className="py-3 px-4">
-                        <p className="text-zinc-300">{log.details || '—'}</p>
+                        <p className="text-zinc-300">{log.details || "—"}</p>
                         {log.targetUserId && (
                           <p className="text-[10px] text-zinc-500 mt-0.5">
-                            Target: {log.targetUserId.name || log.targetUserId.email}
+                            Target:{" "}
+                            {log.targetUserId.name || log.targetUserId.email}
                           </p>
                         )}
                       </td>
@@ -282,7 +297,7 @@ export default function AdminActivityLogs() {
                       <td className="py-3 px-4 text-zinc-400 font-mono text-[11px] whitespace-nowrap">
                         <div className="flex items-center gap-1">
                           <Globe className="w-3 h-3 text-zinc-600" />
-                          <span>{log.ipAddress || '127.0.0.1'}</span>
+                          <span>{log.ipAddress || "127.0.0.1"}</span>
                         </div>
                       </td>
 
@@ -291,20 +306,26 @@ export default function AdminActivityLogs() {
                         <div className="flex items-center justify-end gap-1.5">
                           <Calendar className="w-3 h-3 text-zinc-600" />
                           <span>
-                            {new Date(log.createdAt).toLocaleDateString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
+                            {new Date(log.createdAt).toLocaleDateString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
                           </span>
                           <span className="text-zinc-500">
-                            {new Date(log.createdAt).toLocaleTimeString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit',
-                            })}
+                            {new Date(log.createdAt).toLocaleTimeString(
+                              "en-IN",
+                              {
+                                timeZone: "Asia/Kolkata",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              },
+                            )}
                           </span>
                         </div>
                       </td>
@@ -314,7 +335,9 @@ export default function AdminActivityLogs() {
               ) : (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-zinc-500">
-                    {loading ? 'Loading audit records...' : 'No activity logs found.'}
+                    {loading
+                      ? "Loading audit records..."
+                      : "No activity logs found."}
                   </td>
                 </tr>
               )}
@@ -326,8 +349,9 @@ export default function AdminActivityLogs() {
         {pages > 1 && (
           <div className="flex items-center justify-between p-4 border-t border-zinc-800 bg-zinc-950/40 text-xs text-zinc-400">
             <span>
-              Page <span className="font-semibold text-white">{page}</span> of{' '}
-              <span className="font-semibold text-white">{pages}</span> ({total} logs)
+              Page <span className="font-semibold text-white">{page}</span> of{" "}
+              <span className="font-semibold text-white">{pages}</span> ({total}{" "}
+              logs)
             </span>
             <div className="flex items-center gap-2">
               <button

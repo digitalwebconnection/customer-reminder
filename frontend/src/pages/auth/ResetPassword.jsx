@@ -1,32 +1,40 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Lock, Eye, EyeOff, KeyRound, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
-import api from '../../api/axios';
-import { useToast } from '../../context/ToastContext';
+import React, { useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  Lock,
+  Eye,
+  EyeOff,
+  KeyRound,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+} from "lucide-react";
+import api from "../../api/axios";
+import { useToast } from "../../context/ToastContext";
 
 export default function ResetPassword() {
   const { token } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError("Password must be at least 6 characters long.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError("Passwords do not match.");
       return;
     }
 
@@ -35,11 +43,14 @@ export default function ResetPassword() {
     try {
       await api.post(`/auth/reset-password/${token}`, { password });
       setSuccess(true);
-      toast.success('Password Reset Successful!', 'You can now sign in with your new password.');
+      toast.success(
+        "Password Reset Successful!",
+        "You can now sign in with your new password.",
+      );
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          'Invalid or expired password reset link. Please request a new one.'
+          "Invalid or expired password reset link. Please request a new one.",
       );
     } finally {
       setLoading(false);
@@ -56,7 +67,9 @@ export default function ResetPassword() {
           <div className="w-14 h-14 rounded-2xl bg-linear-to-tr from-indigo-600 via-indigo-500 to-violet-500 flex items-center justify-center mx-auto text-white shadow-xl shadow-indigo-600/35 border border-white/20">
             <KeyRound className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Set New Password</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            Set New Password
+          </h1>
           <p className="text-xs text-zinc-400">
             Create a secure new password for your account
           </p>
@@ -68,7 +81,9 @@ export default function ResetPassword() {
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">Password Updated!</h3>
+              <h3 className="text-base font-semibold text-white">
+                Password Updated!
+              </h3>
               <p className="text-xs text-zinc-400 mt-1">
                 Your password has been changed successfully. You can now log in.
               </p>
@@ -99,7 +114,7 @@ export default function ResetPassword() {
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -111,7 +126,11 @@ export default function ResetPassword() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 transition cursor-pointer"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -123,7 +142,7 @@ export default function ResetPassword() {
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -138,7 +157,9 @@ export default function ResetPassword() {
               disabled={loading}
               className="w-full min-h-11.5 py-3 px-4 rounded-xl bg-linear-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:brightness-110 text-white text-sm font-bold transition shadow-lg shadow-indigo-600/35 flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-95"
             >
-              <span>{loading ? 'Updating Password...' : 'Save New Password'}</span>
+              <span>
+                {loading ? "Updating Password..." : "Save New Password"}
+              </span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </form>

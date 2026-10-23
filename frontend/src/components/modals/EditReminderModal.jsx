@@ -281,7 +281,7 @@ export default function EditReminderModal({
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
               <span className="flex items-center gap-1.5">
-             
+                <Globe className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Country & Regional Timezone</span>
               </span>
             </label>

@@ -1,4 +1,11 @@
-import  { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import {
   getDetailedPermissions,
   requestAndSubscribePush,
@@ -20,26 +27,26 @@ export function PwaProvider({ children }) {
   // Permission Diagnostics State
   const [permissions, setPermissions] = useState({
     isSupported: true,
-    notification: 'default',
+    notification: "default",
     serviceWorkerActive: false,
     pushSubscribed: false,
     storagePersisted: false,
     isStandalone: false,
-    ringSound: 'granted',
+    ringSound: "granted",
   });
   const [loadingPermissions, setLoadingPermissions] = useState(false);
 
   const refreshPermissions = useCallback(async () => {
     try {
       const details = await getDetailedPermissions();
-      const merged = { ...details, ringSound: 'granted' };
+      const merged = { ...details, ringSound: "granted" };
       setPermissions(merged);
       if (details?.isStandalone) {
         setIsInstalled(true);
       }
       return merged;
     } catch (e) {
-      console.warn('[PWA] Error checking permissions:', e);
+      console.warn("[PWA] Error checking permissions:", e);
     }
   }, []);
 
@@ -99,7 +106,8 @@ export function PwaProvider({ children }) {
 
     // 2. Detect iOS device
     const userAgent = window.navigator.userAgent.toLowerCase();
-    const isAppleDevice = /iphone|ipad|ipod/.test(userAgent) && !window.MSStream;
+    const isAppleDevice =
+      /iphone|ipad|ipod/.test(userAgent) && !window.MSStream;
     setIsIos(isAppleDevice);
 
     // 3. Listen for Android / Chrome / Edge PWA install prompt
@@ -107,7 +115,9 @@ export function PwaProvider({ children }) {
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
-      console.log("[PWA] 📱 beforeinstallprompt event captured and ready for mobile install!");
+      console.log(
+        "[PWA] 📱 beforeinstallprompt event captured and ready for mobile install!",
+      );
     };
 
     const handleAppInstalled = () => {
@@ -172,7 +182,10 @@ export function PwaProvider({ children }) {
     window.addEventListener("click", handleFirstGesture, { once: true });
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
       window.removeEventListener("appinstalled", handleAppInstalled);
       window.removeEventListener("touchstart", handleFirstGesture);
       window.removeEventListener("click", handleFirstGesture);

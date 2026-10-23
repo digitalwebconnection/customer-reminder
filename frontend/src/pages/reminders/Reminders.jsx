@@ -130,7 +130,7 @@ export default function Reminders() {
           }
           return changed ? next : prev;
         },
-        { replace: true }
+        { replace: true },
       );
     }, 0);
   };
@@ -674,13 +674,17 @@ export default function Reminders() {
     }
     try {
       await api.delete(`/reminders/${id}`);
-      toast.info("Reminder Deleted", `Removed record for ${name || "customer"}.`);
+      toast.info(
+        "Reminder Deleted",
+        `Removed record for ${name || "customer"}.`,
+      );
       setReminderToDelete(null);
       fetchReminders();
     } catch (err) {
       toast.error(
         "Delete Failed",
-        err.response?.data?.message || "Could not remove reminder from database."
+        err.response?.data?.message ||
+          "Could not remove reminder from database.",
       );
     } finally {
       setIsDeletingReminder(false);
@@ -839,7 +843,6 @@ export default function Reminders() {
 
   return (
     <div className="max-w-7xl mx-auto pt-2 pb-28 sm:py-6 space-y-5">
-
       {/* Header with Original Titles & Image 2 Solid White Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0 w-full">
         <div className="min-w-0 flex-1">
@@ -1034,8 +1037,6 @@ export default function Reminders() {
         </button>
       </div>
 
-
-
       {/* Controls Row: Search, Date Filter / Sort, and Refresh Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pt-1">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1 w-full">
@@ -1129,8 +1130,8 @@ export default function Reminders() {
               {search
                 ? `No customers match "${search}". Try clearing search or filters.`
                 : filter !== "all"
-                ? `No ${filter} reminders right now. All caught up!`
-                : "Your customer reminder schedule is clear. Add a reminder to get started."}
+                  ? `No ${filter} reminders right now. All caught up!`
+                  : "Your customer reminder schedule is clear. Add a reminder to get started."}
             </p>
           </div>
           {search ? (
@@ -1170,7 +1171,9 @@ export default function Reminders() {
                   <th className="hidden xl:table-cell py-3 px-4">Contact</th>
                   <th className="py-3 px-2.5 sm:px-4">Due Date & Time (AU)</th>
                   <th className="py-3 px-2.5 sm:px-4">Status</th>
-                  <th className="py-3 pl-2 pr-3 sm:pl-4 sm:pr-5 text-right">Quick Actions</th>
+                  <th className="py-3 pl-2 pr-3 sm:pl-4 sm:pr-5 text-right">
+                    Quick Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/60 text-xs">
@@ -1197,7 +1200,9 @@ export default function Reminders() {
                           </div>
                           <div className="min-w-0">
                             <div className="font-medium text-xs sm:text-sm text-zinc-100 group-hover:text-white transition flex items-center gap-1.5">
-                              <span className="truncate max-w-32.5 sm:max-w-none">{r.name}</span>
+                              <span className="truncate max-w-32.5 sm:max-w-none">
+                                {r.name}
+                              </span>
                               {r.note && (
                                 <span
                                   className="hidden xl:inline text-[10px] px-1.5 py-0.2 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 truncate max-w-48"

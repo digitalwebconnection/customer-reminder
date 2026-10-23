@@ -1,4 +1,4 @@
-import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -9,11 +9,11 @@ import {
   LogOut,
   Bell,
   ExternalLink,
-} from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 
-import MobileBottomNav from './MobileBottomNav';
+import MobileBottomNav from "./MobileBottomNav";
 
 export default function AdminLayout({ children }) {
   const { user, openLogoutModal } = useAuth();
@@ -26,10 +26,10 @@ export default function AdminLayout({ children }) {
   };
 
   const navLinks = [
-    { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/admin/users', label: 'Users', icon: Users },
-    { to: '/admin/reminders', label: 'Global Reminders', icon: ListTodo },
-    { to: '/admin/logs', label: 'Audit Logs', icon: History },
+    { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+    { to: "/admin/users", label: "Users", icon: Users },
+    { to: "/admin/reminders", label: "Global Reminders", icon: ListTodo },
+    { to: "/admin/logs", label: "Audit Logs", icon: History },
   ];
 
   return (
@@ -37,23 +37,18 @@ export default function AdminLayout({ children }) {
       {/* Top Admin Navbar */}
       <header
         className="sticky top-0 z-40 bg-[#09090b]/90 backdrop-blur-xl border-b border-zinc-800"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           {/* Logo & Super Admin Shield */}
           <div className="flex items-center gap-3">
             <Link to="/admin" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-zinc-950 font-bold shadow-lg shadow-amber-500/20">
-                <Shield className="w-4 h-4 text-zinc-950" />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-white tracking-tight text-base">
-                  Remind<span className="text-zinc-400">IQ</span>
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                  SUPER ADMIN
-                </span>
-              </div>
+              <span className="font-extrabold text-white tracking-tight text-lg">
+                Remind<span className="text-zinc-400">IQ</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                SUPER ADMIN
+              </span>
             </Link>
           </div>
 
@@ -64,7 +59,7 @@ export default function AdminLayout({ children }) {
               className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white hover:border-amber-500/50 transition"
               title={`Logged in as ${user?.email}`}
             >
-              {(user?.name || user?.email || 'A').charAt(0).toUpperCase()}
+              {(user?.name || user?.email || "A").charAt(0).toUpperCase()}
             </Link>
 
             <button
@@ -91,12 +86,14 @@ export default function AdminLayout({ children }) {
                   className={({ isActive }) => {
                     const active =
                       isActive ||
-                      (item.to === '/admin' && location.pathname === '/admin/dashboard') ||
-                      (item.to === '/admin/logs' && location.pathname === '/admin/activity-logs');
+                      (item.to === "/admin" &&
+                        location.pathname === "/admin/dashboard") ||
+                      (item.to === "/admin/logs" &&
+                        location.pathname === "/admin/activity-logs");
                     return `inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
                       active
-                        ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-xs'
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
+                        ? "bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-xs"
+                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
                     }`;
                   }}
                 >
@@ -119,4 +116,3 @@ export default function AdminLayout({ children }) {
     </div>
   );
 }
-

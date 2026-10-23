@@ -36,7 +36,9 @@ export default function MobileBottomNav() {
   if (isSuperAdmin) {
     return (
       <nav
-        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}
+        style={{
+          paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))",
+        }}
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#09090b]/95 backdrop-blur-2xl border-t border-zinc-800/90 px-3 py-1.5 shadow-2xl safe-area-bottom select-none"
       >
         <div className="flex items-center justify-around max-w-md mx-auto">
@@ -46,7 +48,9 @@ export default function MobileBottomNav() {
             end
             className={({ isActive }) =>
               `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+                isActive
+                  ? "text-amber-400 font-bold"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`
             }
           >
@@ -59,7 +63,9 @@ export default function MobileBottomNav() {
             to="/admin/users"
             className={({ isActive }) =>
               `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+                isActive
+                  ? "text-amber-400 font-bold"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`
             }
           >
@@ -72,7 +78,9 @@ export default function MobileBottomNav() {
             to="/admin/reminders"
             className={({ isActive }) =>
               `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-                isActive ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+                isActive
+                  ? "text-amber-400 font-bold"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`
             }
           >
@@ -87,7 +95,9 @@ export default function MobileBottomNav() {
               const active =
                 isActive || location.pathname === "/admin/activity-logs";
               return `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-                active ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+                active
+                  ? "text-amber-400 font-bold"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`;
             }}
           >
@@ -104,7 +114,9 @@ export default function MobileBottomNav() {
                 location.pathname === "/settings" ||
                 location.pathname === "/account";
               return `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-                active ? "text-amber-400 font-bold" : "text-zinc-400 hover:text-zinc-200"
+                active
+                  ? "text-amber-400 font-bold"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`;
             }}
           >
@@ -148,7 +160,9 @@ export default function MobileBottomNav() {
               location.pathname === "/reminders/add" ||
               location.pathname === "/add-reminder";
             return `flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-2xl bg-white text-zinc-950 shadow-xl shadow-black/50 border-2 border-[#09090b] active:scale-90 transition-all cursor-pointer ${
-              active ? "ring-2 ring-white ring-offset-2 ring-offset-[#09090b]" : ""
+              active
+                ? "ring-2 ring-white ring-offset-2 ring-offset-[#09090b]"
+                : ""
             }`;
           }}
           title="Add Customer Reminder"
@@ -165,7 +179,9 @@ export default function MobileBottomNav() {
               location.pathname === "/settings" ||
               location.pathname === "/account";
             return `flex flex-col items-center justify-center min-h-11.5 min-w-13 py-1 px-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
-              active ? "text-white font-bold" : "text-zinc-400 hover:text-zinc-200"
+              active
+                ? "text-white font-bold"
+                : "text-zinc-400 hover:text-zinc-200"
             }`;
           }}
           title="My Profile"

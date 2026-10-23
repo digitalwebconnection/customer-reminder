@@ -86,19 +86,14 @@ export default function Login() {
       <div className="fixed inset-0 bg-grid-pattern pointer-events-none opacity-20" />
 
       <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 p-7 sm:p-9 rounded-2xl shadow-2xl transition-all duration-300">
-        {/* Logo & Header */}
-        <div className="text-center space-y-2 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-200 shadow-sm">
-            <Bell className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Remind<span className="text-zinc-400">IQ</span>
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1">
-              Sign in to manage follow-ups, calls, and customer reminders
-            </p>
-          </div>
+        {/* Header */}
+        <div className="text-center space-y-1.5 mb-6">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+            Remind<span className="text-zinc-400">IQ</span>
+          </h1>
+          <p className="text-xs text-zinc-400">
+            Sign in to manage follow-ups, calls, and customer reminders
+          </p>
         </div>
 
         {/* Error Alert */}
