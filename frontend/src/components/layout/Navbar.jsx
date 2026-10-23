@@ -30,14 +30,12 @@ import api from "../../api/axios";
 
 export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
   const toast = useToast();
-  const { logout, openLogoutModal, user } = useAuth();
+  const {  openLogoutModal, user } = useAuth();
   const {
     promptInstall,
     isInstalled,
     setShowAlarmModal,
-    permissions,
-    enableRingPermission,
-    toggleRingPermission,
+    
   } = usePwa();
   const navigate = useNavigate();
   const location = useLocation();
@@ -442,7 +440,7 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                 </span>
                 {!isCollapsed && (
                   <span className="text-[10px] text-zinc-400 font-mono">
-                    {isSuperAdmin ? "Super Admin" : "Customer Calls"}
+                    {isSuperAdmin ? "Super Admin" : " "}
                   </span>
                 )}
               </div>
@@ -621,7 +619,7 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                         Super Admin
                       </span>
                     ) : (
-                      "User"
+                      "Admin"
                     )}
                   </p>
                 </div>
