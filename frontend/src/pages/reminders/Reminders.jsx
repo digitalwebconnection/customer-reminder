@@ -968,7 +968,7 @@ export default function Reminders() {
       </div>
 
       {/* 4 Metric Cards with REAL WEBSITE DATA - Interactive Filtering */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Total Reminders */}
         <button
           type="button"
@@ -1308,16 +1308,16 @@ export default function Reminders() {
         </div>
       ) : (
         <>
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto liquid-glass rounded-3xl smooth-page-enter">
-            <table className="w-full text-left border-collapse min-w-155 xl:min-w-220">
+          {/* Desktop & Tablet Table View */}
+          <div className="hidden md:block overflow-x-auto liquid-glass rounded-3xl smooth-page-enter touch-pan-x scrollbar-thin">
+            <table className="w-full text-left border-collapse min-w-[640px] xl:min-w-[850px]">
               <thead>
                 <tr className="border-b border-slate-200/80 bg-white/40 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 pl-5 sm:pl-6 pr-3">Customer</th>
-                  <th className="hidden xl:table-cell py-3.5 px-4">Contact</th>
-                  <th className="py-3.5 px-3 sm:px-4">Due Date & Time (AU)</th>
-                  <th className="py-3.5 px-3 sm:px-4">Status</th>
-                  <th className="py-3.5 pl-2 pr-4 sm:pl-4 sm:pr-6 text-right">
+                  <th className="py-3.5 pl-5 sm:pl-6 pr-3 whitespace-nowrap">Customer</th>
+                  <th className="hidden xl:table-cell py-3.5 px-4 whitespace-nowrap">Contact</th>
+                  <th className="py-3.5 px-3 sm:px-4 whitespace-nowrap">Due Date & Time (AU)</th>
+                  <th className="py-3.5 px-3 sm:px-4 whitespace-nowrap">Status</th>
+                  <th className="py-3.5 pl-2 pr-4 sm:pl-4 sm:pr-6 text-right whitespace-nowrap">
                     Quick Actions
                   </th>
                 </tr>

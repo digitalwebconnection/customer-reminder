@@ -426,16 +426,16 @@ export default function AdminReminders() {
           )}
         </div>
 
-        {/* Desktop View: Table (>= md) */}
-        <div className="hidden md:block overflow-x-auto touch-pan-x">
-          <table className="w-full text-left text-xs min-w-170">
+        {/* Desktop & Tablet View: Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto touch-pan-x scrollbar-thin">
+          <table className="w-full text-left text-xs min-w-[700px]">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-200/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3.5 px-4">Client / Reminder</th>
-                <th className="py-3.5 px-4">Owner (User)</th>
-                <th className="py-3.5 px-4">Due Date & Time</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Client / Reminder</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Owner (User)</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Due Date & Time</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100/80">

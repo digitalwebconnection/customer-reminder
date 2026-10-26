@@ -30,7 +30,7 @@ export default function AdminLayout({ children }) {
   ];
 
   return (
-    <div className="admin-apple-theme min-h-screen text-slate-800 flex flex-col relative selection:bg-amber-100 selection:text-amber-900">
+    <div className="admin-apple-theme min-h-screen text-slate-800 flex flex-col relative overflow-x-clip selection:bg-amber-100 selection:text-amber-900">
       {/* Ambient Liquid Glass Background Slabs & Prisms (Hardware Accelerated Floating Fluid Motion) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none">
         {/* Top-Left Ambient Liquid Glass Slab */}
@@ -53,19 +53,19 @@ export default function AdminLayout({ children }) {
         className="sticky top-0 z-40 liquid-glass-header transition-colors duration-300"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between min-w-0">
           {/* Logo & Super Admin Shield */}
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="flex items-center gap-3 group transition-transform duration-200 active:scale-95">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Link to="/admin" className="flex items-center gap-2 sm:gap-3 group transition-transform duration-200 active:scale-95 shrink-0">
               <RemindIQLogo size="md" />
-              <span className="liquid-glass-pill px-2.5 py-0.5 text-[10px] font-extrabold text-amber-900 bg-amber-500/15 border border-amber-400/40 tracking-wider rounded-full shadow-xs transition-transform duration-200 group-hover:scale-105">
+              <span className="liquid-glass-pill px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-extrabold text-amber-900 bg-amber-500/15 border border-amber-400/40 tracking-wider rounded-full shadow-xs transition-transform duration-200 group-hover:scale-105 shrink-0">
                 SUPER ADMIN
               </span>
             </Link>
           </div>
 
           {/* Right Action: Profile & Logout */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               to="/admin"
               className="w-9 h-9 liquid-glass-pill flex items-center justify-center text-xs font-bold text-slate-800 hover:text-amber-600 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
@@ -87,7 +87,7 @@ export default function AdminLayout({ children }) {
 
         {/* Secondary Sub-nav Bar (iOS Segmented Control with Liquid Glass Pills) */}
         <div className="border-t border-white/60 bg-white/30 backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2 scrollbar-none touch-pan-x">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-2 scrollbar-none touch-pan-x justify-start sm:justify-center md:justify-start">
             {navLinks.map((item) => {
               const Icon = item.icon;
               return (
@@ -102,7 +102,7 @@ export default function AdminLayout({ children }) {
                         location.pathname === "/admin/dashboard") ||
                       (item.to === "/admin/logs" &&
                         location.pathname === "/admin/activity-logs");
-                    return `inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer active:scale-95 ${
+                    return `inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap min-h-[38px] transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer active:scale-95 ${
                       active
                         ? "liquid-glass-pill text-amber-950 font-bold ring-1 ring-amber-400/40 shadow-xs scale-[1.02]"
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/70 hover:scale-[1.01]"
@@ -121,7 +121,7 @@ export default function AdminLayout({ children }) {
       {/* Main Admin Content Body with Silk Page Entrance Transition */}
       <main
         key={location.pathname}
-        className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8 relative z-10 smooth-page-enter"
+        className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8 relative z-10 smooth-page-enter min-w-0"
       >
         {children}
       </main>

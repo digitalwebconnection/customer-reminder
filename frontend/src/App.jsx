@@ -73,11 +73,25 @@ function Layout({ children }) {
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
-      return localStorage.getItem("remindiq_sidebar_collapsed") === "true";
+      const saved = localStorage.getItem("remindiq_sidebar_collapsed");
+      if (saved !== null) return saved === "true";
+      // Auto-collapse on tablet screens (< 1024px) for optimal canvas space
+      return typeof window !== "undefined" && window.innerWidth < 1024;
     } catch {
       return false;
     }
   });
+
+  // Automatically adapt sidebar on tablet screen resize or device orientation change
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setIsSidebarCollapsed(true);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => {

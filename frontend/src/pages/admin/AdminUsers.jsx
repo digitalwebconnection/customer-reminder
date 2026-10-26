@@ -561,7 +561,7 @@ export default function AdminUsers() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 ios-glass p-4 rounded-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 ios-glass p-3.5 sm:p-4 rounded-2xl">
         {/* Search */}
         <div className="sm:col-span-2 relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -770,17 +770,17 @@ export default function AdminUsers() {
           )}
         </div>
 
-        {/* Desktop View: Table (>= md) */}
-        <div className="hidden md:block overflow-x-auto touch-pan-x">
-          <table className="w-full text-left text-xs min-w-170">
+        {/* Desktop & Tablet View: Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto touch-pan-x scrollbar-thin">
+          <table className="w-full text-left text-xs min-w-[700px]">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-200/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3.5 px-4">User</th>
-                <th className="py-3.5 px-4">Role</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-center">Reminders</th>
-                <th className="py-3.5 px-4">Joined Date</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">User</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Role</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">Reminders</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Joined Date</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100/80">
@@ -874,8 +874,8 @@ export default function AdminUsers() {
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="inline-flex items-center gap-1">
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1 justify-end min-w-[160px]">
                           {/* View Details */}
                           <button
                             type="button"
@@ -1255,10 +1255,10 @@ export default function AdminUsers() {
 
                   {/* Recent Reminders List */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                        <ListTodo className="w-4 h-4 text-amber-600" />
-                        <span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 min-w-0">
+                        <ListTodo className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span className="truncate">
                           Recent Reminders Created by this User (
                           {userDetailsData?.reminders?.length || 0})
                         </span>
@@ -1266,7 +1266,7 @@ export default function AdminUsers() {
                       <button
                         type="button"
                         onClick={() => handleOpenAddReminder(displayUser)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 hover:bg-amber-100 shadow-2xs transition cursor-pointer"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 hover:bg-amber-100 shadow-2xs transition cursor-pointer self-start sm:self-auto shrink-0"
                       >
                         <Plus className="w-3 h-3" />
                         <span>Add Reminder for User</span>

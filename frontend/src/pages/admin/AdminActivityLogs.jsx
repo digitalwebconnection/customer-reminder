@@ -286,16 +286,16 @@ export default function AdminActivityLogs() {
           )}
         </div>
 
-        {/* Desktop View: Table (>= md) */}
-        <div className="hidden md:block overflow-x-auto touch-pan-x">
-          <table className="w-full text-left text-xs min-w-155">
+        {/* Desktop & Tablet View: Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto touch-pan-x scrollbar-thin">
+          <table className="w-full text-left text-xs min-w-[650px]">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-200/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3.5 px-4">Event Type</th>
-                <th className="py-3.5 px-4">Actor (User)</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Event Type</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Actor (User)</th>
                 <th className="py-3.5 px-4">Event Details</th>
-                <th className="py-3.5 px-4">Network IP</th>
-                <th className="py-3.5 px-4 text-right">Timestamp</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Network IP</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">Timestamp</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100/80">

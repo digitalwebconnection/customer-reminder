@@ -125,29 +125,29 @@ export default function AdminDashboard() {
       </div>
 
       {/* 4 Primary Metric Cards with Smooth Hover Physics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
           return (
             <Link
               key={idx}
               to={card.link}
-              className="p-4 sm:p-5 rounded-2xl ios-glass smooth-interactive-card flex flex-col justify-between group cursor-pointer"
+              className="p-3.5 sm:p-5 rounded-2xl ios-glass smooth-interactive-card flex flex-col justify-between group cursor-pointer"
             >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-500">
+              <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+                <span className="text-[11px] sm:text-xs font-semibold text-slate-500 truncate mr-1">
                   {card.label}
                 </span>
-                <div className={`p-2 rounded-xl bg-linear-to-br ${card.color} border shadow-2xs transition-transform duration-200 group-hover:scale-110`}>
-                  <Icon className="w-4 h-4" />
+                <div className={`p-1.5 sm:p-2 rounded-xl bg-linear-to-br ${card.color} border shadow-2xs transition-transform duration-200 group-hover:scale-110 shrink-0`}>
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
               </div>
 
               <div>
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
                   {card.value}
                 </span>
-                <p className="text-[11px] text-slate-400 font-medium mt-1">
+                <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5 sm:mt-1 truncate">
                   {card.sublabel}
                 </p>
               </div>
@@ -157,33 +157,33 @@ export default function AdminDashboard() {
       </div>
 
       {/* Two Column Grid: Recent Signups & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Recent Signups (2 Cols) */}
-        <div className="lg:col-span-2 ios-glass rounded-3xl p-6 transition-shadow duration-300">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-amber-600" />
-              <h2 className="text-sm font-bold text-slate-900">
+        <div className="lg:col-span-2 ios-glass rounded-3xl p-4 sm:p-6 transition-shadow duration-300">
+          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <Users className="w-4 h-4 text-amber-600 shrink-0" />
+              <h2 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                 Recent User Signups (7 Days)
               </h2>
             </div>
             <Link
               to="/admin/users"
-              className="text-xs text-amber-600 hover:text-amber-700 font-semibold transition-colors duration-200"
+              className="text-xs text-amber-600 hover:text-amber-700 font-semibold transition-colors duration-200 shrink-0"
             >
-              View all users &rarr;
+              View all &rarr;
             </Link>
           </div>
 
           {stats?.recentSignups?.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto touch-pan-x scrollbar-thin">
+              <table className="w-full text-left text-xs min-w-[480px]">
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-400 font-semibold">
-                    <th className="pb-2.5 font-semibold">User</th>
-                    <th className="pb-2.5 font-semibold">Role</th>
-                    <th className="pb-2.5 font-semibold">Status</th>
-                    <th className="pb-2.5 font-semibold text-right">Joined</th>
+                    <th className="pb-2.5 font-semibold whitespace-nowrap">User</th>
+                    <th className="pb-2.5 font-semibold whitespace-nowrap">Role</th>
+                    <th className="pb-2.5 font-semibold whitespace-nowrap">Status</th>
+                    <th className="pb-2.5 font-semibold text-right whitespace-nowrap">Joined</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100/80">
