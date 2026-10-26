@@ -23,8 +23,8 @@ const getBaseURL = () => {
     return '/api/v1';
   }
 
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (!envUrl) return '/api/v1';
+  const envUrl =
+    import.meta.env.VITE_API_URL || 'https://customer-reminder-h18e.onrender.com';
 
   let cleanUrl = envUrl.trim().replace(/\/+$/, '');
   if (cleanUrl.endsWith('/api/v1')) return cleanUrl;

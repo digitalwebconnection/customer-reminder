@@ -135,24 +135,7 @@ export default defineConfig({
   build: {
     target: 'esnext',
     cssCodeSplit: true,
-    chunkSizeWarningLimit: 600,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'react-vendor';
-            }
-            if (id.includes('lucide-react')) {
-              return 'lucide-icons';
-            }
-            if (id.includes('axios') || id.includes('date-fns') || id.includes('zod') || id.includes('@hookform')) {
-              return 'app-utils';
-            }
-          }
-        },
-      },
-    },
+    chunkSizeWarningLimit: 1200,
   },
   server: {
     port: 5173,

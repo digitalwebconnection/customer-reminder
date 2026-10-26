@@ -33,7 +33,8 @@
         try {
           const isProd =
             window.location.hostname === 'digitalwebconnection.com' ||
-            window.location.hostname.endsWith('.digitalwebconnection.com');
+            window.location.hostname.endsWith('.digitalwebconnection.com') ||
+            window.location.hostname.endsWith('.vercel.app');
 
           if (isProd) {
             await OneSignal.init({
