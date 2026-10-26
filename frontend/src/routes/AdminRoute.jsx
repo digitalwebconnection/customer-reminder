@@ -2,20 +2,14 @@ import React from "react";
 import { Navigate, useLocation, Link } from "react-router-dom";
 import { ShieldAlert, ArrowLeft } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { LoadingScreen } from "../components/common";
 
 export default function AdminRoute({ children }) {
   const { isAuthenticated, isSuperAdmin, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center text-zinc-400 text-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <span>Verifying administrator permissions...</span>
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Verifying administrator permissions..." />;
   }
 
   if (!isAuthenticated) {

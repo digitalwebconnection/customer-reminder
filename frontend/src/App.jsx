@@ -51,7 +51,7 @@ function UserOnlyRoute({ children }) {
 // Smart default route based on role
 function RoleBasedHome() {
   const { user, isAuthenticated, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <LoadingScreen message="Loading Workspace..." />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user?.role === "superadmin") return <Navigate to="/admin" replace />;
   return <Navigate to="/reminders" replace />;
@@ -61,6 +61,7 @@ function RoleBasedHome() {
 import { InstallPwaBanner, InstallPwaModal } from "./components/pwa";
 import { LogoutConfirmationModal } from "./components/modals";
 import RemindIQLogo from "./components/common/RemindIQLogo";
+import { LoadingScreen } from "./components/common";
 
 // Background Services
 import { registerServiceWorker } from "./services/pushManager";
@@ -166,18 +167,7 @@ export default function App() {
           <ToastProvider>
             <BrowserRouter>
               <LogoutConfirmationModal />
-              <Suspense
-                fallback={
-                  <div className="admin-apple-theme min-h-screen flex flex-col items-center justify-center p-4 relative selection:bg-amber-100 select-none">
-                    <div className="liquid-glass-modal px-8 py-6 rounded-3xl flex flex-col items-center gap-3.5 shadow-xl animate-in fade-in duration-200">
-                      <RemindIQLogo size="lg" />
-                      <span className="text-xs font-bold text-slate-500 tracking-tight">
-                        Loading Workspace...
-                      </span>
-                    </div>
-                  </div>
-                }
-              >
+              <Suspense fallback={<LoadingScreen message="Loading Workspace..." />}>
                 <Routes>
                   {/* Public Guest Auth Routes */}
                   <Route
