@@ -177,7 +177,7 @@ export default function AdminDashboard() {
 
           {stats?.recentSignups?.length > 0 ? (
             <div className="overflow-x-auto touch-pan-x scrollbar-thin">
-              <table className="w-full text-left text-xs min-w-[480px]">
+              <table className="w-full text-left text-xs min-w-120">
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-400 font-semibold">
                     <th className="pb-2.5 font-semibold whitespace-nowrap">User</th>

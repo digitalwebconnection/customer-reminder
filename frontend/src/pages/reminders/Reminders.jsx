@@ -1310,7 +1310,7 @@ export default function Reminders() {
         <>
           {/* Desktop & Tablet Table View */}
           <div className="hidden md:block overflow-x-auto liquid-glass rounded-3xl smooth-page-enter touch-pan-x scrollbar-thin">
-            <table className="w-full text-left border-collapse min-w-[640px] xl:min-w-[850px]">
+            <table className="w-full text-left border-collapse min-w-160 xl:min-w-212.5">
               <thead>
                 <tr className="border-b border-slate-200/80 bg-white/40 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <th className="py-3.5 pl-5 sm:pl-6 pr-3 whitespace-nowrap">Customer</th>

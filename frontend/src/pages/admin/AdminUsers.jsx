@@ -772,7 +772,7 @@ export default function AdminUsers() {
 
         {/* Desktop & Tablet View: Table (>= md) */}
         <div className="hidden md:block overflow-x-auto touch-pan-x scrollbar-thin">
-          <table className="w-full text-left text-xs min-w-[700px]">
+          <table className="w-full text-left text-xs min-w-175">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-200/70 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                 <th className="py-3.5 px-4 whitespace-nowrap">User</th>
@@ -875,7 +875,7 @@ export default function AdminUsers() {
 
                       {/* Actions */}
                       <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1 justify-end min-w-[160px]">
+                        <div className="inline-flex items-center gap-1 justify-end min-w-40">
                           {/* View Details */}
                           <button
                             type="button"

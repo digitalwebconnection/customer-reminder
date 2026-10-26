@@ -102,7 +102,7 @@ export default function AdminLayout({ children }) {
                         location.pathname === "/admin/dashboard") ||
                       (item.to === "/admin/logs" &&
                         location.pathname === "/admin/activity-logs");
-                    return `inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap min-h-[38px] transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer active:scale-95 ${
+                    return `inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap min-h-9.5 transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer active:scale-95 ${
                       active
                         ? "liquid-glass-pill text-amber-950 font-bold ring-1 ring-amber-400/40 shadow-xs scale-[1.02]"
                         : "text-slate-600 hover:text-slate-900 hover:bg-white/70 hover:scale-[1.01]"
