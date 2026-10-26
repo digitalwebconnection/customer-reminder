@@ -14,6 +14,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 
 import MobileBottomNav from "./MobileBottomNav";
+import RemindIQLogo from "../common/RemindIQLogo";
 
 export default function AdminLayout({ children }) {
   const { user, openLogoutModal } = useAuth();
@@ -33,20 +34,35 @@ export default function AdminLayout({ children }) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col relative">
-      {/* Top Admin Navbar */}
+    <div className="admin-apple-theme min-h-screen text-slate-800 flex flex-col relative selection:bg-amber-100 selection:text-amber-900">
+      {/* Ambient Liquid Glass Background Slabs & Prisms */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none">
+        {/* Top-Left Ambient Liquid Glass Slab (like reference image) */}
+        <div className="absolute -top-14 -left-20 w-[460px] h-32 rounded-full ambient-liquid-slab transform -rotate-12 opacity-85" />
+        {/* Top-Right Ambient Liquid Glass Slab */}
+        <div className="absolute top-16 -right-28 w-[520px] h-36 rounded-full ambient-liquid-slab transform rotate-6 opacity-80" />
+        {/* Mid-screen floating liquid backdrop capsule */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-48 rounded-[50px] ambient-liquid-slab transform -rotate-2 opacity-50 pointer-events-none" />
+        {/* Bottom-Left Ambient Liquid Glass Slab */}
+        <div className="absolute -bottom-14 -left-16 w-[480px] h-36 rounded-full ambient-liquid-slab transform rotate-8 opacity-80" />
+        {/* Bottom-Right Ambient Liquid Glass Slab */}
+        <div className="absolute -bottom-16 -right-20 w-[540px] h-40 rounded-full ambient-liquid-slab transform -rotate-6 opacity-85" />
+        {/* Prismatic ambient light caustics */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-200/25 rounded-full blur-3xl opacity-60" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-200/25 rounded-full blur-3xl opacity-60" />
+      </div>
+
+      {/* Top Admin Navbar with Liquid Glass */}
       <header
-        className="sticky top-0 z-40 bg-[#09090b]/90 backdrop-blur-xl border-b border-zinc-800"
+        className="sticky top-0 z-40 liquid-glass-header"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
           {/* Logo & Super Admin Shield */}
           <div className="flex items-center gap-3">
-            <Link to="/admin" className="flex items-center gap-2.5">
-              <span className="font-extrabold text-white tracking-tight text-lg">
-                Remind<span className="text-zinc-400">IQ</span>
-              </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <Link to="/admin" className="flex items-center gap-3 group">
+              <RemindIQLogo size="md" />
+              <span className="liquid-glass-pill px-2.5 py-0.5 text-[10px] font-extrabold text-amber-900 bg-amber-500/15 border border-amber-400/40 tracking-wider rounded-full shadow-xs">
                 SUPER ADMIN
               </span>
             </Link>
@@ -55,8 +71,8 @@ export default function AdminLayout({ children }) {
           {/* Right Action: Profile & Logout */}
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
-              to="/profile"
-              className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white hover:border-amber-500/50 transition"
+              to="/admin"
+              className="w-9 h-9 liquid-glass-pill flex items-center justify-center text-xs font-bold text-slate-800 hover:text-amber-600 transition active:scale-95 cursor-pointer"
               title={`Logged in as ${user?.email}`}
             >
               {(user?.name || user?.email || "A").charAt(0).toUpperCase()}
@@ -65,7 +81,7 @@ export default function AdminLayout({ children }) {
             <button
               type="button"
               onClick={handleLogout}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition cursor-pointer"
+              className="p-2 liquid-glass-pill text-slate-600 hover:text-rose-600 transition cursor-pointer active:scale-95"
               title="Log Out"
             >
               <LogOut className="w-4 h-4" />
@@ -73,9 +89,9 @@ export default function AdminLayout({ children }) {
           </div>
         </div>
 
-        {/* Secondary Sub-nav Bar */}
-        <div className="border-t border-zinc-800/80 bg-zinc-950/50">
-          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-1 overflow-x-auto py-1 scrollbar-none touch-pan-x">
+        {/* Secondary Sub-nav Bar (iOS Segmented Control with Liquid Glass Pills) */}
+        <div className="border-t border-white/60 bg-white/30 backdrop-blur-md">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2 scrollbar-none touch-pan-x">
             {navLinks.map((item) => {
               const Icon = item.icon;
               return (
@@ -90,10 +106,10 @@ export default function AdminLayout({ children }) {
                         location.pathname === "/admin/dashboard") ||
                       (item.to === "/admin/logs" &&
                         location.pathname === "/admin/activity-logs");
-                    return `inline-flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                    return `inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                       active
-                        ? "bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-xs"
-                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+                        ? "liquid-glass-pill text-amber-950 font-bold ring-1 ring-amber-400/40"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                     }`;
                   }}
                 >
@@ -107,7 +123,7 @@ export default function AdminLayout({ children }) {
       </header>
 
       {/* Main Admin Content Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8 relative z-10">
         {children}
       </main>
 

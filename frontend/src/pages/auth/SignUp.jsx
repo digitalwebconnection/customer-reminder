@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Bell,
   Lock,
   Mail,
   User,
@@ -8,12 +7,8 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  KeyRound,
   CheckCircle2,
   AlertCircle,
-  Globe,
-  Clock,
-  ChevronDown,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -24,6 +19,7 @@ import {
   validatePhone,
   sanitizePhoneInput,
 } from "../../utils/validationUtils";
+import RemindIQLogo from "../../components/common/RemindIQLogo";
 
 export default function SignUp() {
   const [name, setName] = useState("");
@@ -51,6 +47,15 @@ export default function SignUp() {
   const phoneVal = validatePhone(phone, country, false);
   const showEmailError = emailTouched && email.length > 0 && !emailVal.isValid;
   const showPhoneError = phoneTouched && phone.length > 0 && !phoneVal.isValid;
+
+  // Prefetch adjacent routes during idle for 0ms navigation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import("./Login");
+      import("../reminders/Reminders");
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Handle Country switch
   const handleCountryChange = (newCountry) => {
@@ -86,58 +91,34 @@ export default function SignUp() {
     return () => clearInterval(interval);
   }, [country, timezone]);
 
-  // Password strength calculation
-  const getPasswordStrength = (pwd) => {
-    if (!pwd) return { score: 0, label: "", color: "" };
-    let score = 0;
-    if (pwd.length >= 6) score += 1;
-    if (pwd.length >= 10) score += 1;
-    if (/[A-Z]/.test(pwd)) score += 1;
-    if (/[0-9]/.test(pwd)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pwd)) score += 1;
-
-    if (score <= 2) return { score: 1, label: "Weak", color: "bg-rose-500" };
-    if (score <= 3) return { score: 2, label: "Fair", color: "bg-amber-500" };
-    if (score <= 4) return { score: 3, label: "Good", color: "bg-blue-500" };
-    return { score: 4, label: "Strong", color: "bg-emerald-500" };
-  };
-
-  const strength = getPasswordStrength(password);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setEmailTouched(true);
     setPhoneTouched(true);
 
-    // Full name validation
     if (!name.trim() || name.trim().length < 2) {
       setError("Please enter your full name (at least 2 characters).");
       return;
     }
 
-    // Email address validation
     if (!emailVal.isValid) {
       setError(emailVal.error);
       return;
     }
 
-    // Phone number validation (if provided)
     if (phone.trim() && !phoneVal.isValid) {
       setError(phoneVal.error);
       return;
     }
 
-    // Password validation
     if (password.length < 6) {
       setError("Password must be at least 6 characters long.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError(
-        "Passwords do not match. Please verify your password confirmation.",
-      );
+      setError("Passwords do not match.");
       return;
     }
 
@@ -154,12 +135,11 @@ export default function SignUp() {
         confirmPassword,
       });
 
-      // Synchronize global timezone immediately
       setGlobalTimezone(timezone, country);
 
       toast.success(
         "Account Created! 🎉",
-        `Welcome to RemindIQ. Your workspace is set to ${country} (${timezone}).`,
+        `Welcome to RemindIQ (${country}).`,
       );
       navigate("/reminders");
     } catch (err) {
@@ -173,37 +153,54 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden selection:bg-zinc-800 selection:text-white">
-      {/* Subtle background grid pattern */}
-      <div className="fixed inset-0 bg-grid-pattern pointer-events-none opacity-20" />
+    <div className="admin-apple-theme min-h-screen text-slate-800 flex items-center justify-center p-3 sm:p-4 relative overflow-hidden selection:bg-amber-100 selection:text-amber-900">
+      {/* ======================================================== */}
+      {/* Floating 3D Liquid Glass Spheres (Matching Reference UI) */}
+      {/* ======================================================== */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none">
+        <div className="absolute top-1/4 -right-12 w-48 sm:w-64 h-48 sm:h-64 liquid-glass-sphere opacity-90 animate-float-slow" />
+        <div className="absolute top-1/3 -left-10 w-32 sm:w-44 h-32 sm:h-44 liquid-glass-sphere opacity-85 animate-float-reverse" />
+        <div className="absolute top-12 left-10 w-16 sm:w-20 h-16 sm:h-20 liquid-glass-sphere opacity-80 animate-float-slow" />
+        <div className="absolute -bottom-8 left-16 w-24 sm:w-32 h-24 sm:h-32 liquid-glass-sphere opacity-85 animate-float-reverse" />
+        <div className="absolute bottom-16 right-12 w-20 sm:w-28 h-20 sm:h-28 liquid-glass-sphere opacity-80 animate-float-slow" />
 
-      <div className="relative w-full max-w-lg bg-zinc-950 border border-zinc-800 p-6 sm:p-8 rounded-2xl shadow-2xl my-6">
-        {/* Header */}
-        <div className="text-center space-y-1.5 mb-6">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Remind<span className="text-zinc-400">IQ</span>
+        <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-amber-200/30 rounded-full blur-3xl opacity-60 animate-pulse-subtle" />
+        <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-sky-200/30 rounded-full blur-3xl opacity-50 animate-pulse-subtle" />
+      </div>
+
+      {/* ======================================================== */}
+      {/* Compact Liquid Glass Card (Refined Mobile View)          */}
+      {/* ======================================================== */}
+      <div className="relative w-full max-w-[340px] sm:max-w-[400px] liquid-glass-compact p-4.5 sm:p-6 rounded-[26px] sm:rounded-3xl shadow-xl transition-all duration-300 z-10 my-3 animate-in fade-in zoom-in-95 duration-400">
+        {/* Header with Official RemindIQ Logo */}
+        <div className="text-center space-y-1 mb-3.5 sm:mb-4">
+          <div className="flex justify-center mb-1">
+            <RemindIQLogo size="md" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight liquid-heading relative inline-block">
+            Register
+            <span className="block w-10 h-0.5 bg-gradient-to-r from-amber-500 to-amber-400 rounded-full mx-auto mt-1" />
           </h1>
-          <h2 className="text-sm sm:text-base font-semibold text-zinc-300 tracking-tight">
-            Create Your Account
-          </h2>
+          <p className="text-[11px] text-slate-500 font-medium">
+            Create your account to start managing reminders
+          </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-zinc-900 border border-rose-500/40 text-xs text-rose-300 flex items-start gap-2.5 mb-5 animate-in fade-in slide-in-from-top-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
-            <span>{error}</span>
+          <div className="p-2.5 rounded-xl liquid-glass-pill bg-rose-500/10 border-rose-300/60 text-[11px] text-rose-800 font-semibold flex items-start gap-2 mb-3 animate-in fade-in slide-in-from-top-1 shadow-xs">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />
+            <span className="leading-tight">{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
-          {/* Row 1: Full Name (Single Full-Width Grid Row) */}
+        <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3" autoComplete="off">
+          {/* Full Name */}
           <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-              Full Name <span className="text-rose-400">*</span>
+            <label className="block text-[11px] font-bold text-slate-700 tracking-tight mb-1">
+              Full Name <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <User className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
               <input
                 type="text"
                 required
@@ -215,35 +212,31 @@ export default function SignUp() {
                   if (error) setError("");
                 }}
                 placeholder="e.g. Rahul Sharma"
-                className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-600 transition shadow-inner"
+                className="w-full pl-3.5 pr-8 py-2 liquid-glass-input rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-400 transition shadow-xs"
               />
+              <User className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
             </div>
           </div>
 
-          {/* Row 2: Email Address & Phone Number in ONE Grid (2 columns on sm) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Email Address */}
+          {/* Email Address & Phone Number (2 cols on sm, 1 col on mobile) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* Email */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-zinc-300">
-                  Email Address <span className="text-rose-400">*</span>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 tracking-tight">
+                  Email <span className="text-rose-500">*</span>
                 </label>
                 {email && (
-                  <span className="text-[10px]">
+                  <span className="text-[9px] font-bold">
                     {emailVal.isValid ? (
-                      <span className="text-emerald-400 font-medium flex items-center gap-0.5">
-                        <CheckCircle2 className="w-3 h-3" /> Valid
-                      </span>
+                      <span className="text-emerald-600">Valid</span>
                     ) : emailTouched ? (
-                      <span className="text-rose-400 font-medium flex items-center gap-0.5">
-                        <AlertCircle className="w-3 h-3" /> Invalid
-                      </span>
+                      <span className="text-rose-600">Invalid</span>
                     ) : null}
                   </span>
                 )}
               </div>
               <div className="relative">
-                <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
                 <input
                   type="email"
                   required
@@ -257,43 +250,31 @@ export default function SignUp() {
                   }}
                   onBlur={() => setEmailTouched(true)}
                   placeholder="you@company.com"
-                  className={`w-full pl-10 pr-4 py-2.5 bg-zinc-900 border ${
-                    showEmailError
-                      ? "border-rose-500/70 focus:border-rose-400"
-                      : "border-zinc-800 focus:border-zinc-500"
-                  } rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition shadow-inner`}
+                  className={`w-full pl-3.5 pr-8 py-2 liquid-glass-input rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none transition shadow-xs ${
+                    showEmailError ? "border-rose-400 focus:ring-rose-400/30" : "focus:border-amber-400"
+                  }`}
                 />
+                <Mail className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
               </div>
-              {showEmailError && (
-                <p className="mt-1 text-[11px] text-rose-400 animate-in fade-in">
-                  {emailVal.error}
-                </p>
-              )}
             </div>
 
-            {/* Phone Number */}
+            {/* Phone */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-zinc-300">
-                  Phone Number{" "}
-                  <span className="text-zinc-500 font-normal">(Optional)</span>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 tracking-tight">
+                  Phone 
                 </label>
-                {phone ? (
-                  <span className="text-[10px]">
+                {phone && (
+                  <span className="text-[9px] font-bold">
                     {phoneVal.isValid ? (
-                      <span className="text-emerald-400 font-medium flex items-center gap-0.5">
-                        <CheckCircle2 className="w-3 h-3" /> Valid
-                      </span>
+                      <span className="text-emerald-600">Valid</span>
                     ) : phoneTouched ? (
-                      <span className="text-rose-400 font-medium flex items-center gap-0.5">
-                        <AlertCircle className="w-3 h-3" /> Invalid
-                      </span>
+                      <span className="text-rose-600">Invalid</span>
                     ) : null}
                   </span>
-                ) : null}
+                )}
               </div>
               <div className="relative">
-                <Phone className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
                 <input
                   type="tel"
                   name="user_signup_phone"
@@ -308,76 +289,66 @@ export default function SignUp() {
                     if (error) setError("");
                   }}
                   onBlur={() => setPhoneTouched(true)}
-                  placeholder={
-                    country === "India" ? "+91 98765 43210" : "+61 412 345 678"
-                  }
-                  className={`w-full pl-10 pr-4 py-2.5 bg-zinc-900 border ${
-                    showPhoneError
-                      ? "border-rose-500/70 focus:border-rose-400"
-                      : "border-zinc-800 focus:border-zinc-500"
-                  } rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition shadow-inner`}
+                  placeholder={country === "India" ? "+91..." : "+61..."}
+                  className={`w-full pl-3.5 pr-8 py-2 liquid-glass-input rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none transition shadow-xs ${
+                    showPhoneError ? "border-rose-400 focus:ring-rose-400/30" : "focus:border-amber-400"
+                  }`}
                 />
+                <Phone className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
               </div>
-              {showPhoneError && (
-                <p className="mt-1 text-[11px] text-rose-400 animate-in fade-in">
-                  {phoneVal.error}
-                </p>
+            </div>
+          </div>
+
+          {/* Country / Timezone Segmented Selector */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-slate-700 tracking-tight">
+                Country & Timezone
+              </label>
+              {liveTime && (
+                <span className="text-[9px] font-mono font-bold text-slate-500 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {liveTime}
+                </span>
               )}
             </div>
-          </div>
-
-          {/* Row 3: Select Country for Time Zone (Simple Dropdown Input) */}
-          <div>
-            <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-              Select Country for Time Zone{" "}
-              <span className="text-rose-400">*</span>
-            </label>
-            <div className="relative">
-              <Globe className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3 pointer-events-none" />
-              <select
-                value={country}
-                onChange={(e) => handleCountryChange(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-600 transition shadow-inner cursor-pointer appearance-none"
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleCountryChange("Australia")}
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                  country === "Australia"
+                    ? "bg-amber-500 text-white shadow-sm ring-1 ring-amber-300/40"
+                    : "liquid-glass-pill text-slate-700 hover:text-slate-900"
+                }`}
               >
-                <option value="Australia" className="bg-zinc-900 text-zinc-100">
-                  Australia
-                </option>
-                <option value="India" className="bg-zinc-900 text-zinc-100">
-                  India
-                </option>
-              </select>
-              <div className="absolute right-3.5 top-3 pointer-events-none text-zinc-400">
-                <ChevronDown className="w-4 h-4" />
-              </div>
+                <span>🇦🇺</span>
+                <span>Australia (AU)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCountryChange("India")}
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                  country === "India"
+                    ? "bg-amber-500 text-white shadow-sm ring-1 ring-amber-300/40"
+                    : "liquid-glass-pill text-slate-700 hover:text-slate-900"
+                }`}
+              >
+                <span>🇮🇳</span>
+                <span>India (IST)</span>
+              </button>
             </div>
           </div>
 
-          {/* Row 4: Password & Confirm Password in ONE Grid (2 columns on sm) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Password & Confirm Password (2 cols on sm, 1 col on mobile) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {/* Password */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-zinc-300">
-                  Password <span className="text-rose-400">*</span>
-                </label>
-                {password && (
-                  <span className="text-[10px] font-medium text-zinc-400">
-                    <span
-                      className={
-                        strength.score >= 3
-                          ? "text-emerald-400 font-semibold"
-                          : strength.score === 2
-                            ? "text-amber-400"
-                            : "text-rose-400"
-                      }
-                    >
-                      {strength.label}
-                    </span>
-                  </span>
-                )}
-              </div>
+              <label className="block text-[11px] font-bold text-slate-700 tracking-tight mb-1">
+                Password <span className="text-rose-500">*</span>
+              </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
@@ -389,42 +360,31 @@ export default function SignUp() {
                     if (error) setError("");
                   }}
                   placeholder="Min. 6 chars"
-                  className="w-full pl-10 pr-10 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-600 transition shadow-inner"
+                  className="w-full pl-3.5 pr-8 py-2 liquid-glass-input rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-400 transition shadow-xs"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-zinc-500 hover:text-zinc-300 transition cursor-pointer"
-                  title={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 transition cursor-pointer p-0.5"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
             {/* Confirm Password */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-zinc-300">
-                  Confirm Password <span className="text-rose-400">*</span>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 tracking-tight">
+                  Confirm <span className="text-rose-500">*</span>
                 </label>
-                {confirmPassword && password !== confirmPassword && (
-                  <span className="text-[10px] text-rose-400 flex items-center gap-0.5">
-                    <AlertCircle className="w-3 h-3" /> Mismatch
-                  </span>
-                )}
                 {confirmPassword && password === confirmPassword && (
-                  <span className="text-[10px] text-emerald-400 flex items-center gap-0.5">
-                    <CheckCircle2 className="w-3 h-3" /> Matched
+                  <span className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
+                    <CheckCircle2 className="w-2.5 h-2.5" /> Matched
                   </span>
                 )}
               </div>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   required
@@ -436,46 +396,39 @@ export default function SignUp() {
                     if (error) setError("");
                   }}
                   placeholder="Re-enter password"
-                  className="w-full pl-10 pr-10 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-600 transition shadow-inner"
+                  className="w-full pl-3.5 pr-8 py-2 liquid-glass-input rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-400 transition shadow-xs"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-2.5 text-zinc-500 hover:text-zinc-300 transition cursor-pointer"
-                  title={
-                    showConfirmPassword ? "Hide password" : "Show password"
-                  }
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 transition cursor-pointer p-0.5"
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-3 py-2.5 sm:py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-[0.99] shadow-sm"
-          >
-            <span>
-              {loading ? "Creating Your Account..." : "Complete Sign Up"}
-            </span>
-            <ArrowRight className="w-4 h-4 text-zinc-950 group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          {/* Submit Button (Matching Reference Image) */}
+          <div className="pt-1.5">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-white hover:bg-slate-50 text-slate-900 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-95 shadow-md shadow-slate-300/40 border border-white/90 transition select-none"
+            >
+              <span>{loading ? "Creating..." : "Create Account"}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-700 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
         </form>
 
-        {/* Footer Link to Login */}
-        <div className="mt-6 pt-5 border-t border-zinc-800/80 text-center">
-          <p className="text-xs sm:text-sm text-zinc-400">
+        {/* Footer Link */}
+        <div className="mt-3.5 sm:mt-4 pt-3 sm:pt-3.5 border-t border-slate-200/60 text-center">
+          <p className="text-[11px] sm:text-xs text-slate-600 font-medium">
             Already have an account?{" "}
             <Link
               to="/login"
-              className="text-zinc-200 hover:text-white font-medium underline underline-offset-4 transition"
+              className="text-slate-900 hover:text-amber-700 font-extrabold transition"
             >
               Sign In
             </Link>

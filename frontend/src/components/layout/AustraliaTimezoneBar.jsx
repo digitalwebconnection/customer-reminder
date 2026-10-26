@@ -110,21 +110,21 @@ export default function AustraliaTimezoneBar() {
   }, []);
 
   return (
-    <div className="bg-[#09090b]/95 backdrop-blur-xl border-b border-zinc-800/80 px-3 sm:px-6 py-1.5 sm:py-2 text-[11px] select-none shadow-xs">
+    <div className="liquid-glass-header px-3 sm:px-6 py-1.5 sm:py-2 text-[11px] select-none border-b border-white/80">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3 min-w-0 w-full">
         {/* Profile Country Indicator (Set from user profile, not changed manually) */}
         <div className="flex items-center gap-1.5 shrink-0">
           <div
-            className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 text-[10px] font-bold shadow-xs select-none"
+            className="flex items-center gap-1.5 px-3 py-1 liquid-glass-pill text-slate-800 text-[10px] font-extrabold select-none"
             title={`Timezone region set from your profile (${activeCountry})`}
           >
             <span>{activeCountry === "India" ? "🇮🇳" : "🇦🇺"}</span>
-            <span className="font-semibold">{activeCountry}</span>
+            <span className="font-bold">{activeCountry}</span>
           </div>
         </div>
 
         {/* Live Regional Clocks: Filtered by active country */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5 touch-pan-x overscroll-x-contain min-w-0 flex-1 justify-end">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-0.5 touch-pan-x overscroll-x-contain min-w-0 flex-1 justify-start sm:justify-end">
           {visibleZones.map((zone) => {
             const isSelected = selectedTimezone === zone.id;
             const data = clockData[zone.id] || { time: "Loading...", code: "" };
@@ -134,26 +134,26 @@ export default function AustraliaTimezoneBar() {
                 key={zone.id}
                 type="button"
                 onClick={() => setTimezone(zone.id, zone.country)}
-                className={`flex items-center gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border text-left transition-all duration-200 cursor-pointer shrink-0 active:scale-95 group ${
+                className={`flex items-center gap-2 px-3 py-1 sm:py-1.5 rounded-full text-left transition-all duration-200 cursor-pointer shrink-0 active:scale-95 group ${
                   isSelected
-                    ? "bg-zinc-800 border-indigo-500/80 text-white shadow-sm ring-1 ring-indigo-500/40"
-                    : "bg-zinc-900/60 border-zinc-800/80 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-800/50"
+                    ? "liquid-glass-pill text-amber-950 font-bold ring-2 ring-amber-400/60 shadow-sm"
+                    : "liquid-glass-pill text-slate-600 hover:text-slate-900 hover:bg-white/80 opacity-90"
                 }`}
                 title={`Click to set ${zone.city} (${zone.id}) as your active reminder timezone`}
               >
                 <span className="text-xs">{zone.flag}</span>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-zinc-300 group-hover:text-white transition">
+                    <span className="text-[10px] font-bold text-slate-800 group-hover:text-amber-700 transition">
                       {zone.city}
                     </span>
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-400 font-mono border border-zinc-700/50">
+                    <span className="text-[9px] px-1 py-0.2 rounded-full bg-white/80 text-slate-600 font-mono border border-slate-200/60">
                       {zone.state}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 font-mono text-[11px] font-semibold text-zinc-100 tabular-nums">
+                  <div className="flex items-center gap-1 font-mono text-[11px] font-bold text-slate-900 tabular-nums">
                     <span className="tabular-nums">{data.time}</span>
-                    <span className="text-[9px] font-bold text-zinc-400 uppercase">
+                    <span className="text-[9px] font-bold text-slate-500 uppercase">
                       {data.code}
                     </span>
                   </div>
@@ -161,7 +161,7 @@ export default function AustraliaTimezoneBar() {
 
                 {isSelected && (
                   <span
-                    className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-0.5 shadow-xs shadow-emerald-400/50"
+                    className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5 shadow-xs shadow-emerald-500/50"
                     title="Active timezone"
                   />
                 )}

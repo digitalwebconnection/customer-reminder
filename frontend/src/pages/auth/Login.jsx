@@ -1,21 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Bell,
   Lock,
   Mail,
   ArrowRight,
   Eye,
   EyeOff,
   AlertCircle,
+  Check,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { validateEmail } from "../../utils/validationUtils";
+import RemindIQLogo from "../../components/common/RemindIQLogo";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,6 +33,15 @@ export default function Login() {
   const emailValidation = validateEmail(email, true);
   const showEmailError =
     emailTouched && email.length > 0 && !emailValidation.isValid;
+
+  // Prefetch adjacent routes during idle for 0ms navigation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import("./SignUp");
+      import("../reminders/Reminders");
+    }, 150);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,7 +84,7 @@ export default function Login() {
     } catch (err) {
       const msg =
         err.response?.data?.message ||
-        "Invalid email or password. Please verify your credentials and try again.";
+        "Invalid email or password. Please verify your credentials.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -81,52 +92,60 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden selection:bg-zinc-800 selection:text-white">
-      {/* Subtle background grid pattern */}
-      <div className="fixed inset-0 bg-grid-pattern pointer-events-none opacity-20" />
+    <div className="admin-apple-theme min-h-screen text-slate-800 flex items-center justify-center p-3 sm:p-4 relative overflow-hidden selection:bg-amber-100 selection:text-amber-900">
+      {/* ======================================================== */}
+      {/* Floating 3D Liquid Glass Spheres (Matching Reference UI) */}
+      {/* ======================================================== */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none">
+        {/* Large 3D Sphere Right */}
+        <div className="absolute top-1/4 -right-12 w-48 sm:w-64 h-48 sm:h-64 liquid-glass-sphere opacity-90 animate-float-slow" />
+        {/* Medium 3D Sphere Left */}
+        <div className="absolute top-1/3 -left-10 w-32 sm:w-44 h-32 sm:h-44 liquid-glass-sphere opacity-85 animate-float-reverse" />
+        {/* Small 3D Sphere Top Left */}
+        <div className="absolute top-12 left-10 w-16 sm:w-20 h-16 sm:h-20 liquid-glass-sphere opacity-80 animate-float-slow" />
+        {/* Small 3D Sphere Bottom Left */}
+        <div className="absolute -bottom-8 left-16 w-24 sm:w-32 h-24 sm:h-32 liquid-glass-sphere opacity-85 animate-float-reverse" />
+        {/* Small 3D Sphere Bottom Right */}
+        <div className="absolute bottom-16 right-12 w-20 sm:w-28 h-20 sm:h-28 liquid-glass-sphere opacity-80 animate-float-slow" />
 
-      <div className="relative w-full max-w-md bg-zinc-950 border border-zinc-800 p-7 sm:p-9 rounded-2xl shadow-2xl transition-all duration-300">
-        {/* Header */}
-        <div className="text-center space-y-1.5 mb-6">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Remind<span className="text-zinc-400">IQ</span>
+        {/* Ambient warm chromatic caustics */}
+        <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-amber-200/30 rounded-full blur-3xl opacity-60 animate-pulse-subtle" />
+        <div className="absolute bottom-1/4 right-1/3 w-80 h-80 bg-sky-200/30 rounded-full blur-3xl opacity-50 animate-pulse-subtle" />
+      </div>
+
+      {/* ======================================================== */}
+      {/* Compact Liquid Glass Card (Refined Best View on Mobile)  */}
+      {/* ======================================================== */}
+      <div className="relative w-full max-w-[340px] sm:max-w-[380px] liquid-glass-compact p-5 sm:p-7 rounded-[26px] sm:rounded-3xl shadow-xl transition-all duration-300 z-10 animate-in fade-in zoom-in-95 duration-400">
+        {/* Header with Official RemindIQ Logo & Underlined Login title */}
+        <div className="text-center space-y-1 mb-4 sm:mb-5">
+          <div className="flex justify-center mb-1">
+            <RemindIQLogo size="md" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight liquid-heading relative inline-block">
+            Login
+            <span className="block w-10 h-0.5 bg-gradient-to-r from-amber-500 to-amber-400 rounded-full mx-auto mt-1" />
           </h1>
-          <p className="text-xs text-zinc-400">
-            Sign in to manage follow-ups, calls, and customer reminders
+          <p className="text-[11px] text-slate-500 font-medium">
+            Sign in to access your follow-ups & calls
           </p>
         </div>
 
-        {/* Error Alert */}
+        {/* Error Alert Pill */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-zinc-900 border border-rose-500/40 text-xs text-rose-300 flex items-start gap-2.5 mb-5 animate-in fade-in slide-in-from-top-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
-            <span>{error}</span>
+          <div className="p-2.5 rounded-xl liquid-glass-pill bg-rose-500/10 border-rose-300/60 text-[11px] text-rose-800 font-semibold flex items-start gap-2 mb-3.5 animate-in fade-in slide-in-from-top-1 shadow-xs">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-600 mt-0.5" />
+            <span className="leading-tight">{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5" autoComplete="off">
           {/* Email Address */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-medium text-zinc-300">
-                Email Address <span className="text-rose-400">*</span>
-              </label>
-              {email && (
-                <span className="text-[10px]">
-                  {emailValidation.isValid ? (
-                    <span className="text-emerald-400 font-medium">
-                      Valid email
-                    </span>
-                  ) : emailTouched ? (
-                    <span className="text-rose-400 font-medium">
-                      Invalid email format
-                    </span>
-                  ) : null}
-                </span>
-              )}
-            </div>
+            <label className="block text-[11px] sm:text-xs font-bold text-slate-700 tracking-tight mb-1">
+              Email
+            </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
               <input
                 type="email"
                 required
@@ -139,15 +158,16 @@ export default function Login() {
                 }}
                 onBlur={() => setEmailTouched(true)}
                 placeholder="name@company.com"
-                className={`w-full pl-10 pr-4 py-2.5 bg-zinc-900 border ${
+                className={`w-full pl-3.5 pr-9 py-2 sm:py-2.5 liquid-glass-input rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none transition shadow-xs ${
                   showEmailError
-                    ? "border-rose-500/70 focus:border-rose-400"
-                    : "border-zinc-800 focus:border-zinc-500"
-                } rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition shadow-inner`}
+                    ? "border-rose-400 focus:ring-rose-400/30"
+                    : "focus:border-amber-400"
+                }`}
               />
+              <Mail className="w-4 h-4 text-slate-400 absolute right-3 top-2.5 sm:top-3 pointer-events-none" />
             </div>
             {showEmailError && (
-              <p className="mt-1 text-[11px] text-rose-400 animate-in fade-in">
+              <p className="mt-1 text-[10px] font-semibold text-rose-600 animate-in fade-in">
                 {emailValidation.error}
               </p>
             )}
@@ -155,19 +175,10 @@ export default function Login() {
 
           {/* Password */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-medium text-zinc-300">
-                Password <span className="text-rose-400">*</span>
-              </label>
-              <Link
-                to="/forgot-password"
-                className="text-[11px] text-zinc-400 hover:text-zinc-200 font-medium transition"
-              >
-                Forgot password?
-              </Link>
-            </div>
+            <label className="block text-[11px] sm:text-xs font-bold text-slate-700 tracking-tight mb-1">
+              Password
+            </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
               <input
                 type={showPassword ? "text" : "password"}
                 required
@@ -178,13 +189,13 @@ export default function Login() {
                   setPassword(e.target.value);
                   if (error) setError("");
                 }}
-                placeholder="Enter your password"
-                className="w-full pl-10 pr-10 py-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-600 transition shadow-inner"
+                placeholder="Enter password"
+                className="w-full pl-3.5 pr-9 py-2 sm:py-2.5 liquid-glass-input rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-400 transition shadow-xs"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-zinc-500 hover:text-zinc-300 transition cursor-pointer p-0.5"
+                className="absolute right-3 top-2 sm:top-2.5 text-slate-400 hover:text-slate-700 transition cursor-pointer p-0.5"
                 title={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
@@ -196,26 +207,48 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full min-h-11.5 py-2.5 sm:py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-sm font-bold transition flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-95 shadow-md"
-          >
-            <span>{loading ? "Signing in..." : "Sign In"}</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          {/* Options Row (Matching Reference Image: Remember me + Forgot Password?) */}
+          <div className="flex items-center justify-between pt-0.5 text-[11px]">
+            <label className="inline-flex items-center gap-1.5 cursor-pointer text-slate-600 select-none font-medium">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-slate-300 text-amber-500 focus:ring-amber-400 cursor-pointer"
+              />
+              <span>Remember me</span>
+            </label>
+
+            <Link
+              to="/forgot-password"
+              className="text-slate-600 hover:text-amber-700 font-semibold transition"
+            >
+              Forgot Password?
+            </Link>
+          </div>
+
+          {/* Login Submit Button (Matching Reference Image Capsule) */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 sm:py-3 px-4 rounded-xl sm:rounded-2xl bg-white hover:bg-slate-50 text-slate-900 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 active:scale-95 shadow-md shadow-slate-300/40 border border-white/90 transition select-none"
+            >
+              <span>{loading ? "Signing in..." : "Login"}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-700 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
         </form>
 
-        {/* Link to Sign Up */}
-        <div className="mt-6 pt-5 border-t border-zinc-800/80 text-center">
-          <p className="text-xs sm:text-sm text-zinc-400">
+        {/* Footer Link (Matching Reference Image: Don't have an account? Register) */}
+        <div className="mt-4 sm:mt-5 pt-3.5 sm:pt-4 border-t border-slate-200/60 text-center">
+          <p className="text-[11px] sm:text-xs text-slate-600 font-medium">
             Don't have an account?{" "}
             <Link
               to="/signup"
-              className="text-zinc-200 hover:text-white font-medium underline underline-offset-4 transition"
+              className="text-slate-900 hover:text-amber-700 font-extrabold transition"
             >
-              Sign Up
+              Register
             </Link>
           </p>
         </div>

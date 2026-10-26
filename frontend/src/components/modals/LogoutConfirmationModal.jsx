@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { LogOut, AlertTriangle, X, Loader2 } from "lucide-react";
+import { LogOut, X, Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function LogoutConfirmationModal() {
@@ -33,44 +33,54 @@ export default function LogoutConfirmationModal() {
       aria-labelledby="logout-modal-title"
       className="fixed inset-0 z-70 flex items-center justify-center p-4 select-none animate-in fade-in duration-200"
     >
-      {/* Dark Blur Backdrop */}
+      {/* Liquid Glass Frosted Backdrop */}
       <div
-        className="fixed inset-0 bg-black/75 backdrop-blur-md transition-opacity cursor-pointer"
+        className="fixed inset-0 bg-slate-900/35 backdrop-blur-sm transition-opacity cursor-pointer"
         onClick={() => {
           if (!isLoggingOut) closeLogoutModal();
         }}
       />
 
-      {/* Modal Dialog Card */}
+      {/* Liquid Glass Modal Card with ambient 3D Liquid Spheres */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-2xl bg-zinc-950/95 border border-zinc-800/90 shadow-2xl shadow-black/80 p-5 sm:p-6 text-zinc-100 z-10 animate-in zoom-in-95 duration-200 ring-1 ring-white/10"
+        className="relative w-full max-w-[360px] sm:max-w-[380px] rounded-[30px] liquid-glass-modal p-6 text-slate-800 z-10 animate-in zoom-in-95 duration-200 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.2),0_12px_28px_-6px_rgba(100,116,139,0.15)] border border-white/95"
       >
+        {/* Decorative 3D Liquid Glass Spheres floating around the modal */}
+        <div 
+          className="liquid-glass-sphere absolute -top-5 -right-5 w-12 h-12 pointer-events-none animate-float-gentle opacity-85 z-0"
+          style={{ animationDuration: '8s' }}
+        />
+        <div 
+          className="liquid-glass-sphere absolute -bottom-4 -left-4 w-9 h-9 pointer-events-none animate-float-reverse opacity-75 z-0"
+          style={{ animationDuration: '10s' }}
+        />
+
         {/* Close Button */}
         <button
           type="button"
           onClick={closeLogoutModal}
           disabled={isLoggingOut}
-          className="absolute top-4 right-4 text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-zinc-800 transition cursor-pointer disabled:opacity-40"
+          className="relative z-10 absolute top-4.5 right-4.5 liquid-glass-pill text-slate-400 hover:text-slate-800 p-1.5 rounded-xl transition cursor-pointer disabled:opacity-40 active:scale-90"
           title="Cancel"
         >
           <X className="w-4 h-4" />
         </button>
 
         {/* Header Icon + Titles */}
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0 shadow-lg shadow-rose-950/40">
-            <LogOut className="w-6 h-6 stroke-[2.2]" />
+        <div className="relative z-10 flex flex-col items-center text-center gap-3">
+          <div className="w-13 h-13 rounded-2xl liquid-glass-pill bg-gradient-to-br from-rose-500/15 via-rose-500/10 to-rose-600/5 border border-rose-400/50 flex items-center justify-center text-rose-600 shrink-0 shadow-sm shadow-rose-500/10 animate-float-gentle">
+            <LogOut className="w-5.5 h-5.5 stroke-[2.2]" />
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0">
             <h3
               id="logout-modal-title"
-              className="text-base sm:text-lg font-bold text-white tracking-tight"
+              className="text-base sm:text-lg font-black text-slate-900 tracking-tight liquid-heading"
             >
               Sign out of RemindIQ?
             </h3>
-            <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+            <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed max-w-[280px] mx-auto">
               Are you sure you want to end your current session? You will need to
               sign back in to manage reminder schedules and receive call alerts.
             </p>
@@ -79,23 +89,23 @@ export default function LogoutConfirmationModal() {
 
         {/* Current Active Account Box */}
         {user && (
-          <div className="mt-4 p-3 rounded-xl bg-zinc-900/70 border border-zinc-800/80 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-xs font-bold text-zinc-200 shrink-0 shadow-xs">
+          <div className="relative z-10 mt-4.5 p-3 rounded-2xl liquid-glass-pill flex items-center gap-3 border border-white/90 shadow-xs">
+            <div className="w-9 h-9 rounded-xl liquid-glass flex items-center justify-center text-xs font-bold text-slate-800 shrink-0 shadow-xs">
               {initial}
             </div>
             <div className="min-w-0 flex-1 text-left">
-              <p className="text-xs font-semibold text-zinc-100 truncate">
+              <p className="text-xs font-bold text-slate-900 truncate">
                 {user.name || "Logged-in User"}
               </p>
-              <p className="text-[11px] text-zinc-400 truncate font-mono">
+              <p className="text-[11px] text-slate-500 truncate font-mono">
                 {user.email}
               </p>
             </div>
             <span
-              className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border uppercase tracking-wider ${
+              className={`text-[9px] px-2 py-0.5 rounded-full font-extrabold tracking-wider uppercase ${
                 user.role === "superadmin"
-                  ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                  : "bg-zinc-800 text-zinc-400 border-zinc-700/60"
+                  ? "bg-amber-500/15 text-amber-800 border border-amber-400/40"
+                  : "bg-slate-200/80 text-slate-700 border border-slate-300/60"
               }`}
             >
               {user.role || "User"}
@@ -104,12 +114,12 @@ export default function LogoutConfirmationModal() {
         )}
 
         {/* Actions: Cancel vs Confirm Logout */}
-        <div className="mt-5 flex items-center justify-end gap-2.5">
+        <div className="relative z-10 mt-5 flex items-center justify-end gap-2.5">
           <button
             type="button"
             onClick={closeLogoutModal}
             disabled={isLoggingOut}
-            className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 hover:border-zinc-700 text-xs font-medium transition cursor-pointer active:scale-95 disabled:opacity-40"
+            className="flex-1 px-4 py-2.5 rounded-xl sm:rounded-2xl liquid-glass-pill text-slate-700 hover:text-slate-900 hover:bg-white/90 text-xs font-bold transition cursor-pointer active:scale-95 disabled:opacity-40 shadow-xs"
           >
             Stay Signed In
           </button>
@@ -118,7 +128,7 @@ export default function LogoutConfirmationModal() {
             type="button"
             onClick={confirmLogout}
             disabled={isLoggingOut}
-            className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-lg shadow-rose-950/60 cursor-pointer active:scale-95 disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-rose-500 via-rose-600 to-rose-700 hover:from-rose-600 hover:to-rose-800 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-rose-500/25 hover:shadow-lg hover:shadow-rose-500/35 cursor-pointer active:scale-95 disabled:opacity-50 border border-white/20"
           >
             {isLoggingOut ? (
               <>

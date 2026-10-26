@@ -362,7 +362,7 @@ export default function VisualDateTimePicker({
         left: `${coords.left}px`,
         zIndex: 9999,
       }}
-      className="bg-zinc-950 border border-zinc-800  shadow-2xl shadow-black/90 text-zinc-100 ring-1 ring-white/10 select-none animate-in fade-in zoom-in-95 duration-150 overflow-hidden w-79 max-w-79"
+      className="liquid-glass-modal rounded-2xl shadow-2xl text-slate-800 select-none animate-in fade-in zoom-in-95 duration-150 overflow-hidden w-79 max-w-79"
     >
       <div className="flex flex-row">
         {/* ======================================================== */}
@@ -370,24 +370,24 @@ export default function VisualDateTimePicker({
         {/* ======================================================== */}
         <div className="p-2.5 flex-1 min-w-51">
           {/* Calendar Header: Month/Year Dropdown & Nav Arrows */}
-          <div className="flex items-center justify-between pb-2 mb-1 border-b border-zinc-800/80">
+          <div className="flex items-center justify-between pb-2 mb-1 border-b border-slate-200/80">
             <button
               type="button"
               onClick={() => setShowMonthYearPicker((prev) => !prev)}
-              className="flex items-center gap-1 text-xs font-bold text-white hover:text-blue-400 transition cursor-pointer px-1 py-0.5 rounded-md hover:bg-zinc-900"
+              className="flex items-center gap-1 text-xs font-bold text-slate-900 hover:text-amber-600 transition cursor-pointer px-1.5 py-0.5 rounded-lg hover:bg-white/60"
             >
               <span>
                 {MONTHS[viewMonth]} {viewYear}
               </span>
-              <ChevronDown className="w-3 h-3 text-zinc-400" />
+              <ChevronDown className="w-3 h-3 text-slate-500" />
             </button>
 
-            {/* Up / Down Navigation Arrows matching the screenshot */}
+            {/* Up / Down Navigation Arrows */}
             <div className="flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="w-5.5 h-5.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition flex items-center justify-center cursor-pointer"
+                className="w-6 h-6 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-white/80 transition flex items-center justify-center cursor-pointer"
                 title="Previous Month"
               >
                 <ChevronUp className="w-3.5 h-3.5" />
@@ -395,7 +395,7 @@ export default function VisualDateTimePicker({
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="w-5.5 h-5.5 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition flex items-center justify-center cursor-pointer"
+                className="w-6 h-6 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-white/80 transition flex items-center justify-center cursor-pointer"
                 title="Next Month"
               >
                 <ChevronDown className="w-3.5 h-3.5" />
@@ -414,10 +414,10 @@ export default function VisualDateTimePicker({
                     setViewMonth(idx);
                     setShowMonthYearPicker(false);
                   }}
-                  className={`py-1.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                  className={`py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer ${
                     viewMonth === idx
-                      ? "bg-blue-600 text-white"
-                      : "bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
+                      ? "bg-amber-500 text-white shadow-sm shadow-amber-500/25"
+                      : "liquid-glass-pill hover:bg-white text-slate-700"
                   }`}
                 >
                   {mName.slice(0, 3)}
@@ -427,7 +427,7 @@ export default function VisualDateTimePicker({
           ) : (
             <>
               {/* Day of Week Labels: Mo Tu We Th Fr Sa Su */}
-              <div className="grid grid-cols-7 gap-0.5 text-center py-1 text-[10px] font-semibold text-zinc-400 border-b border-zinc-800/50">
+              <div className="grid grid-cols-7 gap-0.5 text-center py-1 text-[10px] font-bold text-slate-400 border-b border-slate-200/60 uppercase">
                 {DAYS_OF_WEEK.map((d) => (
                   <div key={d} className="py-0.5">
                     {d}
@@ -435,7 +435,7 @@ export default function VisualDateTimePicker({
                 ))}
               </div>
 
-              {/* Dynamic Calendar Grid (5 rows or 6 rows only if strictly needed) */}
+              {/* Dynamic Calendar Grid */}
               <div className="grid grid-cols-7 gap-0.5 pt-1.5">
                 {calendarDays.map((c) => {
                   const isSelected = date === c.dateString;
@@ -448,16 +448,16 @@ export default function VisualDateTimePicker({
                       type="button"
                       disabled={isPast}
                       onClick={() => handleSelectDate(c.dateString)}
-                      className={`h-6.5 w-6.5 mx-auto rounded-sm text-[11px] flex items-center justify-center transition cursor-pointer font-medium ${
+                      className={`h-7 w-7 mx-auto rounded-lg text-[11px] flex items-center justify-center transition cursor-pointer font-bold ${
                         isSelected
-                          ? "bg-blue-600 text-white font-bold ring-1 ring-zinc-900 border border-blue-400 shadow-xs"
+                          ? "bg-amber-500 text-white shadow-sm shadow-amber-500/25 ring-1 ring-amber-300"
                           : isToday
-                            ? "border border-blue-500/80 text-blue-400 hover:bg-blue-500/10"
+                            ? "border border-amber-500/80 text-amber-600 hover:bg-amber-500/10"
                             : !c.isCurrentMonth
-                              ? "text-zinc-600 hover:text-zinc-400"
+                              ? "text-slate-300 hover:text-slate-500"
                               : isPast
-                                ? "text-zinc-700 cursor-not-allowed opacity-35"
-                                : "text-zinc-200 hover:bg-zinc-800/80 hover:text-white"
+                                ? "text-slate-300 cursor-not-allowed opacity-35"
+                                : "text-slate-700 hover:bg-white/80 hover:text-slate-900"
                       }`}
                     >
                       {c.day}
@@ -472,7 +472,7 @@ export default function VisualDateTimePicker({
         {/* ======================================================== */}
         {/* RIGHT PANEL: DUAL-COLUMN TIME PICKER (Hours & Minutes)  */}
         {/* ======================================================== */}
-        <div className="border-l border-zinc-800/80 flex divide-x divide-zinc-800/60 bg-zinc-950/80 shrink-0">
+        <div className="border-l border-slate-200/80 flex divide-x divide-slate-200/60 bg-white/40 shrink-0">
           {/* Hours Column */}
           <div
             ref={hoursListRef}
@@ -485,10 +485,10 @@ export default function VisualDateTimePicker({
                   key={h}
                   type="button"
                   onClick={() => handleSelectHour(h)}
-                  className={`w-full h-7 flex items-center justify-center text-xs font-mono font-medium transition cursor-pointer ${
+                  className={`w-full h-7 flex items-center justify-center text-xs font-mono font-bold transition cursor-pointer ${
                     isSelected
-                      ? "bg-blue-600 text-white font-bold"
-                      : "text-zinc-300 hover:bg-zinc-800/70 hover:text-white"
+                      ? "bg-amber-500 text-white shadow-sm shadow-amber-500/25"
+                      : "text-slate-700 hover:bg-white/80 hover:text-slate-900"
                   }`}
                 >
                   {h}
@@ -509,10 +509,10 @@ export default function VisualDateTimePicker({
                   key={m}
                   type="button"
                   onClick={() => handleSelectMinute(m)}
-                  className={`w-full h-7 flex items-center justify-center text-xs font-mono font-medium transition cursor-pointer ${
+                  className={`w-full h-7 flex items-center justify-center text-xs font-mono font-bold transition cursor-pointer ${
                     isSelected
-                      ? "bg-blue-600 text-white font-bold"
-                      : "text-zinc-300 hover:bg-zinc-800/70 hover:text-white"
+                      ? "bg-amber-500 text-white shadow-sm shadow-amber-500/25"
+                      : "text-slate-700 hover:bg-white/80 hover:text-slate-900"
                   }`}
                 >
                   {m}
@@ -526,10 +526,10 @@ export default function VisualDateTimePicker({
   );
 
   return (
-    <div className={`space-y-1 ${className}`}>
-      {/* Label matching the screenshot */}
+    <div className={`space-y-1.5 ${className}`}>
+      {/* Label */}
       {label && (
-        <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300">
+        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700">
           {label} {required && <span className="text-rose-500">*</span>}
         </label>
       )}
@@ -540,24 +540,24 @@ export default function VisualDateTimePicker({
         onClick={() => {
           if (!disabled) setIsOpen((prev) => !prev);
         }}
-        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition cursor-pointer bg-zinc-900/80 hover:border-zinc-700 text-zinc-100 ${
+        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl liquid-glass-input transition cursor-pointer text-slate-800 ${
           isOpen
-            ? "border-blue-500 ring-2 ring-blue-500/20 shadow-xs"
+            ? "ring-2 ring-amber-400"
             : error
               ? "border-rose-500"
-              : "border-zinc-800"
+              : ""
         } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <span
           className={`font-mono text-xs sm:text-sm tracking-wide ${
-            displayValue ? "text-zinc-100 font-semibold" : "text-zinc-500"
+            displayValue ? "text-slate-900 font-bold" : "text-slate-400 font-medium"
           }`}
         >
           {displayValue || "DD/MM/YYYY HH:mm"}
         </span>
 
-        <div className="flex items-center gap-1.5 text-zinc-400">
-          <CalendarIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+        <div className="flex items-center gap-1.5 text-slate-500">
+          <CalendarIcon className="w-4 h-4 text-amber-500 shrink-0" />
         </div>
       </div>
 

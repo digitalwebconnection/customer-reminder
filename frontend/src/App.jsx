@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -60,6 +60,7 @@ function RoleBasedHome() {
 // Modals & PWA Components
 import { InstallPwaBanner, InstallPwaModal } from "./components/pwa";
 import { LogoutConfirmationModal } from "./components/modals";
+import RemindIQLogo from "./components/common/RemindIQLogo";
 
 // Background Services
 import { registerServiceWorker } from "./services/pushManager";
@@ -70,96 +71,55 @@ function Layout({ children }) {
   const location = useLocation();
   const { user } = useAuth();
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     try {
-      const saved = localStorage.getItem("remindiq_sidebar_collapsed");
-      if (saved !== null) return saved === "true";
-      // Auto-collapse sidebar on tablet screens (< 1024px) for full responsiveness
-      return typeof window !== "undefined" && window.innerWidth < 1024;
-    } catch (e) {
+      return localStorage.getItem("remindiq_sidebar_collapsed") === "true";
+    } catch {
       return false;
     }
   });
-
-  // Adjust on resize if no manual preference saved
-  useEffect(() => {
-    const handleResize = () => {
-      try {
-        const saved = localStorage.getItem("remindiq_sidebar_collapsed");
-        if (saved === null) {
-          setIsSidebarCollapsed(window.innerWidth < 1024);
-        }
-      } catch (e) {}
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Global listener: If push alarm is received or clicked while on any page, route to the ringing screen
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-
-    const handleSwMessage = (e) => {
-      if (!e.data) return;
-      if (
-        e.data.type === "CALL_REMINDER_NOTIFICATION_CLICK" ||
-        e.data.type === "PUSH_ALARM_RECEIVED"
-      ) {
-        const { reminderId, userId: msgUserId } = e.data.data || {};
-        if (msgUserId && user?._id && String(msgUserId) !== String(user._id)) {
-          return;
-        }
-        if (reminderId) {
-          if (
-            String(reminderId).startsWith("test-") ||
-            reminderId === "test-alert"
-          ) {
-            return;
-          }
-          const target = `/reminders?alertId=${reminderId}`;
-          if (
-            location.pathname !== "/reminders" ||
-            !location.search.includes(reminderId)
-          ) {
-            navigate(target);
-          }
-        }
-      }
-    };
-
-    navigator.serviceWorker.addEventListener("message", handleSwMessage);
-    return () =>
-      navigator.serviceWorker.removeEventListener("message", handleSwMessage);
-  }, [navigate, location, user]);
 
   const toggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
       try {
         localStorage.setItem("remindiq_sidebar_collapsed", String(next));
-      } catch (e) {}
+      } catch {}
       return next;
     });
   };
 
-  return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-100 flex flex-col relative overflow-x-clip selection:bg-zinc-700 selection:text-white">
-      {/* Subtle Dark Background Mesh */}
-      <div className="fixed inset-0 pointer-events-none bg-zinc-950/40 z-0" />
+  // Super Admin should NEVER use the dark user Layout (Image 1) - route directly to Super Admin dashboard (Image 2)
+  if (user?.role === "superadmin") {
+    return <Navigate to="/admin" replace />;
+  }
 
-      {/* Left-Side Slider Navigation (Desktop Fixed Sidebar + Mobile Slide-Over Drawer) */}
+  return (
+    <div className="admin-apple-theme min-h-screen text-slate-800 flex flex-col relative overflow-x-clip selection:bg-amber-100 selection:text-amber-900">
+      {/* Ambient Liquid Glass Background Slabs & Prisms */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none">
+        <div className="absolute -top-14 -left-20 w-[460px] h-32 rounded-full ambient-liquid-slab transform -rotate-12 opacity-85" />
+        <div className="absolute top-16 -right-28 w-[520px] h-36 rounded-full ambient-liquid-slab transform rotate-6 opacity-80" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-48 rounded-[50px] ambient-liquid-slab transform -rotate-2 opacity-50 pointer-events-none" />
+        <div className="absolute -bottom-14 -left-16 w-[480px] h-36 rounded-full ambient-liquid-slab transform rotate-8 opacity-80" />
+        <div className="absolute -bottom-16 -right-20 w-[540px] h-40 rounded-full ambient-liquid-slab transform -rotate-6 opacity-85" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-200/25 rounded-full blur-3xl opacity-60" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-200/25 rounded-full blur-3xl opacity-60" />
+      </div>
+
+      {/* Left Sidebar Navigation: Sliding Open/Close */}
       <Navbar
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={toggleSidebarCollapse}
       />
 
-      {/* Main Content Area: Offset by sidebar width on desktop */}
+      {/* Main Content Area: Smooth desktop padding transition for sidebar collapse */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 ease-in-out min-w-0 w-full ${
+        className={`flex-1 flex flex-col min-w-0 w-full transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? "md:pl-20" : "md:pl-64"
         }`}
       >
-        {/* 🇦🇺 Live Australian Timezones Bar - Stationary/Static at Top */}
+        {/* 🇦🇺 Live Australian Timezones Bar - Pinned at top of workspace */}
         <div className="sticky top-14 md:top-0 z-30">
           <AustraliaTimezoneBar />
         </div>
@@ -194,11 +154,13 @@ export default function App() {
               <LogoutConfirmationModal />
               <Suspense
                 fallback={
-                  <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-3">
-                    <div className="w-8 h-8 rounded-full border-2 border-zinc-700 border-t-white animate-spin" />
-                    <span className="text-xs text-zinc-500 font-mono">
-                      Loading RemindIQ...
-                    </span>
+                  <div className="admin-apple-theme min-h-screen flex flex-col items-center justify-center p-4 relative selection:bg-amber-100 select-none">
+                    <div className="liquid-glass-modal px-8 py-6 rounded-3xl flex flex-col items-center gap-3.5 shadow-xl animate-in fade-in duration-200">
+                      <RemindIQLogo size="lg" />
+                      <span className="text-xs font-bold text-slate-500 tracking-tight">
+                        Loading Workspace...
+                      </span>
+                    </div>
                   </div>
                 }
               >
@@ -329,9 +291,11 @@ export default function App() {
                     path="/profile"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Profile />
-                        </Layout>
+                        <UserOnlyRoute>
+                          <Layout>
+                            <Profile />
+                          </Layout>
+                        </UserOnlyRoute>
                       </ProtectedRoute>
                     }
                   />
@@ -339,9 +303,11 @@ export default function App() {
                     path="/settings"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Profile />
-                        </Layout>
+                        <UserOnlyRoute>
+                          <Layout>
+                            <Profile />
+                          </Layout>
+                        </UserOnlyRoute>
                       </ProtectedRoute>
                     }
                   />
@@ -349,9 +315,11 @@ export default function App() {
                     path="/account"
                     element={
                       <ProtectedRoute>
-                        <Layout>
-                          <Profile />
-                        </Layout>
+                        <UserOnlyRoute>
+                          <Layout>
+                            <Profile />
+                          </Layout>
+                        </UserOnlyRoute>
                       </ProtectedRoute>
                     }
                   />

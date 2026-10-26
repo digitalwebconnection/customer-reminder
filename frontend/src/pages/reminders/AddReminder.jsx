@@ -194,16 +194,16 @@ export default function AddReminder() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight liquid-heading">
               Add Reminder
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-zinc-900 text-zinc-300 border border-zinc-800 shadow-xs">
+            <span className="liquid-glass-pill inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-slate-700">
               {currentZoneObj?.country === "India"
                 ? "🇮🇳 India (IST)"
                 : "🇦🇺 Australia"}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
             Pick your appointment date on the visual calendar, choose call time,
             and select your regional timezone.
           </p>
@@ -212,18 +212,18 @@ export default function AddReminder() {
 
       {/* Success Notification Banner */}
       {successInfo && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in shadow-xl backdrop-blur-md">
+        <div className="p-4 sm:p-5 rounded-3xl liquid-glass-modal text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in shadow-xl">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-500/30">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-400/30">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             </div>
             <div className="text-xs sm:text-sm">
-              <span className="font-semibold text-white">
+              <span className="font-bold text-slate-900">
                 Reminder saved successfully!
               </span>
-              <p className="text-emerald-400/90 text-xs mt-0.5">
+              <p className="text-slate-600 font-medium text-xs mt-0.5">
                 Scheduled for{" "}
-                <span className="font-semibold text-white">
+                <span className="font-bold text-slate-900">
                   {successInfo.name}
                 </span>{" "}
                 at {successInfo.time}
@@ -232,7 +232,7 @@ export default function AddReminder() {
           </div>
           <Link
             to="/reminders"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition self-start sm:self-auto shadow-md active:scale-95"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition self-start sm:self-auto shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
           >
             <span>View in Reminders</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -242,7 +242,7 @@ export default function AddReminder() {
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 backdrop-blur-md shadow-lg">
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-600 shadow-sm">
           {error}
         </div>
       )}
@@ -250,46 +250,46 @@ export default function AddReminder() {
       {/* Form Card */}
       <form
         onSubmit={handleSubmit}
-        className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 sm:p-8 shadow-xs relative overflow-hidden"
+        className="liquid-glass rounded-3xl p-5 sm:p-8 relative overflow-hidden"
       >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-start">
           {/* Left Column: Customer Details & Notes */}
           <div className="space-y-4 sm:space-y-5">
-            <div className="border-b border-zinc-800 pb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2">
-                <User className="w-4 h-4 text-zinc-400" />
+            <div className="border-b border-slate-200/80 pb-3 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <User className="w-4 h-4 text-amber-500" />
                 <span>Customer Information</span>
               </h2>
-              <span className="text-[11px] text-zinc-400 font-medium">
+              <span className="text-[11px] text-slate-400 font-semibold">
                 Fields marked * required
               </span>
             </div>
 
             {/* Customer Name */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                Customer Name <span className="text-rose-400">*</span>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Customer Name <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
+                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Jack Thompson"
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 transition shadow-inner"
+                  className="w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-2xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition font-medium"
                 />
               </div>
             </div>
 
             {/* Phone Number */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
-                Phone Number <span className="text-rose-400">*</span>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Phone Number <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <Phone className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
+                <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="tel"
                   required
@@ -307,10 +307,10 @@ export default function AddReminder() {
                       ? "+91 98765 43210"
                       : "+61 412 345 678"
                   }
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 transition font-mono shadow-inner"
+                  className="w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-2xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition font-mono font-medium"
                 />
               </div>
-              <p className="text-[11px] text-zinc-500 mt-1">
+              <p className="text-[11px] text-slate-500 mt-1 font-medium">
                 {selectedCountry === "India" || timezone === "Asia/Kolkata"
                   ? "Indian 10-digit mobile number (e.g. 98765 43210 or +91 98765 43210)"
                   : "Australian mobile or landline (e.g. 0412 345 678 or +61 412 345 678)"}
@@ -320,11 +320,11 @@ export default function AddReminder() {
             {/* Email & Address */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Email (optional)
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
                     type="email"
                     name="customer_email"
@@ -336,23 +336,23 @@ export default function AddReminder() {
                       if (error) setError("");
                     }}
                     placeholder="customer@example.com"
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 transition shadow-inner"
+                    className="w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-2xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition font-medium"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Address (optional)
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3.5" />
+                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="Suburb, City, or State"
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 transition shadow-inner"
+                    className="w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-2xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition font-medium"
                   />
                 </div>
               </div>
@@ -360,9 +360,9 @@ export default function AddReminder() {
 
             {/* Note */}
             <div>
-              <label className="text-xs font-semibold text-zinc-300 mb-1.5 flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>Call Notes & Discussion Points</span>
-                <span className="text-zinc-500 font-normal text-[11px]">
+                <span className="text-slate-400 font-medium text-[11px]">
                   Optional
                 </span>
               </label>
@@ -371,7 +371,7 @@ export default function AddReminder() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Key discussion points, quotation follow-up, callback details..."
-                className="w-full p-3.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-base sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500/30 transition resize-none shadow-inner"
+                className="w-full p-3.5 liquid-glass-input rounded-2xl text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition resize-none font-medium"
               />
             </div>
           </div>
@@ -379,20 +379,21 @@ export default function AddReminder() {
           {/* Right Column: Schedule, Timezone, Preview & Submit */}
           <div className="space-y-5 flex flex-col justify-between h-full">
             <div className="space-y-5">
-              <div className="border-b border-zinc-800 pb-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-zinc-400" />
+              <div className="border-b border-slate-200/80 pb-3 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-500" />
                   <span>Call Schedule & Timezone</span>
                 </h2>
-                <span className="text-[11px] text-zinc-300 bg-zinc-900 px-2.5 py-0.5 rounded-lg border border-zinc-800 font-mono shadow-xs">
+                <span className="liquid-glass-pill text-[11px] text-slate-700 px-3 py-1 font-mono font-bold">
                   {currentZoneObj.short} ({currentZoneObj.state})
                 </span>
               </div>
 
               {/* Regional Timezone Selection */}
-              <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/80 space-y-2.5">
+              <div className="p-4 rounded-lg liquid-glass-pill space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-amber-500" />
                     <span>Country & Regional Timezone</span>
                   </label>
                 </div>
@@ -400,17 +401,17 @@ export default function AddReminder() {
                 <select
                   value={timezone}
                   onChange={(e) => handleTimezoneChange(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-zinc-900 border border-zinc-700/80 rounded-xl text-xs sm:text-sm text-zinc-100 focus:outline-none focus:border-zinc-500 transition cursor-pointer"
+                  className="w-full px-3.5 py-2.5 liquid-glass-input rounded-lg text-xs sm:text-sm text-slate-900 focus:outline-none transition cursor-pointer font-semibold"
                 >
                   <optgroup
                     label="🇦🇺 Australia"
-                    className="bg-zinc-900 text-zinc-300 font-semibold"
+                    className="bg-white text-slate-800 font-bold"
                   >
                     {AUSTRALIAN_TIMEZONES.map((tz) => (
                       <option
                         key={tz.value}
                         value={tz.value}
-                        className="bg-zinc-900 text-zinc-100 font-normal"
+                        className="bg-white text-slate-800 font-normal"
                       >
                         {tz.label}
                       </option>
@@ -418,20 +419,20 @@ export default function AddReminder() {
                   </optgroup>
                   <optgroup
                     label="🇮🇳 India"
-                    className="bg-zinc-900 text-zinc-300 font-semibold"
+                    className="bg-white text-slate-800 font-bold"
                   >
                     {INDIAN_TIMEZONES.map((tz) => (
                       <option
                         key={tz.value}
                         value={tz.value}
-                        className="bg-zinc-900 text-zinc-100 font-normal"
+                        className="bg-white text-slate-800 font-normal"
                       >
                         {tz.label}
                       </option>
                     ))}
                   </optgroup>
                 </select>
-                <p className="text-[11px] text-zinc-500">
+                <p className="text-[11px] text-slate-500 font-medium">
                   Tip: Click any Australian or Indian city clock in the top bar
                   to synchronize this timezone automatically.
                 </p>
@@ -450,14 +451,14 @@ export default function AddReminder() {
 
               {/* Real-time Schedule Preview (Slim & Compact) */}
               {previewDueUTC ? (
-                <div className="px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80 flex items-center justify-between gap-2 text-xs">
+                <div className="px-3.5 py-2.5 rounded-lg liquid-glass-pill flex items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                    <span className="text-[11px] text-zinc-400">
+                    <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="text-[11px] text-slate-500 font-medium">
                       Scheduled ({currentZoneObj.short}):
                     </span>
                   </div>
-                  <span className="font-mono font-semibold text-zinc-200 text-xs">
+                  <span className="font-mono font-bold text-amber-600 text-xs">
                     {formatInAustralianTime(previewDueUTC, timezone)}
                   </span>
                 </div>
@@ -469,14 +470,14 @@ export default function AddReminder() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full min-h-12 py-3 px-4 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-sm sm:text-base transition shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
+                className="w-full min-h-12 py-3.5 px-6 rounded-full bg-amber-500 hover:bg-amber-400 text-white font-bold text-sm sm:text-base transition shadow-lg shadow-amber-500/25 border border-amber-300/40 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer active:scale-95"
               >
                 <CheckCircle2 className="w-5 h-5" />
                 <span>
                   {loading ? "Saving Customer..." : "Create Customer"}
                 </span>
               </button>
-              <p className="text-[11px] text-zinc-500 text-center mt-2">
+              <p className="text-[11px] text-slate-400 text-center mt-2 font-medium">
                 Stored with automated desktop alert and audio chime when call is
                 due.
               </p>

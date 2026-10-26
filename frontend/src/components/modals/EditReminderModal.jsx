@@ -147,18 +147,18 @@ export default function EditReminderModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-9998 flex items-center justify-center p-2.5 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-9998 flex items-center justify-center p-2.5 sm:p-6 bg-slate-900/35 backdrop-blur-md animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-zinc-950 border border-zinc-800 rounded-2xl sm:rounded-xl shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[90vh] text-zinc-100 ring-1 ring-black/70 overflow-hidden my-auto"
+        className="w-full max-w-xl liquid-glass-modal rounded-3xl shadow-2xl flex flex-col max-h-[92dvh] sm:max-h-[90vh] text-slate-800 ring-1 ring-slate-900/10 overflow-hidden my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Pinned Header */}
-        <div className="shrink-0 px-5 sm:px-6 py-2 border-b border-zinc-800 bg-zinc-900/40 flex items-center justify-between">
+        <div className="shrink-0 px-5 sm:px-6 py-4 border-b border-slate-200/80 bg-white/40 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                 Edit Reminder
               </h3>
             </div>
@@ -166,7 +166,7 @@ export default function EditReminderModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition cursor-pointer"
+            className="p-1.5 rounded-full liquid-glass-pill text-slate-500 hover:text-slate-900 transition cursor-pointer"
             title="Close (Esc)"
           >
             <X className="w-5 h-5" />
@@ -180,36 +180,36 @@ export default function EditReminderModal({
           className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 pb-16"
         >
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300">
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-600">
               {error}
             </div>
           )}
 
           {/* Customer Name */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Customer Name <span className="text-rose-400">*</span>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Customer Name <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. John Smith"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                className="w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-2xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition font-medium"
               />
             </div>
           </div>
 
           {/* Phone Number */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Phone Number <span className="text-rose-400">*</span>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Phone Number <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+              <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
                 type="tel"
                 required
@@ -226,10 +226,10 @@ export default function EditReminderModal({
                     ? "+91 98765 43210"
                     : "0412 345 678"
                 }
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition font-mono shadow-inner"
+                className="w-full pl-10 pr-4 py-2.5 liquid-glass-input rounded-2xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition font-mono font-medium"
               />
             </div>
-            <p className="mt-1 text-[10px] text-zinc-500">
+            <p className="mt-1 text-[11px] text-slate-500 font-medium">
               {timezone === "Asia/Kolkata"
                 ? "Indian 10-digit mobile number"
                 : "Australian 9-10 digit mobile or landline"}
@@ -239,11 +239,11 @@ export default function EditReminderModal({
           {/* Email & Address (2-Column Grid) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
                 Email
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="email"
                   name="edit_customer_email"
@@ -255,23 +255,23 @@ export default function EditReminderModal({
                     if (error) setError("");
                   }}
                   placeholder="name@example.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                  className="w-full pl-10 pr-3.5 py-2.5 liquid-glass-input rounded-2xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition font-medium"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
                 Address / City
               </label>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="e.g. Sydney, NSW"
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition shadow-inner"
+                  className="w-full pl-10 pr-3.5 py-2.5 liquid-glass-input rounded-2xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition font-medium"
                 />
               </div>
             </div>
@@ -279,26 +279,26 @@ export default function EditReminderModal({
 
           {/* Regional Timezone */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
               <span className="flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-indigo-400" />
+                <Globe className="w-3.5 h-3.5 text-amber-500" />
                 <span>Country & Regional Timezone</span>
               </span>
             </label>
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
+              className="w-full px-3.5 py-2.5 liquid-glass-input rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none transition cursor-pointer font-semibold"
             >
               <optgroup
                 label="🇦🇺 Australia"
-                className="bg-slate-900 text-slate-300 font-semibold"
+                className="bg-white text-slate-800 font-bold"
               >
                 {AUSTRALIAN_TIMEZONES.map((tz) => (
                   <option
                     key={tz.value}
                     value={tz.value}
-                    className="bg-slate-900 text-slate-100 font-normal"
+                    className="bg-white text-slate-800 font-normal"
                   >
                     {tz.label} ({tz.offset})
                   </option>
@@ -306,13 +306,13 @@ export default function EditReminderModal({
               </optgroup>
               <optgroup
                 label="🇮🇳 India"
-                className="bg-slate-900 text-slate-300 font-semibold"
+                className="bg-white text-slate-800 font-bold"
               >
                 {INDIAN_TIMEZONES.map((tz) => (
                   <option
                     key={tz.value}
                     value={tz.value}
-                    className="bg-slate-900 text-slate-100 font-normal"
+                    className="bg-white text-slate-800 font-normal"
                   >
                     {tz.label} ({tz.offset})
                   </option>
@@ -334,11 +334,11 @@ export default function EditReminderModal({
 
           {/* Real-time Preview (Slim) */}
           {previewDueUTC && (
-            <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-indigo-500/30 text-xs flex items-center justify-between gap-1 shadow-inner">
-              <span className="text-[11px] text-slate-400">
+            <div className="px-3.5 py-2 rounded-2xl liquid-glass-pill text-xs flex items-center justify-between gap-1">
+              <span className="text-[11px] text-slate-500 font-medium">
                 Scheduled In Zone:
               </span>
-              <span className="font-mono text-indigo-300 font-bold text-xs">
+              <span className="font-mono text-amber-600 font-bold text-xs">
                 {formatInAustralianTime(previewDueUTC, timezone)}
               </span>
             </div>
@@ -346,20 +346,20 @@ export default function EditReminderModal({
 
           {/* Status Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
               Status
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-800/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer shadow-inner"
+              className="w-full px-3.5 py-2.5 liquid-glass-input rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none transition cursor-pointer font-semibold"
             >
-              <option value="pending" className="bg-slate-900 text-slate-100">
+              <option value="pending" className="bg-white text-slate-900">
                 Pending (Call Pending)
               </option>
               <option
                 value="completed"
-                className="bg-slate-900 text-emerald-400"
+                className="bg-white text-emerald-600 font-bold"
               >
                 Completed (Finished)
               </option>
@@ -368,7 +368,7 @@ export default function EditReminderModal({
 
           {/* Note / Follow-up Details */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
               Call Note / Agenda
             </label>
             <textarea
@@ -376,7 +376,7 @@ export default function EditReminderModal({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="e.g. Call regarding insurance quotation follow-up"
-              className="w-full p-3 bg-slate-800/80 border border-white/10 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20 transition resize-none shadow-inner"
+              className="w-full p-3.5 liquid-glass-input rounded-2xl text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition resize-none font-medium"
             />
           </div>
         </form>
@@ -386,12 +386,12 @@ export default function EditReminderModal({
           style={{
             paddingBottom: "max(0.875rem, env(safe-area-inset-bottom, 0px))",
           }}
-          className="shrink-0 px-4 sm:px-6 py-3 sm:py-3.5 border-t border-zinc-800 bg-zinc-900/60 flex items-center justify-end gap-2.5"
+          className="shrink-0 px-4 sm:px-6 py-3.5 sm:py-4 border-t border-slate-200/80 bg-white/40 flex items-center justify-end gap-3"
         >
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-xs font-medium text-zinc-400 hover:text-white transition cursor-pointer min-h-10 active:scale-95"
+            className="px-4 py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer min-h-10 active:scale-95"
           >
             Cancel
           </button>
@@ -399,7 +399,7 @@ export default function EditReminderModal({
             type="submit"
             form="edit-reminder-form"
             disabled={loading}
-            className="px-5 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 disabled:opacity-50 min-h-10"
+            className="px-6 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-white text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-amber-500/25 border border-amber-300/40 cursor-pointer active:scale-95 disabled:opacity-50 min-h-10"
           >
             <Check className="w-4 h-4" />
             <span>{loading ? "Saving Changes..." : "Update Reminder"}</span>

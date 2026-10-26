@@ -3,64 +3,37 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   PlusCircle,
   ListTodo,
-  Bell,
-  BellRing,
   LogOut,
-  AlertCircle,
   Smartphone,
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
   X,
-  Volume2,
   User as UserIcon,
-  LayoutDashboard,
-  Users,
-  History,
-  Sparkles,
+  BellRing,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { usePwa } from "../../context/PwaContext";
-import {
-  subscribeKeepAlive,
-  pingBackend,
-} from "../../services/renderKeepAlive";
 import api from "../../api/axios";
+import RemindIQLogo from "../common/RemindIQLogo";
 
 export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
   const toast = useToast();
-  const {  openLogoutModal, user } = useAuth();
-  const {
-    promptInstall,
-    isInstalled,
-    setShowAlarmModal,
-    
-  } = usePwa();
-  const navigate = useNavigate();
+  const { openLogoutModal, user } = useAuth();
+  const { promptInstall, isInstalled, setShowAlarmModal } = usePwa();
   const location = useLocation();
 
   const [notificationState, setNotificationState] = useState("default");
-  const [loadingPush, setLoadingPush] = useState(false);
-  const [testSent, setTestSent] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [keepAlive, setKeepAlive] = useState({
-    status: "online",
-    lastPing: null,
-    latencyMs: null,
-    pingCount: 0,
-  });
+  const [testSent, setTestSent] = useState(false);
 
   useEffect(() => {
-    if ("Notification" in window) {
+    if (typeof window !== "undefined" && "Notification" in window) {
       setNotificationState(Notification.permission);
     }
-
-    const unsubscribe = subscribeKeepAlive((state) => {
-      setKeepAlive(state);
-    });
-
-    return () => unsubscribe();
   }, []);
 
   // Close mobile drawer on route change
@@ -68,21 +41,14 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const handleManualPing = async () => {
-    toast.info(
-      "Pinging Render...",
-      "Sending 14-minute keep-alive ping to backend.",
-    );
-    const data = await pingBackend();
-    if (data) {
-      toast.success(
-        "Render Server Active 🟢",
-        `Response in ${keepAlive.latencyMs || 100}ms. Database: ${data.database || "connected"}`,
-      );
-    } else {
-      toast.warning("Server Cold Start", "Ping queued. Render is waking up.");
-    }
-  };
+  // Prefetch workspace routes during idle for instantaneous tab switching
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      import("../../pages/reminders/AddReminder");
+      import("../../pages/profile/Profile");
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSendTestAlert = async () => {
     if ("Notification" in window && Notification.permission === "granted") {
@@ -118,56 +84,24 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
     .charAt(0)
     .toUpperCase();
 
-  const isSuperAdmin = user?.role === "superadmin";
-
-  // Navigation Links definition - Super Admin only gets admin control items, regular user gets reminders
-  const navItems = isSuperAdmin
-    ? [
-        {
-          to: "/admin",
-          label: "Dashboard",
-          icon: LayoutDashboard,
-          end: true,
-        },
-        {
-          to: "/admin/users",
-          label: "User Management",
-          icon: Users,
-        },
-        {
-          to: "/admin/reminders",
-          label: "Global Reminders",
-          icon: ListTodo,
-        },
-        {
-          to: "/admin/logs",
-          label: "Audit Logs",
-          icon: History,
-        },
-        {
-          to: "/profile",
-          label: "My Profile",
-          icon: UserIcon,
-        },
-      ]
-    : [
-        {
-          to: "/reminders",
-          label: "All Reminders",
-          icon: ListTodo,
-          end: true,
-        },
-        {
-          to: "/add",
-          label: "Add Reminder",
-          icon: PlusCircle,
-        },
-        {
-          to: "/profile",
-          label: "My Profile",
-          icon: UserIcon,
-        },
-      ];
+  const navItems = [
+    {
+      to: "/reminders",
+      label: "All Reminders",
+      icon: ListTodo,
+      end: true,
+    },
+    {
+      to: "/add",
+      label: "Add Reminder",
+      icon: PlusCircle,
+    },
+    {
+      to: "/profile",
+      label: "My Profile",
+      icon: UserIcon,
+    },
+  ];
 
   const isNavActive = (itemTo, defaultActive) => {
     if (defaultActive) return true;
@@ -175,15 +109,6 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
       itemTo === "/add" &&
       (location.pathname === "/reminders/add" ||
         location.pathname === "/add-reminder")
-    ) {
-      return true;
-    }
-    if (itemTo === "/admin" && location.pathname === "/admin/dashboard") {
-      return true;
-    }
-    if (
-      itemTo === "/admin/logs" &&
-      location.pathname === "/admin/activity-logs"
     ) {
       return true;
     }
@@ -198,11 +123,8 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
 
   return (
     <>
-      {/* ======================================================== */}
-      {/* 1. MOBILE TOP BAR (< md): With hamburger left-slider toggle */}
-      {/* ======================================================== */}
       <header
-        className="md:hidden sticky top-0 z-40 bg-[#09090b]/95 backdrop-blur-xl border-b border-zinc-800 px-4 flex items-center justify-between shadow-xs transition-all"
+        className="md:hidden sticky top-0 z-40 liquid-glass-header px-4 flex items-center justify-between select-none"
         style={{
           paddingTop: "env(safe-area-inset-top, 0px)",
           minHeight: "calc(3.5rem + env(safe-area-inset-top, 0px))",
@@ -212,70 +134,99 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            aria-label="Open Left Navigation Slider"
-            className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 transition cursor-pointer active:scale-95"
+            aria-label="Open navigation sidebar"
+            className="p-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 transition-all cursor-pointer active:scale-95 shadow-xs"
           >
             <Menu className="w-5 h-5" />
           </button>
 
           <NavLink
-            to={isSuperAdmin ? "/admin" : "/reminders"}
-            className="flex items-center font-bold text-white text-base"
+            to="/reminders"
+            className="flex items-center"
+            title="RemindIQ Workspace"
           >
-            <span className="font-extrabold text-white tracking-tight text-base">
-              Remind<span className="text-zinc-400">IQ</span>
+            <RemindIQLogo size="sm" />
+          </NavLink>
+        </div>
+
+        {/* Mobile Right: Alarm Pill & Profile */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              if (notificationState !== "granted") {
+                if ("Notification" in window) {
+                  const perm = await Notification.requestPermission();
+                  setNotificationState(perm);
+                }
+              } else {
+                handleSendTestAlert();
+              }
+            }}
+            className="p-2 rounded-xl liquid-glass-pill text-emerald-600 active:scale-95"
+            title={
+              notificationState === "granted"
+                ? "Alarms Active"
+                : "Enable Alarms"
+            }
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
             </span>
+          </button>
+
+          <NavLink
+            to="/profile"
+            className="w-8 h-8 rounded-xl liquid-glass-pill flex items-center justify-center font-bold text-xs text-slate-800"
+          >
+            {userInitial}
           </NavLink>
         </div>
       </header>
 
       {/* ======================================================== */}
-      {/* 2. MOBILE SLIDE-OVER DRAWER (< md): Smooth left-side slider */}
+      {/* 2. MOBILE SLIDE-OVER DRAWER (< md): Smooth left slider   */}
       {/* ======================================================== */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           {/* Backdrop overlay */}
           <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity duration-300"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-300"
             onClick={() => setMobileOpen(false)}
           />
 
           {/* Left Slide Drawer */}
-          <div
-            className="relative w-72 max-w-[82vw] bg-[#09090b] border-r border-zinc-800 px-4 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-250 overflow-y-auto"
+          <aside
+            className="relative w-72 max-w-[82vw] liquid-glass-sidebar p-4 flex flex-col justify-between shadow-2xl z-10 animate-in slide-in-from-left duration-300 overflow-y-auto"
             style={{
               paddingTop: "max(1rem, env(safe-area-inset-top, 0px))",
               paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
             }}
           >
             <div>
-              {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-zinc-800/80">
-                <NavLink
-                  to={isSuperAdmin ? "/admin" : "/reminders"}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center"
-                >
-                  <span className="font-extrabold text-white tracking-tight text-lg">
-                    Remind<span className="text-zinc-400">IQ</span>
-                  </span>
-                </NavLink>
+              {/* Header with Brand & Close Button */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200/60">
+                <div className="flex items-center">
+                  <RemindIQLogo size="md" />
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
-                  aria-label="Close Slider Menu"
+                  aria-label="Slide sidebar closed"
+                  className="p-1.5 rounded-xl liquid-glass-pill text-slate-500 hover:text-slate-900 transition cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <PanelLeftClose className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Navigation Links */}
-              <div className="mt-4">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 mb-1.5">
+              {/* Navigation Links Group */}
+              <div className="mt-5">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-2.5 mb-2 select-none">
                   Navigation
                 </p>
-                <div className="flex flex-col gap-1">
+                <nav className="flex flex-col gap-1.5">
                   {navItems.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -286,108 +237,89 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                         onClick={() => setMobileOpen(false)}
                         className={({ isActive }) => {
                           const active = isNavActive(item.to, isActive);
-                          return `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                          return `flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                             active
-                              ? "bg-zinc-800 text-white shadow-xs border border-zinc-700/60"
-                              : "text-zinc-300 hover:text-white hover:bg-zinc-900"
+                              ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-1 ring-amber-300/40"
+                              : "liquid-glass-pill text-slate-600 hover:text-slate-900 hover:bg-white/90"
                           }`;
                         }}
                       >
-                        <Icon className="w-4 h-4 shrink-0 text-zinc-400" />
+                        <Icon className="w-4 h-4 shrink-0" />
                         <span>{item.label}</span>
                       </NavLink>
                     );
                   })}
-                </div>
+                </nav>
               </div>
 
-              {/* System & Tools */}
-              <div className="mt-6">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 mb-1.5">
-                  App & Alarms
+              {/* System & Alarms Group */}
+              <div className="mt-6 pt-5 border-t border-slate-200/60">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-2.5 mb-2 select-none">
+                  System & Alarms
                 </p>
-                <div className="flex flex-col gap-1.5">
-                  {/* Download App */}
+                <div className="flex flex-col gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       setMobileOpen(false);
                       promptInstall();
                     }}
-                    className="flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800 transition cursor-pointer"
+                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold liquid-glass-pill text-slate-700 hover:text-slate-900 transition shadow-xs"
                   >
-                    <Smartphone className="w-4 h-4 text-zinc-400 shrink-0" />
-                    <span>
-                      {isInstalled ? "App Installed" : "Download Mobile App"}
-                    </span>
+                    <Smartphone className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span>{isInstalled ? "App Installed" : "Download App"}</span>
                   </button>
 
-                  {/* Notification Permissions */}
                   <button
                     type="button"
-                    onClick={async () => {
+                    onClick={() => {
                       if (notificationState !== "granted") {
-                        await enableAllAlarmPermissions();
+                        setShowAlarmModal(true);
+                      } else {
+                        handleSendTestAlert();
                       }
                     }}
-                    className={`flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-lg text-xs font-medium border transition cursor-pointer ${
+                    className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition shadow-xs ${
                       notificationState === "granted"
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                        : notificationState === "denied"
-                          ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
-                          : "bg-zinc-900 text-amber-300 border-amber-500/30"
+                        ? "liquid-glass-pill text-emerald-800 bg-emerald-500/10"
+                        : "liquid-glass-pill text-amber-800 bg-amber-500/10"
                     }`}
                   >
-                    {notificationState === "granted" ? (
-                      <>
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                        <span>Notifications Active</span>
-                      </>
-                    ) : notificationState === "denied" ? (
-                      <>
-                        <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                        <span>Notifications Blocked</span>
-                      </>
-                    ) : (
-                      <>
-                        <BellRing className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span>Enable Notifications</span>
-                      </>
-                    )}
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        notificationState === "granted"
+                          ? "bg-emerald-500 animate-pulse"
+                          : "bg-amber-500"
+                      }`}
+                    />
+                    <span>
+                      {notificationState === "granted"
+                        ? testSent
+                          ? "Test Alert Sent!"
+                          : "Alarms Active"
+                        : "Enable Alarms"}
+                    </span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Mobile Drawer Footer: User & Logout */}
-            <div className="pt-4 border-t border-zinc-800/80 flex items-center justify-between">
+            {/* Bottom User Profile & Logout */}
+            <div className="pt-4 border-t border-slate-200/60 flex items-center justify-between">
               <NavLink
                 to="/profile"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition cursor-pointer"
-                title="View Profile"
+                className="flex items-center gap-2.5 min-w-0"
               >
-                <div
-                  className={`w-8 h-8 rounded-full border flex items-center justify-center font-bold text-xs text-white shrink-0 ${
-                    user?.role === "superadmin"
-                      ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                      : "bg-zinc-800 border-zinc-700"
-                  }`}
-                >
+                <div className="w-9 h-9 rounded-2xl liquid-glass-pill flex items-center justify-center font-bold text-xs text-slate-800 shrink-0 shadow-xs">
                   {userInitial}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium text-white truncate max-w-32.5">
+                  <p className="text-xs font-bold text-slate-900 truncate">
                     {user?.name || user?.email || "User"}
                   </p>
-                  <p className="text-[10px] text-zinc-400">
-                    {user?.role === "superadmin" ? (
-                      <span className="text-amber-400 font-semibold">
-                        Super Admin
-                      </span>
-                    ) : (
-                      "User"
-                    )}
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Account Owner
                   </p>
                 </div>
               </NavLink>
@@ -395,90 +327,82 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
               <button
                 type="button"
                 onClick={handleLogout}
+                className="p-2 rounded-2xl liquid-glass-pill text-slate-600 hover:text-rose-600 transition"
                 title="Log Out"
-                className="p-2 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800/80 transition cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
-          </div>
+          </aside>
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* 3. DESKTOP LEFT-SIDE SLIDER (>= md): Sleek vertical sidebar */}
+      {/* 3. DESKTOP LEFT SIDEBAR (>= md): Sliding Open / Close     */}
       {/* ======================================================== */}
       <aside
-        className={`hidden md:flex fixed top-0 bottom-0 left-0 bg-[#09090b] border-r border-zinc-800 z-40 flex-col justify-between transition-all duration-300 ease-in-out shadow-lg ${
-          isCollapsed ? "w-20 p-3" : "w-64 p-4"
+        className={`hidden md:flex fixed top-0 bottom-0 left-0 z-40 flex-col justify-between liquid-glass-sidebar transition-all duration-300 ease-in-out select-none ${
+          isCollapsed ? "w-20 px-3 py-4" : "w-64 px-4 py-4"
         }`}
       >
-        {/* Top: Brand Header + Slider Collapse Toggle */}
+        {/* Top Header & Brand */}
         <div>
-          <div className="flex items-center justify-between pb-4 border-b border-zinc-800/80">
-            <NavLink
-              to={isSuperAdmin ? "/admin" : "/reminders"}
-              className={`flex items-center font-bold text-white tracking-tight group overflow-hidden ${
-                isCollapsed ? "justify-center w-full py-1 text-center" : ""
-              }`}
-              title={
-                isSuperAdmin
-                  ? "Super Admin Control Center"
-                  : "RemindIQ Dashboard"
-              }
-            >
-              <div className="flex flex-col">
-                <span
-                  className={`font-extrabold text-white tracking-tight leading-tight ${
-                    isCollapsed ? "text-base tracking-wider" : "text-xl"
-                  }`}
+          <div
+            className={`flex items-center pb-4 border-b border-slate-200/60 ${
+              isCollapsed ? "flex-col gap-3 justify-center" : "justify-between"
+            }`}
+          >
+            {isCollapsed ? (
+              <>
+                <NavLink
+                  to="/reminders"
+                  title="RemindIQ Workspace"
+                  className="w-10 h-10 rounded-2xl liquid-glass-pill flex items-center justify-center shadow-xs transition hover:scale-105 active:scale-95"
                 >
-                  {isCollapsed ? "R" : "Remind"}
-                  <span className="text-zinc-400">
-                    {isCollapsed ? "IQ" : "IQ"}
-                  </span>
-                </span>
-                {!isCollapsed && (
-                  <span className="text-[10px] text-zinc-400 font-mono">
-                    {isSuperAdmin ? "Super Admin" : " "}
-                  </span>
-                )}
-              </div>
-            </NavLink>
+                  <RemindIQLogo iconOnly size="sm" />
+                </NavLink>
 
-            {/* Slider Collapse / Expand Button */}
-            {!isCollapsed && onToggleCollapse && (
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                title="Slide sidebar closed"
-                aria-label="Slide sidebar closed"
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition cursor-pointer shrink-0"
-              >
-                <PanelLeftClose className="w-4 h-4" />
-              </button>
+                {onToggleCollapse && (
+                  <button
+                    type="button"
+                    onClick={onToggleCollapse}
+                    title="Slide sidebar open"
+                    aria-label="Slide sidebar open"
+                    className="p-2 rounded-xl liquid-glass-pill text-slate-600 hover:text-slate-900 hover:bg-white/90 transition-all cursor-pointer active:scale-95 shadow-xs"
+                  >
+                    <PanelLeftOpen className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <NavLink
+                  to="/reminders"
+                  className="flex items-center group cursor-pointer"
+                  title="RemindIQ Workspace"
+                >
+                  <RemindIQLogo size="md" />
+                    </NavLink>
+
+                {onToggleCollapse && (
+                  <button
+                    type="button"
+                    onClick={onToggleCollapse}
+                    title="Slide sidebar closed"
+                    aria-label="Slide sidebar closed"
+                    className="p-1.5 rounded-xl liquid-glass-pill text-slate-500 hover:text-slate-900 hover:bg-white/90 transition-all cursor-pointer active:scale-95 shadow-xs"
+                  >
+                    <PanelLeftClose className="w-4 h-4" />
+                  </button>
+                )}
+              </>
             )}
           </div>
-
-          {/* If collapsed, show the expand button directly below brand */}
-          {isCollapsed && onToggleCollapse && (
-            <div className="pt-2 flex justify-center">
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                title="Slide sidebar open"
-                aria-label="Slide sidebar open"
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/80 transition cursor-pointer"
-              >
-                <PanelLeftOpen className="w-4 h-4" />
-              </button>
-            </div>
-          )}
 
           {/* Navigation Links Group */}
           <div className="mt-5">
             {!isCollapsed && (
-              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 mb-2">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 mb-2 select-none">
                 Navigation
               </p>
             )}
@@ -493,11 +417,15 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                     title={item.label}
                     className={({ isActive }) => {
                       const active = isNavActive(item.to, isActive);
-                      return `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer ${
+                      return `flex items-center gap-3 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                         active
-                          ? "bg-zinc-800 text-white shadow-xs border border-zinc-700/60 font-semibold"
-                          : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/60"
-                      } ${isCollapsed ? "justify-center px-0 py-2.5" : ""}`;
+                          ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-1 ring-amber-300/40"
+                          : "liquid-glass-pill text-slate-600 hover:text-slate-900 hover:bg-white/90"
+                      } ${
+                        isCollapsed
+                          ? "justify-center p-3"
+                          : "px-3.5 py-2.5"
+                      }`;
                     }}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -508,10 +436,10 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
             </nav>
           </div>
 
-          {/* System & Actions Group */}
-          <div className="mt-6 pt-5 border-t border-zinc-800/60">
+          {/* System & Alarms Group */}
+          <div className="mt-6 pt-5 border-t border-slate-200/60">
             {!isCollapsed && (
-              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 mb-2">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 mb-2 select-none">
                 System & Alarms
               </p>
             )}
@@ -520,17 +448,17 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
               {/* Download App */}
               <button
                 type="button"
-                onClick={() => promptInstall()}
+                onClick={promptInstall}
                 title={
                   isInstalled
-                    ? "App Installed on PC/Device"
-                    : "Download & Install Mobile Web App"
+                    ? "App Installed on Device"
+                    : "Download & Install Web App"
                 }
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border border-zinc-800/80 transition cursor-pointer shadow-xs ${
-                  isCollapsed ? "justify-center px-0" : ""
+                className={`flex items-center gap-2.5 rounded-2xl text-xs font-bold liquid-glass-pill text-slate-700 hover:text-slate-900 transition-all cursor-pointer shadow-xs active:scale-95 ${
+                  isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"
                 }`}
               >
-                <Smartphone className="w-4 h-4 text-zinc-400 shrink-0" />
+                <Smartphone className="w-4 h-4 text-slate-500 shrink-0" />
                 {!isCollapsed && (
                   <span className="truncate">
                     {isInstalled ? "App Installed" : "Download App"}
@@ -538,89 +466,72 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                 )}
               </button>
 
-              {/* Alarm Status Button */}
-              {notificationState === "granted" ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAlarmModal(true)}
-                  title="Alarms active. Click to manage permissions or test."
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/20 transition cursor-pointer shadow-xs ${
-                    isCollapsed ? "justify-center px-0" : ""
+              {/* Alarms Status Pill */}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (notificationState !== "granted") {
+                    setShowAlarmModal(true);
+                  } else {
+                    handleSendTestAlert();
+                  }
+                }}
+                title={
+                  notificationState === "granted"
+                    ? "Alarms Active! Click to test alert chime"
+                    : "Notifications blocked or disabled. Click to configure."
+                }
+                className={`flex items-center gap-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 ${
+                  notificationState === "granted"
+                    ? "liquid-glass-pill text-emerald-800 bg-emerald-500/10 border border-emerald-400/40"
+                    : "liquid-glass-pill text-amber-800 bg-amber-500/10 border border-amber-400/40"
+                } ${isCollapsed ? "justify-center p-3" : "px-3.5 py-2.5"}`}
+              >
+                <span
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                    notificationState === "granted"
+                      ? "bg-emerald-500 animate-pulse shadow-xs shadow-emerald-500/50"
+                      : "bg-amber-500"
                   }`}
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                  {!isCollapsed && (
-                    <span className="truncate">Alarms Active</span>
-                  )}
-                </button>
-              ) : notificationState === "denied" ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAlarmModal(true)}
-                  title="Notifications are blocked in browser. Click to unblock."
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25 transition cursor-pointer ${
-                    isCollapsed ? "justify-center px-0" : ""
-                  }`}
-                >
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                  {!isCollapsed && (
-                    <span className="truncate">Alarms Blocked</span>
-                  )}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowAlarmModal(true)}
-                  disabled={loadingPush}
-                  title="Click to enable customer call alarms"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 transition cursor-pointer disabled:opacity-50 shadow-xs ${
-                    isCollapsed ? "justify-center px-0" : ""
-                  }`}
-                >
-                  <BellRing className="w-4 h-4 text-amber-400 shrink-0" />
-                  {!isCollapsed && <span className="truncate">Set Alarms</span>}
-                </button>
-              )}
+                />
+                {!isCollapsed && (
+                  <span className="truncate">
+                    {notificationState === "granted"
+                      ? testSent
+                        ? "Test Sent!"
+                        : "Alarms Active"
+                      : "Enable Alarms"}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
 
         {/* Bottom: User Info & Logout */}
-        <div className="pt-4 border-t border-zinc-800/80">
+        <div className="pt-4 border-t border-slate-200/60">
           <div
             className={`flex items-center ${
-              isCollapsed ? "flex-col gap-2 justify-center" : "justify-between"
+              isCollapsed ? "flex-col gap-2.5 justify-center" : "justify-between"
             }`}
           >
             <NavLink
               to="/profile"
-              title={`View Profile (${user?.email})`}
-              className={`flex items-center gap-2.5 min-w-0 hover:opacity-85 transition cursor-pointer ${
+              title={`Profile (${user?.name || user?.email || "User"})`}
+              className={`flex items-center gap-2.5 min-w-0 transition hover:opacity-85 ${
                 isCollapsed ? "justify-center" : ""
               }`}
             >
-              <div
-                className={`w-8 h-8 rounded-full border flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-xs ${
-                  user?.role === "superadmin"
-                    ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                    : "bg-zinc-800 border-zinc-700"
-                }`}
-              >
+              <div className="w-9 h-9 rounded-2xl liquid-glass-pill flex items-center justify-center font-bold text-xs text-slate-800 shrink-0 shadow-xs">
                 {userInitial}
               </div>
               {!isCollapsed && (
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-zinc-200 truncate max-w-30">
+                  <p className="text-xs font-bold text-slate-900 truncate max-w-28">
                     {user?.name || user?.email || "User"}
                   </p>
-                  <p className="text-[10px] text-zinc-400 font-mono">
-                    {user?.role === "superadmin" ? (
-                      <span className="text-amber-400 font-semibold">
-                        Super Admin
-                      </span>
-                    ) : (
-                      "Admin"
-                    )}
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Account Owner
                   </p>
                 </div>
               )}
@@ -629,9 +540,9 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
             <button
               type="button"
               onClick={handleLogout}
-              title={`Log out (${user?.email || "User"})`}
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800/60 transition cursor-pointer"
+              title="Log Out"
               aria-label="Log Out"
+              className="p-2 rounded-2xl liquid-glass-pill text-slate-500 hover:text-rose-600 transition-all cursor-pointer active:scale-95 shadow-xs"
             >
               <LogOut className="w-4 h-4" />
             </button>

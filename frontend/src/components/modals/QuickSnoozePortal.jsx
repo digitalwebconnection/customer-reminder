@@ -109,7 +109,7 @@ export default function QuickSnoozePortal({
       <div className="fixed inset-0 z-9999 flex flex-col justify-end">
         {/* Backdrop overlay */}
         <div
-          className="fixed inset-0 bg-black/75 backdrop-blur-xs transition-opacity duration-200"
+          className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity duration-200"
           onClick={onClose}
         />
 
@@ -117,26 +117,26 @@ export default function QuickSnoozePortal({
         <div
           ref={menuRef}
           style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom, 0px))" }}
-          className="relative w-full bg-zinc-950 border-t border-zinc-800 rounded-t-3xl p-4 sm:p-5 shadow-2xl z-10 animate-in slide-in-from-bottom duration-200 select-none text-zinc-100"
+          className="relative w-full liquid-glass-modal rounded-t-3xl p-5 shadow-2xl z-10 animate-in slide-in-from-bottom duration-200 select-none text-slate-800"
         >
           {/* Drag Handle Bar */}
-          <div className="w-10 h-1 bg-zinc-700/80 rounded-full mx-auto mb-3" />
+          <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-3" />
 
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80 mb-2">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 mb-2">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <CalendarClock className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <CalendarClock className="w-4 h-4 text-amber-500" />
                 Quick Reschedule
               </span>
-              <p className="text-sm font-semibold text-white truncate max-w-65 mt-0.5">
+              <p className="text-sm font-bold text-slate-900 truncate max-w-65 mt-0.5">
                 {reminder.name}
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white transition cursor-pointer active:scale-95"
+              className="p-1.5 rounded-full liquid-glass-pill text-slate-500 hover:text-slate-900 transition cursor-pointer active:scale-95"
               title="Close"
             >
               <X className="w-4 h-4" />
@@ -148,13 +148,13 @@ export default function QuickSnoozePortal({
             <button
               type="button"
               onClick={() => onSnooze(reminder, 1, "+1 Hour")}
-              className="w-full text-left px-3.5 py-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 active:bg-zinc-800 border border-zinc-800/80 text-zinc-200 transition flex items-center justify-between active:scale-98 cursor-pointer group"
+              className="w-full text-left px-3.5 py-3 rounded-2xl liquid-glass-pill hover:bg-white/80 active:bg-white text-slate-800 transition flex items-center justify-between active:scale-98 cursor-pointer group"
             >
-              <span className="flex items-center gap-3 font-medium text-sm">
-                <Clock className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+              <span className="flex items-center gap-3 font-semibold text-sm">
+                <Clock className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
                 <span>+1 Hour</span>
               </span>
-              <span className="text-xs text-zinc-400 font-mono bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-700/50">
+              <span className="text-xs text-slate-600 font-mono bg-white/60 px-2 py-0.5 rounded-md border border-slate-200/80 font-bold">
                 +1h
               </span>
             </button>
@@ -162,13 +162,13 @@ export default function QuickSnoozePortal({
             <button
               type="button"
               onClick={() => onSnooze(reminder, 3, "+3 Hours")}
-              className="w-full text-left px-3.5 py-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 active:bg-zinc-800 border border-zinc-800/80 text-zinc-200 transition flex items-center justify-between active:scale-98 cursor-pointer group"
+              className="w-full text-left px-3.5 py-3 rounded-2xl liquid-glass-pill hover:bg-white/80 active:bg-white text-slate-800 transition flex items-center justify-between active:scale-98 cursor-pointer group"
             >
-              <span className="flex items-center gap-3 font-medium text-sm">
-                <Clock3 className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+              <span className="flex items-center gap-3 font-semibold text-sm">
+                <Clock3 className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
                 <span>+3 Hours</span>
               </span>
-              <span className="text-xs text-zinc-400 font-mono bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-700/50">
+              <span className="text-xs text-slate-600 font-mono bg-white/60 px-2 py-0.5 rounded-md border border-slate-200/80 font-bold">
                 +3h
               </span>
             </button>
@@ -176,13 +176,13 @@ export default function QuickSnoozePortal({
             <button
               type="button"
               onClick={() => onSnooze(reminder, 24, "Tomorrow")}
-              className="w-full text-left px-3.5 py-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 active:bg-zinc-800 border border-zinc-800/80 text-zinc-200 transition flex items-center justify-between active:scale-98 cursor-pointer group"
+              className="w-full text-left px-3.5 py-3 rounded-2xl liquid-glass-pill hover:bg-white/80 active:bg-white text-slate-800 transition flex items-center justify-between active:scale-98 cursor-pointer group"
             >
-              <span className="flex items-center gap-3 font-medium text-sm">
-                <Calendar className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span className="flex items-center gap-3 font-semibold text-sm">
+                <Calendar className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
                 <span>Tomorrow (Same Time)</span>
               </span>
-              <span className="text-xs text-emerald-400/90 font-mono bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 font-semibold">
+              <span className="text-xs text-emerald-700 font-mono bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30 font-bold">
                 +24h
               </span>
             </button>
@@ -190,13 +190,13 @@ export default function QuickSnoozePortal({
             <button
               type="button"
               onClick={() => onSnooze(reminder, 24 * 7, "Next Week")}
-              className="w-full text-left px-3.5 py-3 rounded-xl bg-zinc-900/60 hover:bg-zinc-800 active:bg-zinc-800 border border-zinc-800/80 text-zinc-200 transition flex items-center justify-between active:scale-98 cursor-pointer group"
+              className="w-full text-left px-3.5 py-3 rounded-2xl liquid-glass-pill hover:bg-white/80 active:bg-white text-slate-800 transition flex items-center justify-between active:scale-98 cursor-pointer group"
             >
-              <span className="flex items-center gap-3 font-medium text-sm">
-                <CalendarClock className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span className="flex items-center gap-3 font-semibold text-sm">
+                <CalendarClock className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
                 <span>Next Week (7 days)</span>
               </span>
-              <span className="text-xs text-zinc-400 font-mono bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-700/50">
+              <span className="text-xs text-slate-600 font-mono bg-white/60 px-2 py-0.5 rounded-md border border-slate-200/80 font-bold">
                 +7d
               </span>
             </button>
@@ -209,9 +209,9 @@ export default function QuickSnoozePortal({
                     onClose();
                     onOpenCustomEdit(reminder);
                   }}
-                  className="w-full text-center px-4 py-2.5 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 active:bg-zinc-700 text-zinc-200 transition flex items-center justify-center gap-2 active:scale-98 cursor-pointer text-xs font-semibold"
+                  className="w-full text-center px-4 py-2.5 rounded-2xl liquid-glass hover:bg-white active:bg-white text-slate-800 transition flex items-center justify-center gap-2 active:scale-98 cursor-pointer text-xs font-bold"
                 >
-                  <SlidersHorizontal className="w-4 h-4 text-zinc-300" />
+                  <SlidersHorizontal className="w-4 h-4 text-slate-600" />
                   <span>Choose Custom Date & Time</span>
                 </button>
               </div>
@@ -233,84 +233,84 @@ export default function QuickSnoozePortal({
         left: `${position.left}px`,
         zIndex: 9999,
       }}
-      className="w-58 rounded-xl bg-zinc-950 border border-zinc-800 shadow-2xl p-2 backdrop-blur-2xl text-left text-xs text-zinc-100 ring-1 ring-black/60 animate-in fade-in zoom-in-95 duration-150"
+      className="w-60 rounded-2xl liquid-glass-modal shadow-2xl p-2.5 backdrop-blur-2xl text-left text-xs text-slate-800 ring-1 ring-slate-900/10 animate-in fade-in zoom-in-95 duration-150"
     >
-      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-zinc-800 mb-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-          <CalendarClock className="w-3.5 h-3.5 text-zinc-400" />
+      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-200/80 mb-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+          <CalendarClock className="w-3.5 h-3.5 text-amber-500" />
           Quick Snooze
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="text-zinc-500 hover:text-zinc-300 p-0.5 rounded transition cursor-pointer"
+          className="text-slate-400 hover:text-slate-700 p-0.5 rounded transition cursor-pointer"
           title="Close"
         >
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <div className="space-y-0.5">
+      <div className="space-y-1">
         <button
           type="button"
           onClick={() => onSnooze(reminder, 1, "+1 Hour")}
-          className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-zinc-900 hover:text-white text-zinc-300 transition flex items-center justify-between cursor-pointer group"
+          className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/80 text-slate-700 hover:text-slate-900 transition flex items-center justify-between cursor-pointer group font-semibold"
         >
-          <span className="flex items-center gap-2 font-medium">
-            <Clock className="w-3.5 h-3.5 text-zinc-400 group-hover:scale-110 transition-transform" />
+          <span className="flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-indigo-500 group-hover:scale-110 transition-transform" />
             <span>+1 Hour</span>
           </span>
-          <span className="text-[10px] text-zinc-500 font-mono">+1h</span>
+          <span className="text-[10px] text-slate-500 font-mono font-bold">+1h</span>
         </button>
 
         <button
           type="button"
           onClick={() => onSnooze(reminder, 3, "+3 Hours")}
-          className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-zinc-900 hover:text-white text-zinc-300 transition flex items-center justify-between cursor-pointer group"
+          className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/80 text-slate-700 hover:text-slate-900 transition flex items-center justify-between cursor-pointer group font-semibold"
         >
-          <span className="flex items-center gap-2 font-medium">
-            <Clock3 className="w-3.5 h-3.5 text-zinc-400 group-hover:scale-110 transition-transform" />
+          <span className="flex items-center gap-2">
+            <Clock3 className="w-3.5 h-3.5 text-indigo-500 group-hover:scale-110 transition-transform" />
             <span>+3 Hours</span>
           </span>
-          <span className="text-[10px] text-zinc-500 font-mono">+3h</span>
+          <span className="text-[10px] text-slate-500 font-mono font-bold">+3h</span>
         </button>
 
         <button
           type="button"
           onClick={() => onSnooze(reminder, 24, "Tomorrow")}
-          className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-zinc-900 hover:text-white text-zinc-300 transition flex items-center justify-between cursor-pointer group"
+          className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/80 text-slate-700 hover:text-slate-900 transition flex items-center justify-between cursor-pointer group font-semibold"
         >
-          <span className="flex items-center gap-2 font-medium">
-            <Calendar className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+          <span className="flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-emerald-500 group-hover:scale-110 transition-transform" />
             <span>Tomorrow (Same Time)</span>
           </span>
-          <span className="text-[10px] text-emerald-400/80 font-mono">+24h</span>
+          <span className="text-[10px] text-emerald-700 font-mono font-bold">+24h</span>
         </button>
 
         <button
           type="button"
           onClick={() => onSnooze(reminder, 24 * 7, "Next Week")}
-          className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-zinc-900 hover:text-white text-zinc-300 transition flex items-center justify-between cursor-pointer group"
+          className="w-full text-left px-2.5 py-2 rounded-xl hover:bg-white/80 text-slate-700 hover:text-slate-900 transition flex items-center justify-between cursor-pointer group font-semibold"
         >
-          <span className="flex items-center gap-2 font-medium">
-            <CalendarClock className="w-3.5 h-3.5 text-zinc-400 group-hover:scale-110 transition-transform" />
+          <span className="flex items-center gap-2">
+            <CalendarClock className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
             <span>Next Week (7 days)</span>
           </span>
-          <span className="text-[10px] text-zinc-500 font-mono">+7d</span>
+          <span className="text-[10px] text-slate-500 font-mono font-bold">+7d</span>
         </button>
 
         {onOpenCustomEdit && (
-          <div className="pt-1 mt-1 border-t border-zinc-800">
+          <div className="pt-1 mt-1 border-t border-slate-200/80">
             <button
               type="button"
               onClick={() => {
                 onClose();
                 onOpenCustomEdit(reminder);
               }}
-              className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-zinc-900 hover:text-white text-zinc-400 transition flex items-center justify-between cursor-pointer group text-[11px]"
+              className="w-full text-left px-2.5 py-1.5 rounded-xl hover:bg-white/80 text-slate-600 hover:text-slate-900 transition flex items-center justify-between cursor-pointer group text-[11px] font-semibold"
             >
-              <span className="flex items-center gap-2 font-medium">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400 group-hover:rotate-45 transition-transform" />
+              <span className="flex items-center gap-2">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 group-hover:rotate-45 transition-transform" />
                 <span>Custom Date & Time...</span>
               </span>
             </button>
