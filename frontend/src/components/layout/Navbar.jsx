@@ -348,32 +348,29 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
         {/* Top Header & Brand */}
         <div>
           <div
-            className={`flex items-center pb-4 border-b border-slate-200/60 ${
-              isCollapsed ? "flex-col gap-3 justify-center" : "justify-between"
+            className={`flex items-center pb-3.5 border-b border-slate-200/60 ${
+              isCollapsed ? "justify-center" : "justify-between"
             }`}
           >
             {isCollapsed ? (
-              <>
-                <NavLink
-                  to="/reminders"
-                  title="RemindIQ Workspace"
-                  className="w-10 h-10 rounded-2xl liquid-glass-pill flex items-center justify-center shadow-xs transition hover:scale-105 active:scale-95"
-                >
+              /* ONLY Logo: positioned cleanly at the top, clicking opens sidebar, hovering reveals Open icon */
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                title="Click to open sidebar & full logo"
+                aria-label="Click to open sidebar & full logo"
+                className="group relative w-11 h-11 rounded-2xl liquid-glass-pill flex items-center justify-center shadow-xs transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer hover:bg-white/95 focus:outline-none"
+              >
+                {/* Default State: Official RemindIQ Logo Icon */}
+                <div className="transition-all duration-200 group-hover:opacity-0 group-hover:scale-75 flex items-center justify-center">
                   <RemindIQLogo iconOnly size="sm" />
-                </NavLink>
+                </div>
 
-                {onToggleCollapse && (
-                  <button
-                    type="button"
-                    onClick={onToggleCollapse}
-                    title="Slide sidebar open"
-                    aria-label="Slide sidebar open"
-                    className="p-2 rounded-xl liquid-glass-pill text-slate-600 hover:text-slate-900 hover:bg-white/90 transition-all cursor-pointer active:scale-95 shadow-xs"
-                  >
-                    <PanelLeftOpen className="w-4 h-4" />
-                  </button>
-                )}
-              </>
+                {/* On Hover State: Open Icon appears smoothly */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all duration-200 text-amber-600">
+                  <PanelLeftOpen className="w-5 h-5 drop-shadow-xs" />
+                </div>
+              </button>
             ) : (
               <>
                 <NavLink
@@ -382,7 +379,7 @@ export default function Navbar({ isCollapsed = false, onToggleCollapse }) {
                   title="RemindIQ Workspace"
                 >
                   <RemindIQLogo size="md" />
-                    </NavLink>
+                </NavLink>
 
                 {onToggleCollapse && (
                   <button

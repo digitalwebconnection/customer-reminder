@@ -321,7 +321,7 @@ export default function AddReminder() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Email (optional)
+                  Email 
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -343,7 +343,7 @@ export default function AddReminder() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Address (optional)
+                  Address 
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />

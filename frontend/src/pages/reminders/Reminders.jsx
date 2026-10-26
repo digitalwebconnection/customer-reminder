@@ -43,6 +43,45 @@ import { usePwa } from "../../context/PwaContext";
 import { useAuth } from "../../context/AuthContext";
 import QuickSnoozePortal from "../../components/modals/QuickSnoozePortal";
 
+// Smooth rolling number counter with cubic easing
+function AnimatedNumber({ value, duration = 450 }) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const prevValueRef = useRef(value);
+
+  useEffect(() => {
+    const startVal = Number(prevValueRef.current) || 0;
+    const endVal = Number(value) || 0;
+    prevValueRef.current = endVal;
+
+    if (startVal === endVal) {
+      setDisplayValue(endVal);
+      return;
+    }
+
+    let startTime = null;
+    let animFrameId;
+
+    const step = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutCubic: 1 - (1 - progress)^3
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startVal + (endVal - startVal) * easeProgress);
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        animFrameId = requestAnimationFrame(step);
+      }
+    };
+
+    animFrameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animFrameId);
+  }, [value, duration]);
+
+  return <>{displayValue.toLocaleString()}</>;
+}
+
 export default function Reminders() {
   const toast = useToast();
   const { user } = useAuth();
@@ -136,7 +175,41 @@ export default function Reminders() {
   };
 
   const [reminders, setReminders] = useState([]);
+  const [allUserReminders, setAllUserReminders] = useState([]);
   const [filter, setFilter] = useState("all"); // all | pending | completed | overdue
+  const [isFilterChanging, setIsFilterChanging] = useState(false);
+  const [filterPendingTarget, setFilterPendingTarget] = useState(null);
+  const filterTimeoutRef = useRef(null);
+
+  // Intentional smooth transition when clicking metric cards instead of instant snap
+  const handleFilterClick = (targetFilter) => {
+    if (filter === targetFilter && !isFilterChanging) return;
+
+    if (filterTimeoutRef.current) {
+      clearTimeout(filterTimeoutRef.current);
+    }
+
+    setIsFilterChanging(true);
+    setFilterPendingTarget(targetFilter);
+    setCurrentPage(1);
+
+    // Intentional 550ms transition so the user clearly sees loading feedback and data change
+    filterTimeoutRef.current = setTimeout(() => {
+      setFilter(targetFilter);
+      setIsFilterChanging(false);
+      setFilterPendingTarget(null);
+    }, 550);
+  };
+
+  // Cleanup pending filter transition timer on unmount
+  useEffect(() => {
+    return () => {
+      if (filterTimeoutRef.current) {
+        clearTimeout(filterTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const [sortBy, setSortBy] = useState("latest"); // latest (newest on top) | dueAt_asc | dueAt_desc
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -396,6 +469,11 @@ export default function Reminders() {
       setReminders(sorted);
       setLastRefreshedAt(new Date());
 
+      // Keep full list for card metrics accurate
+      if (filter === "all" && !search.trim()) {
+        setAllUserReminders(sorted);
+      }
+
       // Check for in-app and desktop notifications
       checkDuePopups(sorted);
     } catch (err) {
@@ -411,6 +489,18 @@ export default function Reminders() {
       }
     }
   };
+
+  const fetchAllUserReminders = async () => {
+    try {
+      const res = await api.get("/reminders");
+      const list = res.data?.data || [];
+      setAllUserReminders(list);
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchAllUserReminders();
+  }, []);
 
   // Immediate fetch on filter, search, or sort change + reset 2-minute timer and page
   useEffect(() => {
@@ -550,6 +640,7 @@ export default function Reminders() {
         `Marked follow-up with ${alertName} as finished.`,
       );
       fetchReminders();
+      fetchAllUserReminders();
     } catch (err) {
       console.error("[Reminders] Failed to mark completed:", err);
       toast.error(
@@ -557,6 +648,7 @@ export default function Reminders() {
         "Could not save completion status to server. Please check your connection.",
       );
       fetchReminders();
+      fetchAllUserReminders();
     } finally {
       setIsCompletingAlert(false);
     }
@@ -643,6 +735,7 @@ export default function Reminders() {
         );
       }
       fetchReminders();
+      fetchAllUserReminders();
     } catch (err) {
       console.error("[Reminders] Toggle status error:", err);
       toast.error(
@@ -650,6 +743,7 @@ export default function Reminders() {
         "Could not change status. Please check connection.",
       );
       fetchReminders();
+      fetchAllUserReminders();
     }
   };
 
@@ -680,12 +774,15 @@ export default function Reminders() {
       );
       setReminderToDelete(null);
       fetchReminders();
+      fetchAllUserReminders();
     } catch (err) {
       toast.error(
         "Delete Failed",
         err.response?.data?.message ||
           "Could not remove reminder from database.",
       );
+      fetchReminders();
+      fetchAllUserReminders();
     } finally {
       setIsDeletingReminder(false);
     }
@@ -745,21 +842,25 @@ export default function Reminders() {
         )} (${label})`,
       );
       fetchReminders();
+      fetchAllUserReminders();
     } catch (err) {
       toast.error("Reschedule Failed", "Could not update call schedule.");
       fetchReminders();
+      fetchAllUserReminders();
     }
   };
 
+  const countsSource =
+    allUserReminders.length > 0 ? allUserReminders : reminders;
   const counts = {
-    all: reminders.length,
-    pending: reminders.filter(
+    all: countsSource.length,
+    pending: countsSource.filter(
       (r) =>
         r.status === "pending" &&
         !(r.isOverdue || new Date(r.dueAt) < new Date()),
     ).length,
-    completed: reminders.filter((r) => r.status === "completed").length,
-    overdue: reminders.filter(
+    completed: countsSource.filter((r) => r.status === "completed").length,
+    overdue: countsSource.filter(
       (r) =>
         r.status === "pending" &&
         (r.isOverdue || new Date(r.dueAt) < new Date()),
@@ -871,22 +972,28 @@ export default function Reminders() {
         {/* Card 1: Total Reminders */}
         <button
           type="button"
-          onClick={() => setFilter("all")}
-          className={`text-left rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 cursor-pointer active:scale-95 liquid-glass ${
-            filter === "all"
-              ? "ring-2 ring-amber-400/80 shadow-md bg-white/95"
+          onClick={() => handleFilterClick("all")}
+          disabled={isFilterChanging && filterPendingTarget === "all"}
+          className={`text-left rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer active:scale-95 liquid-glass ${
+            (filterPendingTarget || filter) === "all"
+              ? "ring-2 ring-sky-400/80 shadow-md bg-white/95"
               : "hover:bg-white/85"
           }`}
           title="Click to view all reminders"
         >
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold">
-            <Users className="w-4 h-4 text-sky-500" />
-            <span>Total Reminders</span>
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-sky-500" />
+              <span>Total Reminders</span>
+            </div>
+            {isFilterChanging && filterPendingTarget === "all" && (
+              <Loader2 className="w-3.5 h-3.5 text-sky-500 animate-spin" />
+            )}
           </div>
           <div className="flex items-end justify-between mt-3">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {counts.all.toLocaleString()}
+                <AnimatedNumber value={counts.all} />
               </span>
               <span className="liquid-glass-pill text-[10px] font-bold text-slate-600 px-2 py-0.5">
                 All
@@ -911,22 +1018,28 @@ export default function Reminders() {
         {/* Card 2: Pending Calls */}
         <button
           type="button"
-          onClick={() => setFilter("pending")}
-          className={`text-left rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 cursor-pointer active:scale-95 liquid-glass ${
-            filter === "pending"
+          onClick={() => handleFilterClick("pending")}
+          disabled={isFilterChanging && filterPendingTarget === "pending"}
+          className={`text-left rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer active:scale-95 liquid-glass ${
+            (filterPendingTarget || filter) === "pending"
               ? "ring-2 ring-amber-400/80 shadow-md bg-white/95"
               : "hover:bg-white/85"
           }`}
           title="Click to filter pending calls"
         >
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold">
-            <Clock className="w-4 h-4 text-amber-500" />
-            <span>Pending Calls</span>
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-500" />
+              <span>Pending Calls</span>
+            </div>
+            {isFilterChanging && filterPendingTarget === "pending" && (
+              <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+            )}
           </div>
           <div className="flex items-end justify-between mt-3">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {counts.pending.toLocaleString()}
+                <AnimatedNumber value={counts.pending} />
               </span>
               <span className="liquid-glass-pill text-[10px] font-bold text-amber-800 bg-amber-500/10 px-2 py-0.5">
                 Queue
@@ -951,22 +1064,28 @@ export default function Reminders() {
         {/* Card 3: Overdue Calls */}
         <button
           type="button"
-          onClick={() => setFilter("overdue")}
-          className={`text-left rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 cursor-pointer active:scale-95 liquid-glass ${
-            filter === "overdue"
+          onClick={() => handleFilterClick("overdue")}
+          disabled={isFilterChanging && filterPendingTarget === "overdue"}
+          className={`text-left rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer active:scale-95 liquid-glass ${
+            (filterPendingTarget || filter) === "overdue"
               ? "ring-2 ring-rose-400/80 shadow-md bg-white/95"
               : "hover:bg-white/85"
           }`}
           title="Click to filter overdue calls"
         >
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold">
-            <AlertTriangle className="w-4 h-4 text-rose-500" />
-            <span>Overdue Calls</span>
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-500" />
+              <span>Overdue Calls</span>
+            </div>
+            {isFilterChanging && filterPendingTarget === "overdue" && (
+              <Loader2 className="w-3.5 h-3.5 text-rose-500 animate-spin" />
+            )}
           </div>
           <div className="flex items-end justify-between mt-3">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {counts.overdue.toLocaleString()}
+                <AnimatedNumber value={counts.overdue} />
               </span>
               <span
                 className={`liquid-glass-pill text-[10px] font-bold px-2 py-0.5 ${
@@ -999,22 +1118,28 @@ export default function Reminders() {
         {/* Card 4: Completed Calls */}
         <button
           type="button"
-          onClick={() => setFilter("completed")}
-          className={`text-left rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 cursor-pointer active:scale-95 liquid-glass ${
-            filter === "completed"
+          onClick={() => handleFilterClick("completed")}
+          disabled={isFilterChanging && filterPendingTarget === "completed"}
+          className={`text-left rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 cursor-pointer active:scale-95 liquid-glass ${
+            (filterPendingTarget || filter) === "completed"
               ? "ring-2 ring-emerald-400/80 shadow-md bg-white/95"
               : "hover:bg-white/85"
           }`}
           title="Click to filter completed calls"
         >
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold">
-            <CheckCircle className="w-4 h-4 text-emerald-500" />
-            <span>Completed Calls</span>
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-500" />
+              <span>Completed Calls</span>
+            </div>
+            {isFilterChanging && filterPendingTarget === "completed" && (
+              <Loader2 className="w-3.5 h-3.5 text-emerald-500 animate-spin" />
+            )}
           </div>
           <div className="flex items-end justify-between mt-3">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {counts.completed.toLocaleString()}
+                <AnimatedNumber value={counts.completed} />
               </span>
               <span className="liquid-glass-pill text-[10px] font-bold text-emerald-800 bg-emerald-500/10 px-2 py-0.5">
                 {completionPercentage}%
@@ -1109,10 +1234,34 @@ export default function Reminders() {
       </div>
 
       {/* Content: Table on Desktop / Cards on Mobile */}
-      {loading ? (
-        <div className="p-16 text-center text-xs text-slate-500 space-y-3 liquid-glass rounded-3xl">
-          <RefreshCw className="w-6 h-6 animate-spin text-amber-500 mx-auto" />
-          <p className="font-semibold text-slate-600">Loading follow-up reminders...</p>
+      {loading || isFilterChanging ? (
+        <div className="p-12 sm:p-16 text-center text-xs text-slate-500 space-y-4 liquid-glass rounded-3xl animate-pulse">
+          <div className="w-12 h-12 rounded-2xl liquid-glass-pill flex items-center justify-center mx-auto text-amber-500 shadow-inner">
+            <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-bold text-sm sm:text-base text-slate-800">
+              {isFilterChanging
+                ? `Updating ${
+                    filterPendingTarget === "all"
+                      ? "All Reminders"
+                      : filterPendingTarget === "pending"
+                        ? "Pending Calls"
+                        : filterPendingTarget === "overdue"
+                          ? "Overdue Calls"
+                          : "Completed Calls"
+                  }...`
+                : "Loading follow-up reminders..."}
+            </p>
+            <p className="text-xs text-slate-400 font-medium">
+              Synchronizing customer schedules & due timestamps
+            </p>
+          </div>
+          {/* Skeleton placeholder rows */}
+          <div className="max-w-md mx-auto space-y-2 pt-2">
+            <div className="h-3.5 bg-slate-200/60 rounded-full w-full mx-auto" />
+            <div className="h-3 bg-slate-200/40 rounded-full w-4/5 mx-auto" />
+          </div>
         </div>
       ) : reminders.length === 0 ? (
         <div className="p-12 text-center liquid-glass rounded-3xl space-y-4">
@@ -1141,7 +1290,7 @@ export default function Reminders() {
             </button>
           ) : filter !== "all" ? (
             <button
-              onClick={() => setFilter("all")}
+              onClick={() => handleFilterClick("all")}
               className="liquid-glass-pill inline-flex items-center gap-1.5 px-4 py-2 text-slate-700 hover:text-slate-900 text-xs font-semibold cursor-pointer"
             >
               <Users className="w-3.5 h-3.5" />
@@ -1160,7 +1309,7 @@ export default function Reminders() {
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto liquid-glass rounded-3xl">
+          <div className="hidden md:block overflow-x-auto liquid-glass rounded-3xl smooth-page-enter">
             <table className="w-full text-left border-collapse min-w-155 xl:min-w-220">
               <thead>
                 <tr className="border-b border-slate-200/80 bg-white/40 text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -1379,7 +1528,7 @@ export default function Reminders() {
           </div>
 
           {/* Mobile Cards View */}
-          <div className="md:hidden space-y-3.5">
+          <div className="md:hidden space-y-3.5 smooth-page-enter">
             {paginatedReminders.map((r) => {
               const tz = r.timezone || "Australia/Sydney";
               const initials = (r.name || "C")
@@ -1558,7 +1707,7 @@ export default function Reminders() {
                   leads
                 </span>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2 pl-2 sm:border-l sm:border-slate-300/40">
                   <span className="text-slate-500 hidden sm:inline">
                     Per page:
                   </span>
@@ -1568,7 +1717,7 @@ export default function Reminders() {
                       setItemsPerPage(Number(e.target.value));
                       setCurrentPage(1);
                     }}
-                    className="liquid-glass-input text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none cursor-pointer font-semibold"
+                    className="liquid-glass-input text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none cursor-pointer font-semibold bg-white/70 shadow-2xs border border-white/60"
                   >
                     <option value={10}>10</option>
                     <option value={20}>20</option>
@@ -1577,104 +1726,105 @@ export default function Reminders() {
                 </div>
               </div>
 
-              {totalPages > 1 && (
-                <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCurrentPage(1);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      disabled={currentPage === 1}
-                      className="p-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
-                      title="First page"
-                    >
-                      <ChevronsLeft className="w-4 h-4" />
-                    </button>
+              {/* Complete Pagination Controls (Always visible for perfect UI balance) */}
+              <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentPage(1);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:text-slate-700 transition cursor-pointer active:scale-95"
+                    title="First page"
+                  >
+                    <ChevronsLeft className="w-4 h-4" />
+                  </button>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCurrentPage((p) => Math.max(1, p - 1));
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      disabled={currentPage === 1}
-                      className="px-3 py-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      <span className="hidden sm:inline">Prev</span>
-                    </button>
-                  </div>
-
-                  {/* Compact Mobile Page Indicator */}
-                  <span className="sm:hidden text-xs font-bold text-slate-800 px-2 font-mono">
-                    {currentPage} / {totalPages}
-                  </span>
-
-                  {/* Desktop Page Numbers */}
-                  <div className="hidden sm:flex items-center gap-1">
-                    {getPageNumbers().map((p, idx) => {
-                      if (p === "...") {
-                        return (
-                          <span
-                            key={`ellipsis-${idx}`}
-                            className="px-2 py-1 text-slate-400 select-none font-bold"
-                          >
-                            …
-                          </span>
-                        );
-                      }
-                      const isCurrent = p === currentPage;
-                      return (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => {
-                            setCurrentPage(p);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
-                          className={`min-w-8 h-8 px-2 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 ${
-                            isCurrent
-                              ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-1 ring-amber-300/40"
-                              : "liquid-glass-pill text-slate-700 hover:text-slate-900"
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCurrentPage((p) => Math.min(totalPages, p + 1));
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
-                    >
-                      <span className="hidden sm:inline">Next</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCurrentPage(totalPages);
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      disabled={currentPage === totalPages}
-                      className="p-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
-                      title="Last page"
-                    >
-                      <ChevronsRight className="w-4 h-4" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentPage((p) => Math.max(1, p - 1));
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:text-slate-700 transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Prev</span>
+                  </button>
                 </div>
-              )}
+
+                {/* Compact Mobile Page Indicator */}
+                <span className="sm:hidden text-xs font-bold text-slate-800 px-2 font-mono">
+                  {currentPage} / {totalPages}
+                </span>
+
+                {/* Desktop Page Numbers */}
+                <div className="hidden sm:flex items-center gap-1">
+                  {getPageNumbers().map((p, idx) => {
+                    if (p === "...") {
+                      return (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="px-2 py-1 text-slate-400 select-none font-bold"
+                        >
+                          …
+                        </span>
+                      );
+                    }
+                    const isCurrent = p === currentPage;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          setCurrentPage(p);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className={`min-w-8 h-8 px-2.5 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 ${
+                          isCurrent
+                            ? "bg-amber-500 text-white shadow-md shadow-amber-500/25 ring-1 ring-amber-300/40"
+                            : "liquid-glass-pill text-slate-700 hover:text-slate-900"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentPage((p) => Math.min(totalPages, p + 1));
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:text-slate-700 transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
+                    title="Next page"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentPage(totalPages);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-xl liquid-glass-pill text-slate-700 hover:text-slate-900 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:text-slate-700 transition cursor-pointer active:scale-95"
+                    title="Last page"
+                  >
+                    <ChevronsRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </>
@@ -1688,6 +1838,7 @@ export default function Reminders() {
           onClose={() => setEditingReminder(null)}
           onSaved={() => {
             fetchReminders();
+            fetchAllUserReminders();
             toast.success(
               "Updated ✨",
               "Reminder details updated successfully.",

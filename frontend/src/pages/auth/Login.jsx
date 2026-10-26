@@ -116,7 +116,7 @@ export default function Login() {
       {/* ======================================================== */}
       {/* Compact Liquid Glass Card (Refined Best View on Mobile)  */}
       {/* ======================================================== */}
-      <div className="relative w-full max-w-[340px] sm:max-w-[380px] liquid-glass-compact p-5 sm:p-7 rounded-[26px] sm:rounded-3xl shadow-xl transition-all duration-300 z-10 animate-in fade-in zoom-in-95 duration-400">
+      <div className="relative w-full max-w-85 sm:max-w-95 liquid-glass-compact p-5 sm:p-7 rounded-[26px] sm:rounded-3xl shadow-xl transition-all z-10 animate-in fade-in zoom-in-95 duration-400">
         {/* Header with Official RemindIQ Logo & Underlined Login title */}
         <div className="text-center space-y-1 mb-4 sm:mb-5">
           <div className="flex justify-center mb-1">
@@ -124,7 +124,7 @@ export default function Login() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight liquid-heading relative inline-block">
             Login
-            <span className="block w-10 h-0.5 bg-gradient-to-r from-amber-500 to-amber-400 rounded-full mx-auto mt-1" />
+            <span className="block w-10 h-0.5 bg-linear-to-r from-amber-500 to-amber-400 rounded-full mx-auto mt-1" />
           </h1>
           <p className="text-[11px] text-slate-500 font-medium">
             Sign in to access your follow-ups & calls

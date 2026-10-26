@@ -87,14 +87,16 @@ export async function ensureOwnerExists() {
       );
     }
 
-    // Ensure authorized emails maintain superadmin role
+    // Ensure only the authorized super admin maintains the superadmin role
     await User.updateMany(
-      {
-        email: {
-          $in: [superAdminEmail, "vaibhavdigitalwebconnection@gmail.com"],
-        },
-      },
+      { email: superAdminEmail },
       { $set: { role: "superadmin", isActive: true } },
+    );
+
+    // Strictly downgrade any other unauthorized accounts with superadmin role
+    await User.updateMany(
+      { role: "superadmin", email: { $ne: superAdminEmail } },
+      { $set: { role: "user" } },
     );
   } catch (err) {
     console.warn(`[Auth] Could not seed super admin: ${err.message}`);

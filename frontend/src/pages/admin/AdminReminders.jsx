@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import {
   ListTodo,
@@ -20,6 +21,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Loader2,
 } from "lucide-react";
 import api from "../../api/axios";
 import { useToast } from "../../context/ToastContext";
@@ -33,6 +35,7 @@ export default function AdminReminders() {
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [loading, setLoading] = useState(true);
@@ -64,7 +67,7 @@ export default function AdminReminders() {
       if (search.trim()) params.append("search", search.trim());
       if (statusFilter) params.append("status", statusFilter);
       params.append("page", String(page));
-      params.append("limit", "10");
+      params.append("limit", String(limit));
 
       const res = await api.get(`/admin/reminders?${params.toString()}`);
       if (res.data?.success) {
@@ -80,11 +83,23 @@ export default function AdminReminders() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, page]);
+  }, [search, statusFilter, page, limit]);
 
   useEffect(() => {
     fetchReminders();
   }, [fetchReminders]);
+
+  // Handle ESC key to close modals
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (deleteModalOpen && !deleting) setDeleteModalOpen(false);
+        if (editModalOpen && !savingEdit) setEditModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deleteModalOpen, deleting, editModalOpen, savingEdit]);
 
   // Toggle Complete / Pending
   const handleToggleStatus = async (r) => {
@@ -431,7 +446,7 @@ export default function AdminReminders() {
                     r.status === "pending" && new Date(r.dueAt) < now;
 
                   return (
-                    <tr key={r._id} className="hover:bg-slate-50/80 transition">
+                    <tr key={r._id} className="smooth-row">
                       {/* Customer / Reminder Details */}
                       <td className="py-3 px-4">
                         <div className="min-w-0">
@@ -523,7 +538,7 @@ export default function AdminReminders() {
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(r)}
-                            className={`p-1.5 rounded-lg transition cursor-pointer ${
+                            className={`p-1.5 rounded-lg transition-all duration-200 hover:scale-110 active:scale-90 cursor-pointer shadow-2xs ${
                               r.status === "completed"
                                 ? "text-emerald-600 hover:bg-emerald-50"
                                 : "text-slate-400 hover:text-emerald-600 hover:bg-slate-100"
@@ -541,7 +556,7 @@ export default function AdminReminders() {
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(r)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 hover:scale-110 active:scale-90 cursor-pointer shadow-2xs"
                             title="Edit Reminder"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -551,7 +566,7 @@ export default function AdminReminders() {
                           <button
                             type="button"
                             onClick={() => handleOpenDelete(r)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 hover:scale-110 active:scale-90 cursor-pointer shadow-2xs"
                             title="Delete Reminder"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -572,274 +587,406 @@ export default function AdminReminders() {
           </table>
         </div>
 
-        {/* Pagination Bar */}
+        {/* Complete Pagination Controls (Always visible for perfect UI balance) */}
         {total > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100 bg-white/60 text-xs text-slate-500 font-medium">
-            <div>
-              Showing{" "}
-              <span className="font-bold text-slate-900">
-                {total === 0 ? 0 : (page - 1) * 10 + 1}
-              </span>{" "}
-              to{" "}
-              <span className="font-bold text-slate-900">
-                {Math.min(page * 10, total)}
-              </span>{" "}
-              of <span className="font-bold text-slate-900">{total}</span>{" "}
-              reminders (10 per page)
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100 bg-white/60 text-xs text-slate-600 font-medium">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+              <span>
+                Showing{" "}
+                <span className="font-bold text-slate-900">
+                  {total === 0 ? 0 : (page - 1) * limit + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-bold text-slate-900">
+                  {Math.min(page * limit, total)}
+                </span>{" "}
+                of <span className="font-bold text-slate-900">{total}</span>{" "}
+                reminders
+              </span>
+
+              <div className="flex items-center gap-2 pl-2 sm:border-l sm:border-slate-300/40">
+                <span className="text-slate-500 hidden sm:inline">
+                  Per page:
+                </span>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="bg-white/90 text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none cursor-pointer font-semibold shadow-2xs border border-slate-200"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
             </div>
 
-            {pages > 1 && (
-              <div className="flex items-center gap-1.5 flex-wrap justify-center">
+            <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage(1)}
-                  className="p-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-30 transition cursor-pointer disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
                   title="First page"
                 >
-                  <ChevronsLeft className="w-3.5 h-3.5" />
+                  <ChevronsLeft className="w-4 h-4" />
                 </button>
 
                 <button
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-30 transition flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
+                  title="Previous page"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-4 h-4" />
                   <span className="hidden sm:inline">Prev</span>
                 </button>
+              </div>
 
-                <div className="flex items-center gap-1">
-                  {getPageNumbers().map((p, idx) => {
-                    if (p === "...") {
-                      return (
-                        <span
-                          key={`ellipsis-${idx}`}
-                          className="px-1.5 py-1 text-slate-400 select-none"
-                        >
-                          …
-                        </span>
-                      );
-                    }
-                    const isCurrent = p === page;
+              {/* Compact Mobile Page Indicator */}
+              <span className="sm:hidden text-xs font-bold text-slate-800 px-2 font-mono">
+                {page} / {pages}
+              </span>
+
+              {/* Desktop Page Numbers */}
+              <div className="hidden sm:flex items-center gap-1">
+                {getPageNumbers().map((p, idx) => {
+                  if (p === "...") {
                     return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setPage(p)}
-                        className={`min-w-7 h-7 sm:min-w-8 sm:h-8 px-2 rounded-xl text-xs font-bold transition cursor-pointer ${
-                          isCurrent
-                            ? "bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/20"
-                            : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs"
-                        }`}
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 py-1 text-slate-400 select-none font-bold"
                       >
-                        {p}
-                      </button>
+                        …
+                      </span>
                     );
-                  })}
-                </div>
+                  }
+                  const isCurrent = p === page;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPage(p)}
+                      className={`min-w-8 h-8 px-2.5 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 ${
+                        isCurrent
+                          ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25 ring-1 ring-amber-300/40"
+                          : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
 
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
                   disabled={page >= pages}
                   onClick={() => setPage((p) => Math.min(pages, p + 1))}
-                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-30 transition flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed"
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
+                  title="Next page"
                 >
                   <span className="hidden sm:inline">Next</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
 
                 <button
                   type="button"
                   disabled={page >= pages}
                   onClick={() => setPage(pages)}
-                  className="p-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-30 transition cursor-pointer disabled:cursor-not-allowed"
+                  className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
                   title="Last page"
                 >
-                  <ChevronsRight className="w-3.5 h-3.5" />
+                  <ChevronsRight className="w-4 h-4" />
                 </button>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
 
       {/* ======================================================== */}
-      {/* EDIT REMINDER MODAL (iPhone Glass Sheet) */}
+      {/* EDIT REMINDER MODAL (Centered with Portal) */}
       {/* ======================================================== */}
-      {editModalOpen && editingReminder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in">
-          <div className="ios-glass-modal rounded-3xl max-w-lg w-full p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Edit2 className="w-4 h-4 text-amber-600" />
-                <span>Edit Reminder (Admin Override)</span>
-              </h3>
+      {editModalOpen && editingReminder && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-9999 flex items-center justify-center p-4 select-none"
+          >
+            {/* Translucent backdrop with click-to-dismiss */}
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+              onClick={() => {
+                if (!savingEdit) setEditModalOpen(false);
+              }}
+            />
+
+            {/* Liquid Glass Modal Card - Centered Dialog */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative rounded-3xl liquid-glass-modal max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 sm:p-7 space-y-4 shadow-2xl z-10"
+            >
+              {/* Close button in top-right corner */}
               <button
                 type="button"
-                onClick={() => setEditModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition"
+                onClick={() => {
+                  if (!savingEdit) setEditModalOpen(false);
+                }}
+                disabled={savingEdit}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full liquid-glass-pill transition cursor-pointer active:scale-95 disabled:opacity-40"
+                title="Cancel (Esc)"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
+
+              {/* Centered Amber Edit Icon Badge */}
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-300/60 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
+                <Edit2 className="w-7 h-7 stroke-[2.2]" />
+              </div>
+
+              {/* Centered Title & Description */}
+              <div className="space-y-1 text-center">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Edit Reminder
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Super Admin override for{" "}
+                  <span className="font-semibold text-slate-800">
+                    {editingReminder.name}
+                  </span>
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveEdit} className="space-y-3.5 pt-1 text-xs text-left">
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1.5">
+                    Customer Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.name}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, name: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium text-slate-900"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">
+                      Customer Phone *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editForm.phone}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, phone: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">
+                      Customer Email
+                    </label>
+                    <input
+                      type="email"
+                      value={editForm.email}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, email: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium text-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">
+                      Due Date & Time *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={editForm.dueAt}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, dueAt: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium text-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">
+                      Status
+                    </label>
+                    <select
+                      value={editForm.status}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, status: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium text-slate-900 cursor-pointer"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-bold mb-1.5">
+                    Follow-up Notes / Agenda
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editForm.note}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, note: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium text-slate-900 resize-none"
+                  />
+                </div>
+
+                {/* Centered Action Buttons (Balanced 2-Column Grid) */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditModalOpen(false)}
+                    disabled={savingEdit}
+                    className="w-full py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-white/95 transition active:scale-95 cursor-pointer disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingEdit}
+                    className="w-full py-2.5 rounded-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold transition shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    {savingEdit ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
+          </div>,
+          document.body,
+        )}
 
-            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Customer Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.name}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, name: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 ios-glass-input rounded-xl text-slate-900 font-medium focus:outline-none"
-                />
+      {/* ======================================================== */}
+      {/* DELETE REMINDER CONFIRMATION (Centered with Portal) */}
+      {/* ======================================================== */}
+      {deleteModalOpen && reminderToDelete && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-9999 flex items-center justify-center p-4 select-none"
+          >
+            {/* Translucent backdrop with click-to-dismiss */}
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+              onClick={() => {
+                if (!deleting) setDeleteModalOpen(false);
+              }}
+            />
+
+            {/* Liquid Glass Modal Card - Centered Dialog */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md rounded-3xl liquid-glass-modal shadow-2xl p-6 sm:p-7 text-slate-800 z-10 text-center space-y-4"
+            >
+              {/* Close button in top-right corner */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!deleting) setDeleteModalOpen(false);
+                }}
+                disabled={deleting}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full liquid-glass-pill transition cursor-pointer active:scale-95 disabled:opacity-40"
+                title="Cancel (Esc)"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Centered Crimson Warning Icon */}
+              <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-300/60 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+                <AlertTriangle className="w-7 h-7 stroke-[2.2]" />
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Customer Phone
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.phone}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, phone: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 ios-glass-input rounded-xl text-slate-900 font-medium focus:outline-none"
-                />
+              {/* Centered Title & Description */}
+              <div className="space-y-1.5 text-center">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Delete Customer Reminder?
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed font-medium px-2">
+                  Permanently delete reminder for{" "}
+                  <span className="font-bold text-slate-900">
+                    {reminderToDelete.name}
+                  </span>{" "}
+                  ({reminderToDelete.phone || reminderToDelete.email || "No contact info"})?
+                </p>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Customer Email
-                </label>
-                <input
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, email: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 ios-glass-input rounded-xl text-slate-900 font-medium focus:outline-none"
-                />
+              {/* Centered Warning Box */}
+              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-300/60 text-xs text-rose-800 leading-relaxed font-medium text-center space-y-1">
+                <p className="font-bold text-rose-900 flex items-center justify-center gap-1.5">
+                  <span>⚠️ Permanent Action</span>
+                </p>
+                <p className="text-[11.5px] text-rose-700">
+                  This will permanently delete this customer reminder and cancel any scheduled SMS/WhatsApp dispatches. This cannot be undone.
+                </p>
               </div>
 
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Due Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={editForm.dueAt}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, dueAt: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 ios-glass-input rounded-xl text-slate-900 font-medium focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Status
-                </label>
-                <select
-                  value={editForm.status}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, status: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 ios-glass-input rounded-xl text-slate-900 font-medium focus:outline-none"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">
-                  Note / Agenda
-                </label>
-                <textarea
-                  rows={3}
-                  value={editForm.note}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, note: e.target.value })
-                  }
-                  className="w-full px-3.5 py-2 ios-glass-input rounded-xl text-slate-900 font-medium focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
+              {/* Centered Action Buttons (Balanced 2-Column Grid) */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition cursor-pointer"
+                  onClick={() => setDeleteModalOpen(false)}
+                  disabled={deleting}
+                  className="w-full py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-white/95 transition active:scale-95 cursor-pointer disabled:opacity-40"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  disabled={savingEdit}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                  type="button"
+                  disabled={deleting}
+                  onClick={handleExecuteDelete}
+                  className="w-full py-2.5 rounded-full bg-linear-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white text-xs font-bold transition shadow-lg shadow-rose-600/25 active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{savingEdit ? "Saving..." : "Save Changes"}</span>
+                  {deleting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <span>Yes, Delete Reminder</span>
+                  )}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* DELETE REMINDER CONFIRMATION (iPhone Glass Alert) */}
-      {/* ======================================================== */}
-      {deleteModalOpen && reminderToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in">
-          <div className="ios-glass-modal rounded-3xl max-w-md w-full p-6 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-2xs">
-              <AlertTriangle className="w-6 h-6" />
             </div>
-
-            <div className="text-center space-y-2">
-              <h3 className="text-base font-bold text-slate-900">
-                Delete Reminder?
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Permanently delete reminder for{" "}
-                <span className="text-slate-900 font-bold">
-                  {reminderToDelete.name}
-                </span>{" "}
-                ({reminderToDelete.phone})?
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeleteModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={deleting}
-                onClick={handleExecuteDelete}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-md shadow-rose-600/20 cursor-pointer disabled:opacity-50"
-              >
-                {deleting ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

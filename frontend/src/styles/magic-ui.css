@@ -1,0 +1,137 @@
+/* ========================================================
+   RemindIQ - Magic UI & Visual Token System
+   ======================================================== */
+
+@layer utilities {
+  /* Ambient Grid & Radial Gradients */
+  .bg-grid-pattern {
+    background-size: 36px 36px;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  }
+
+  .bg-radial-ambient {
+    background: radial-gradient(
+      circle at 50% 0%,
+      rgba(99, 102, 241, 0.12) 0%,
+      rgba(15, 23, 42, 0) 70%
+    );
+  }
+
+  /* Dark Frosted Glass Components */
+  .glass-panel {
+    background: rgba(13, 19, 35, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-card {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(51, 65, 85, 0.45);
+    box-shadow:
+      0 10px 30px -10px rgba(0, 0, 0, 0.5),
+      0 0 1px 1px rgba(255, 255, 255, 0.05) inset;
+  }
+
+  .glass-card-interactive {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(51, 65, 85, 0.45);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .glass-card-interactive:hover {
+    border-color: rgba(99, 102, 241, 0.45);
+    background: rgba(20, 29, 53, 0.8);
+    transform: translateY(-1px);
+    box-shadow:
+      0 12px 35px -10px rgba(99, 102, 241, 0.15),
+      0 0 1px 1px rgba(99, 102, 241, 0.2) inset;
+  }
+
+  /* Animated Shine Border Token from Magic UI */
+  .shine-border {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shine-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(99, 102, 241, 0.4) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: border-shine 6s infinite linear;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Subtle Glowing Shimmer Button */
+  .btn-shimmer {
+    background-size: 200% auto;
+    background-image: linear-gradient(
+      110deg,
+      #4f46e5 0%,
+      #6366f1 25%,
+      #818cf8 50%,
+      #6366f1 75%,
+      #4f46e5 100%
+    );
+    animation: shimmer-swipe 4s infinite linear;
+  }
+
+  /* Magic UI Border Beam & Shimmer Slide */
+  .animate-border-beam {
+    animation: border-beam var(--duration, 8s) infinite linear;
+  }
+
+  .animate-shimmer-slide {
+    animation: shimmer-slide 2s infinite ease-in-out;
+  }
+}
+
+@keyframes border-shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes shimmer-swipe {
+  to {
+    background-position: 200% center;
+  }
+}
+
+@keyframes border-beam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes shimmer-slide {
+  to {
+    transform: translateX(100%);
+  }
+}

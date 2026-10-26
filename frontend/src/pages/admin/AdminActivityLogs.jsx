@@ -12,6 +12,10 @@ import {
   Trash2,
   Calendar,
   Globe,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import api from "../../api/axios";
 import { useToast } from "../../context/ToastContext";
@@ -48,6 +52,7 @@ export default function AdminActivityLogs() {
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [actionFilter, setActionFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -59,7 +64,7 @@ export default function AdminActivityLogs() {
       const params = new URLSearchParams();
       if (actionFilter) params.append("action", actionFilter);
       params.append("page", String(page));
-      params.append("limit", "50");
+      params.append("limit", String(limit));
 
       const res = await api.get(`/admin/activity?${params.toString()}`);
       if (res.data?.success) {
@@ -75,11 +80,40 @@ export default function AdminActivityLogs() {
     } finally {
       setLoading(false);
     }
-  }, [actionFilter, page]);
+  }, [actionFilter, page, limit]);
 
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
+
+  const getPageNumbers = () => {
+    if (pages <= 7) {
+      return Array.from({ length: pages }, (_, i) => i + 1);
+    }
+    if (page <= 4) {
+      return [1, 2, 3, 4, 5, "...", pages];
+    }
+    if (page >= pages - 3) {
+      return [
+        1,
+        "...",
+        pages - 4,
+        pages - 3,
+        pages - 2,
+        pages - 1,
+        pages,
+      ];
+    }
+    return [
+      1,
+      "...",
+      page - 1,
+      page,
+      page + 1,
+      "...",
+      pages,
+    ];
+  };
 
   // Action Badge styling helper
   const getActionBadge = (action) => {
@@ -197,7 +231,7 @@ export default function AdminActivityLogs() {
               const Icon = badge.icon;
 
               return (
-                <div key={log._id} className="p-4 space-y-2.5 hover:bg-slate-50/50 transition">
+                <div key={log._id} className="p-4 space-y-2.5 smooth-row">
                   <div className="flex items-center justify-between gap-2">
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${badge.style}`}
@@ -273,7 +307,7 @@ export default function AdminActivityLogs() {
                   return (
                     <tr
                       key={log._id}
-                      className="hover:bg-slate-50/80 transition"
+                      className="smooth-row"
                     >
                       {/* Action Badge */}
                       <td className="py-3 px-4">
@@ -352,31 +386,124 @@ export default function AdminActivityLogs() {
           </table>
         </div>
 
-        {/* Pagination Bar */}
-        {pages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-slate-100 bg-white/60 text-xs text-slate-500 font-medium">
-            <span>
-              Page <span className="font-bold text-slate-900">{page}</span> of{" "}
-              <span className="font-bold text-slate-900">{pages}</span> ({total}{" "}
-              logs)
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 disabled:opacity-40 transition cursor-pointer shadow-2xs disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                disabled={page >= pages}
-                onClick={() => setPage((p) => Math.min(pages, p + 1))}
-                className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 disabled:opacity-40 transition cursor-pointer shadow-2xs disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+        {/* Complete Pagination Controls (Always visible for perfect UI balance) */}
+        {total > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100 bg-white/60 text-xs text-slate-600 font-medium">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+              <span>
+                Showing{" "}
+                <span className="font-bold text-slate-900">
+                  {total === 0 ? 0 : (page - 1) * limit + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-bold text-slate-900">
+                  {Math.min(page * limit, total)}
+                </span>{" "}
+                of <span className="font-bold text-slate-900">{total}</span>{" "}
+                logs
+              </span>
+
+              <div className="flex items-center gap-2 pl-2 sm:border-l sm:border-slate-300/40">
+                <span className="text-slate-500 hidden sm:inline">
+                  Per page:
+                </span>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="bg-white/90 text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none cursor-pointer font-semibold shadow-2xs border border-slate-200"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage(1)}
+                  className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
+                  title="First page"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Prev</span>
+                </button>
+              </div>
+
+              {/* Compact Mobile Page Indicator */}
+              <span className="sm:hidden text-xs font-bold text-slate-800 px-2 font-mono">
+                {page} / {pages}
+              </span>
+
+              {/* Desktop Page Numbers */}
+              <div className="hidden sm:flex items-center gap-1">
+                {getPageNumbers().map((p, idx) => {
+                  if (p === "...") {
+                    return (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 py-1 text-slate-400 select-none font-bold"
+                      >
+                        …
+                      </span>
+                    );
+                  }
+                  const isCurrent = p === page;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPage(p)}
+                      className={`min-w-8 h-8 px-2.5 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 ${
+                        isCurrent
+                          ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25 ring-1 ring-amber-300/40"
+                          : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={page >= pages}
+                  onClick={() => setPage((p) => Math.min(pages, p + 1))}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
+                  title="Next page"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  disabled={page >= pages}
+                  onClick={() => setPage(pages)}
+                  className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
+                  title="Last page"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}

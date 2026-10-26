@@ -62,10 +62,10 @@ export default function ResetPassword() {
     <div className="admin-apple-theme min-h-screen text-slate-800 flex items-center justify-center p-4 relative overflow-hidden selection:bg-amber-100 selection:text-amber-900">
       {/* Animated Liquid Glass Background Atmosphere & Slabs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 select-none">
-        <div className="absolute -top-12 -left-16 w-[480px] h-36 rounded-full ambient-liquid-slab transform -rotate-12 opacity-85 animate-float-slow" />
-        <div className="absolute top-1/4 -right-24 w-[540px] h-40 rounded-full ambient-liquid-slab transform rotate-8 opacity-80 animate-float-reverse" />
-        <div className="absolute -bottom-16 -left-12 w-[520px] h-44 rounded-full ambient-liquid-slab transform rotate-6 opacity-85 animate-float-slow" />
-        <div className="absolute -bottom-20 -right-20 w-[580px] h-48 rounded-full ambient-liquid-slab transform -rotate-6 opacity-80 animate-float-reverse" />
+        <div className="absolute -top-12 -left-16 w-120 h-36 rounded-full ambient-liquid-slab transform -rotate-12 opacity-85 animate-float-slow" />
+        <div className="absolute top-1/4 -right-24 w-135 h-40 rounded-full ambient-liquid-slab transform rotate-8 opacity-80 animate-float-reverse" />
+        <div className="absolute -bottom-16 -left-12 w-130 h-44 rounded-full ambient-liquid-slab transform rotate-6 opacity-85 animate-float-slow" />
+        <div className="absolute -bottom-20 -right-20 w-145 h-48 rounded-full ambient-liquid-slab transform -rotate-6 opacity-80 animate-float-reverse" />
 
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-200/35 rounded-full blur-3xl opacity-60 animate-pulse-subtle" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-200/35 rounded-full blur-3xl opacity-60 animate-pulse-subtle" />
@@ -77,7 +77,7 @@ export default function ResetPassword() {
             <RemindIQLogo size="lg" />
           </div>
           <div className="liquid-glass-pill w-12 h-12 rounded-2xl p-2 flex items-center justify-center mx-auto shadow-xs animate-float-gentle">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-amber-500/30">
+            <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-amber-500/30">
               <KeyRound className="w-4 h-4" />
             </div>
           </div>

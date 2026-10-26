@@ -297,8 +297,9 @@ router.patch('/users/:id/block', async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    if (user.role === 'superadmin') {
-      return res.status(403).json({ success: false, message: 'Cannot block the super admin account' });
+    const superAdminEmail = (process.env.SUPERADMIN_EMAIL || 'vaibhavdigitalwebconnection@gmail.com').toLowerCase();
+    if (user.email === superAdminEmail || user._id.toString() === req.user.id) {
+      return res.status(403).json({ success: false, message: 'Cannot block the primary super admin account' });
     }
 
     user.isActive = !user.isActive;
@@ -324,8 +325,9 @@ router.delete('/users/:id', async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    if (user.role === 'superadmin') {
-      return res.status(403).json({ success: false, message: 'Cannot delete the super admin account' });
+    const superAdminEmail = (process.env.SUPERADMIN_EMAIL || 'vaibhavdigitalwebconnection@gmail.com').toLowerCase();
+    if (user.email === superAdminEmail || user._id.toString() === req.user.id) {
+      return res.status(403).json({ success: false, message: 'Cannot delete the primary super admin account' });
     }
 
     // Delete all user's reminders

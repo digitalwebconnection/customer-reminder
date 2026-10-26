@@ -44,7 +44,7 @@ export default function LogoutConfirmationModal() {
       {/* Liquid Glass Modal Card with ambient 3D Liquid Spheres - Compact & Streamlined */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[300px] sm:max-w-[320px] rounded-[24px] liquid-glass-modal p-4 sm:p-5 text-slate-800 z-10 animate-in zoom-in-95 duration-200 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.2),0_10px_25px_-5px_rgba(100,116,139,0.15)] border border-white/95"
+        className="relative w-full max-w-75 sm:max-w-[320px] rounded-3xl liquid-glass-modal p-4 sm:p-5 text-slate-800 z-10 animate-in zoom-in-95 duration-200 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.2),0_10px_25px_-5px_rgba(100,116,139,0.15)] border border-white/95"
       >
         {/* Decorative 3D Liquid Glass Spheres */}
         <div 
@@ -70,7 +70,7 @@ export default function LogoutConfirmationModal() {
 
         {/* Header Icon + Concise Title */}
         <div className="relative z-10 flex flex-col items-center text-center gap-2 pt-1">
-          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-gradient-to-br from-rose-500/15 via-rose-500/10 to-rose-600/5 border border-rose-400/50 flex items-center justify-center text-rose-600 shrink-0 shadow-xs animate-float-gentle">
+          <div className="w-10 h-10 rounded-xl liquid-glass-pill bg-linear-to-br from-rose-500/15 via-rose-500/10 to-rose-600/5 border border-rose-400/50 flex items-center justify-center text-rose-600 shrink-0 shadow-xs animate-float-gentle">
             <LogOut className="w-4.5 h-4.5 stroke-[2.2]" />
           </div>
 
@@ -128,7 +128,7 @@ export default function LogoutConfirmationModal() {
             type="button"
             onClick={confirmLogout}
             disabled={isLoggingOut}
-            className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-rose-600 to-rose-700 hover:from-rose-600 hover:to-rose-800 text-white text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-rose-500/25 hover:shadow-lg hover:shadow-rose-500/35 cursor-pointer active:scale-95 disabled:opacity-50 border border-white/20"
+            className="flex-1 px-3 py-2 rounded-xl bg-linear-to-r from-rose-500 via-rose-600 to-rose-700 hover:from-rose-600 hover:to-rose-800 text-white text-[11px] font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-rose-500/25 hover:shadow-lg hover:shadow-rose-500/35 cursor-pointer active:scale-95 disabled:opacity-50 border border-white/20"
           >
             {isLoggingOut ? (
               <>

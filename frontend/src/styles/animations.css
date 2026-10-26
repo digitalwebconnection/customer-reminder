@@ -1,0 +1,198 @@
+/* ========================================================
+   RemindIQ - Motion, Keyframes & Animation Tokens
+   ======================================================== */
+
+/* GPU Accelerated Floating Fluid Keyframes */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(25px, -18px, 0) rotate(4deg);
+  }
+  66% {
+    transform: translate3d(-18px, 15px, 0) rotate(-3deg);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(-22px, 20px, 0) rotate(-4deg);
+  }
+  66% {
+    transform: translate3d(16px, -14px, 0) rotate(3deg);
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0) scale(1.02);
+  }
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    left: -150%;
+  }
+  40%, 100% {
+    left: 150%;
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.65;
+    transform: scale3d(1, 1, 1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale3d(1.04, 1.04, 1);
+  }
+}
+
+@keyframes modal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.93) translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes backdrop-fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes slide-in-step {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes smooth-page-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation Utility Classes */
+.animate-float-slow {
+  animation: float-slow 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+.animate-modal-pop {
+  animation: modal-pop 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-backdrop-fade {
+  animation: backdrop-fade 0.25s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.animate-slide-in-step {
+  animation: slide-in-step 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Physics-based Smooth Motion Tokens */
+.smooth-transition {
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.smooth-row {
+  transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.smooth-row:hover {
+  background-color: rgba(254, 243, 199, 0.32);
+}
+
+.smooth-interactive-card {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease,
+              background-color 0.2s ease;
+  will-change: transform, box-shadow;
+}
+
+.smooth-interactive-card:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 18px 40px -10px rgba(100, 116, 139, 0.16), 0 0 0 1px rgba(245, 158, 11, 0.25);
+}
+
+.smooth-interactive-card:active {
+  transform: translateY(0.5px) scale(0.985);
+}
+
+.smooth-page-enter {
+  animation: smooth-page-fade 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Reduced Motion Accessibility Overrides */
+@media (prefers-reduced-motion: reduce) {
+  .smooth-page-enter,
+  .animate-float-slow,
+  .animate-float-reverse,
+  .animate-float-gentle,
+  .animate-pulse-subtle,
+  .animate-modal-pop,
+  .animate-backdrop-fade,
+  .animate-pulse-glow,
+  .animate-slide-in-step {
+    animation: none !important;
+    transition: none !important;
+  }
+}

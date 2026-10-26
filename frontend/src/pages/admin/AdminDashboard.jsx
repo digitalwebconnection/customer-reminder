@@ -107,16 +107,16 @@ export default function AdminDashboard() {
           <button
             type="button"
             onClick={fetchDashboardStats}
-            className="inline-flex items-center gap-1.5 px-4 py-2 liquid-glass-pill text-xs font-semibold text-slate-700 hover:text-slate-900 transition active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 liquid-glass-pill text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+              className={`w-3.5 h-3.5 transition-transform duration-500 ${loading ? "animate-spin" : ""}`}
             />
             <span>Refresh</span>
           </button>
           <Link
             to="/admin/users"
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold bg-amber-500 hover:bg-amber-400 text-white transition shadow-lg shadow-amber-500/25 active:scale-95 border border-amber-300/40"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold bg-amber-500 hover:bg-amber-400 text-white transition-all duration-200 hover:scale-105 shadow-lg shadow-amber-500/25 active:scale-95 border border-amber-300/40"
           >
             <span>Manage Users</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 4 Primary Metric Cards */}
+      {/* 4 Primary Metric Cards with Smooth Hover Physics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((card, idx) => {
           const Icon = card.icon;
@@ -132,13 +132,13 @@ export default function AdminDashboard() {
             <Link
               key={idx}
               to={card.link}
-              className="p-4 sm:p-5 rounded-2xl ios-glass hover:bg-white/95 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 flex flex-col justify-between group"
+              className="p-4 sm:p-5 rounded-2xl ios-glass smooth-interactive-card flex flex-col justify-between group cursor-pointer"
             >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold text-slate-500">
                   {card.label}
                 </span>
-                <div className={`p-2 rounded-xl bg-gradient-to-br ${card.color} border shadow-2xs`}>
+                <div className={`p-2 rounded-xl bg-linear-to-br ${card.color} border shadow-2xs transition-transform duration-200 group-hover:scale-110`}>
                   <Icon className="w-4 h-4" />
                 </div>
               </div>
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
       {/* Two Column Grid: Recent Signups & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Signups (2 Cols) */}
-        <div className="lg:col-span-2 ios-glass rounded-3xl p-6">
+        <div className="lg:col-span-2 ios-glass rounded-3xl p-6 transition-shadow duration-300">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-amber-600" />
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
             </div>
             <Link
               to="/admin/users"
-              className="text-xs text-amber-600 hover:text-amber-700 font-semibold transition"
+              className="text-xs text-amber-600 hover:text-amber-700 font-semibold transition-colors duration-200"
             >
               View all users &rarr;
             </Link>
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody className="divide-y divide-slate-100/80">
                   {stats.recentSignups.map((u) => (
-                    <tr key={u._id} className="hover:bg-slate-50/80 transition">
+                    <tr key={u._id} className="smooth-row">
                       <td className="py-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shadow-2xs">
@@ -259,35 +259,35 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               <Link
                 to="/admin/users"
-                className="flex items-center justify-between p-3 rounded-xl bg-white/90 border border-slate-200/80 hover:border-slate-300 text-xs font-semibold text-slate-800 shadow-2xs transition group"
+                className="flex items-center justify-between p-3 rounded-xl bg-white/90 border border-slate-200/80 hover:border-amber-400/50 hover:bg-white text-xs font-semibold text-slate-800 shadow-2xs smooth-transition hover:translate-x-1 group"
               >
                 <div className="flex items-center gap-2.5">
-                  <UserCheck className="w-4 h-4 text-amber-600" />
+                  <UserCheck className="w-4 h-4 text-amber-600 transition-transform duration-200 group-hover:scale-110" />
                   <span>Inspect & Filter All Users</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-transform" />
               </Link>
 
               <Link
                 to="/admin/reminders"
-                className="flex items-center justify-between p-3 rounded-xl bg-white/90 border border-slate-200/80 hover:border-slate-300 text-xs font-semibold text-slate-800 shadow-2xs transition group"
+                className="flex items-center justify-between p-3 rounded-xl bg-white/90 border border-slate-200/80 hover:border-blue-400/50 hover:bg-white text-xs font-semibold text-slate-800 shadow-2xs smooth-transition hover:translate-x-1 group"
               >
                 <div className="flex items-center gap-2.5">
-                  <ListTodo className="w-4 h-4 text-blue-600" />
+                  <ListTodo className="w-4 h-4 text-blue-600 transition-transform duration-200 group-hover:scale-110" />
                   <span>Global Reminders Monitor</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
               </Link>
 
               <Link
                 to="/admin/logs"
-                className="flex items-center justify-between p-3 rounded-xl bg-white/90 border border-slate-200/80 hover:border-slate-300 text-xs font-semibold text-slate-800 shadow-2xs transition group"
+                className="flex items-center justify-between p-3 rounded-xl bg-white/90 border border-slate-200/80 hover:border-purple-400/50 hover:bg-white text-xs font-semibold text-slate-800 shadow-2xs smooth-transition hover:translate-x-1 group"
               >
                 <div className="flex items-center gap-2.5">
-                  <Shield className="w-4 h-4 text-purple-600" />
+                  <Shield className="w-4 h-4 text-purple-600 transition-transform duration-200 group-hover:scale-110" />
                   <span>Security Audit Logs</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
           </div>

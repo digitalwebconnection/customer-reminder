@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   Users,
   Search,
@@ -14,10 +15,15 @@ import {
   ListTodo,
   Calendar,
   AlertTriangle,
+  Loader2,
   RefreshCw,
   Edit2,
   Plus,
   Save,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import api from "../../api/axios";
 import { useToast } from "../../context/ToastContext";
@@ -29,6 +35,7 @@ export default function AdminUsers() {
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -81,7 +88,7 @@ export default function AdminUsers() {
       if (statusFilter) params.append("status", statusFilter);
       if (roleFilter) params.append("role", roleFilter);
       params.append("page", String(page));
-      params.append("limit", "20");
+      params.append("limit", String(limit));
 
       const res = await api.get(`/admin/users?${params.toString()}`);
       if (res.data?.success) {
@@ -97,11 +104,40 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, roleFilter, page]);
+  }, [search, statusFilter, roleFilter, page, limit]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const getPageNumbers = () => {
+    if (pages <= 7) {
+      return Array.from({ length: pages }, (_, i) => i + 1);
+    }
+    if (page <= 4) {
+      return [1, 2, 3, 4, 5, "...", pages];
+    }
+    if (page >= pages - 3) {
+      return [
+        1,
+        "...",
+        pages - 4,
+        pages - 3,
+        pages - 2,
+        pages - 1,
+        pages,
+      ];
+    }
+    return [
+      1,
+      "...",
+      page - 1,
+      page,
+      page + 1,
+      "...",
+      pages,
+    ];
+  };
 
   // Toggle user active / blocked
   const handleToggleBlock = async (user) => {
@@ -435,12 +471,15 @@ export default function AdminUsers() {
   };
 
   // Open Delete Modal
-  const handleOpenDelete = (user) => {
-    if (user.role === "superadmin") {
-      toast.warning("Forbidden", "Cannot delete the Super Admin account.");
+  const handleOpenDelete = (targetUser) => {
+    if (
+      targetUser._id === currentAdmin?.id ||
+      targetUser.email === "vaibhavdigitalwebconnection@gmail.com"
+    ) {
+      toast.warning("Forbidden", "Cannot delete the primary Super Admin account.");
       return;
     }
-    setSelectedUser(user);
+    setSelectedUser(targetUser);
     setDeleteModal(true);
   };
 
@@ -466,6 +505,31 @@ export default function AdminUsers() {
       setDeletingUser(false);
     }
   };
+
+  // Close modals on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (deleteModal && !deletingUser) setDeleteModal(false);
+        if (editUserModal && !savingUserEdit) setEditUserModal(false);
+        if (resetPasswordModal && !resettingPassword) setResetPasswordModal(false);
+        if (addReminderModal && !savingNewReminder) setAddReminderModal(false);
+        if (viewDetailsModal) setViewDetailsModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    deleteModal,
+    deletingUser,
+    editUserModal,
+    savingUserEdit,
+    resetPasswordModal,
+    resettingPassword,
+    addReminderModal,
+    savingNewReminder,
+    viewDetailsModal,
+  ]);
 
   const displayUser = userDetailsData?.user || selectedUser;
 
@@ -728,11 +792,11 @@ export default function AdminUsers() {
                   const isCurrent = currentAdmin?.id === u._id;
 
                   return (
-                    <tr key={u._id} className="hover:bg-slate-50/80 transition">
+                    <tr key={u._id} className="smooth-row">
                       {/* User Info */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shadow-2xs shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-700 shadow-2xs shrink-0 transition-transform duration-200 group-hover:scale-105">
                             {initial}
                           </div>
                           <div className="min-w-0">
@@ -816,7 +880,7 @@ export default function AdminUsers() {
                           <button
                             type="button"
                             onClick={() => handleOpenDetails(u)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all duration-200 hover:scale-110 active:scale-90 cursor-pointer shadow-2xs"
                             title="View User Details & Reminders"
                           >
                             <Eye className="w-4 h-4" />
@@ -826,7 +890,7 @@ export default function AdminUsers() {
                           <button
                             type="button"
                             onClick={() => handleOpenEditUser(u)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition-all duration-200 hover:scale-110 active:scale-90 cursor-pointer shadow-2xs"
                             title="Edit User Info"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -836,18 +900,18 @@ export default function AdminUsers() {
                           <button
                             type="button"
                             onClick={() => handleOpenResetPassword(u)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 transition cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 transition-all duration-200 hover:scale-110 active:scale-90 cursor-pointer shadow-2xs"
                             title="Reset Password"
                           >
                             <KeyRound className="w-4 h-4" />
                           </button>
 
                           {/* Block / Unblock Toggle */}
-                          {u.role !== "superadmin" && (
+                          {!isCurrent && u.email !== "vaibhavdigitalwebconnection@gmail.com" && (
                             <button
                               type="button"
                               onClick={() => handleToggleBlock(u)}
-                              className={`p-1.5 rounded-lg transition cursor-pointer ${
+                              className={`p-1.5 rounded-lg transition-all duration-200 hover:scale-110 active:scale-90 cursor-pointer shadow-2xs ${
                                 u.isActive
                                   ? "text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                                   : "text-rose-600 hover:text-emerald-600 hover:bg-emerald-50"
@@ -863,11 +927,11 @@ export default function AdminUsers() {
                           )}
 
                           {/* Delete Account */}
-                          {u.role !== "superadmin" && (
+                          {!isCurrent && u.email !== "vaibhavdigitalwebconnection@gmail.com" && (
                             <button
                               type="button"
                               onClick={() => handleOpenDelete(u)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all duration-200 hover:scale-110 active:scale-90 cursor-pointer shadow-2xs"
                               title="Delete User and Associated Data"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -891,42 +955,149 @@ export default function AdminUsers() {
           </table>
         </div>
 
-        {/* Pagination Bar */}
-        {pages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-slate-100 bg-white/60 text-xs text-slate-500 font-medium">
-            <span>
-              Page <span className="font-bold text-slate-900">{page}</span> of{" "}
-              <span className="font-bold text-slate-900">{pages}</span> ({total}{" "}
-              users)
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-40 transition cursor-pointer disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                disabled={page >= pages}
-                onClick={() => setPage((p) => Math.min(pages, p + 1))}
-                className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-40 transition cursor-pointer disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+        {/* Complete Pagination Controls (Always visible for perfect UI balance) */}
+        {total > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100 bg-white/60 text-xs text-slate-600 font-medium">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+              <span>
+                Showing{" "}
+                <span className="font-bold text-slate-900">
+                  {total === 0 ? 0 : (page - 1) * limit + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-bold text-slate-900">
+                  {Math.min(page * limit, total)}
+                </span>{" "}
+                of <span className="font-bold text-slate-900">{total}</span>{" "}
+                users
+              </span>
+
+              <div className="flex items-center gap-2 pl-2 sm:border-l sm:border-slate-300/40">
+                <span className="text-slate-500 hidden sm:inline">
+                  Per page:
+                </span>
+                <select
+                  value={limit}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="bg-white/90 text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none cursor-pointer font-semibold shadow-2xs border border-slate-200"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage(1)}
+                  className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
+                  title="First page"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Prev</span>
+                </button>
+              </div>
+
+              {/* Compact Mobile Page Indicator */}
+              <span className="sm:hidden text-xs font-bold text-slate-800 px-2 font-mono">
+                {page} / {pages}
+              </span>
+
+              {/* Desktop Page Numbers */}
+              <div className="hidden sm:flex items-center gap-1">
+                {getPageNumbers().map((p, idx) => {
+                  if (p === "...") {
+                    return (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="px-2 py-1 text-slate-400 select-none font-bold"
+                      >
+                        …
+                      </span>
+                    );
+                  }
+                  const isCurrent = p === page;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPage(p)}
+                      className={`min-w-8 h-8 px-2.5 rounded-xl text-xs font-bold transition cursor-pointer active:scale-95 ${
+                        isCurrent
+                          ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25 ring-1 ring-amber-300/40"
+                          : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={page >= pages}
+                  onClick={() => setPage((p) => Math.min(pages, p + 1))}
+                  className="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition flex items-center gap-1 cursor-pointer active:scale-95 text-xs font-semibold"
+                  title="Next page"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  disabled={page >= pages}
+                  onClick={() => setPage(pages)}
+                  className="p-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer active:scale-95"
+                  title="Last page"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
       {/* ======================================================== */}
-      {/* 1. USER DETAILS & TELEMETRY MODAL (iPhone Glass Sheet) */}
+      {/* 1. USER DETAILS & TELEMETRY MODAL (Centered with Portal) */}
       {/* ======================================================== */}
-      {viewDetailsModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in">
-          <div className="ios-glass-modal rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      {viewDetailsModal && selectedUser && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-9999 flex items-center justify-center p-3 sm:p-4 select-none"
+          >
+            {/* Translucent backdrop with click-to-dismiss */}
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+              onClick={() => setViewDetailsModal(false)}
+            />
+
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative rounded-3xl liquid-glass-modal max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden z-10"
+            >
             {/* Modal Header */}
             <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-white/60">
               <div className="flex items-center gap-3">
@@ -1210,374 +1381,528 @@ export default function AdminUsers() {
               <button
                 type="button"
                 onClick={() => setViewDetailsModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                className="px-5 py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-white/95 transition active:scale-95 cursor-pointer"
               >
                 Close
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ======================================================== */}
-      {/* 2. EDIT USER (NAME, PHONE) MODAL */}
+      {/* 2. EDIT USER (NAME, PHONE) MODAL (Centered with Portal) */}
       {/* ======================================================== */}
-      {editUserModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in">
-          <div className="ios-glass-modal max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Edit2 className="w-5 h-5 text-indigo-500" />
-                <span>Edit User Information</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setEditUserModal(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {editUserModal && selectedUser && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-9999 flex items-center justify-center p-4 select-none"
+          >
+            {/* Translucent backdrop with click-to-dismiss */}
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+              onClick={() => {
+                if (!savingUserEdit) setEditUserModal(false);
+              }}
+            />
 
-            <p className="text-xs text-slate-500">
-              Update contact info for{" "}
-              <span className="text-slate-900 font-semibold">
-                {selectedUser.email}
-              </span>
-              .
-            </p>
-
-            <form onSubmit={handleSaveUserEdit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editUserName}
-                  onChange={(e) => setEditUserName(e.target.value)}
-                  placeholder="e.g. Bhargav Patel"
-                  className="w-full px-3.5 py-2.5 ios-glass-input text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={editUserPhone}
-                  onChange={(e) => setEditUserPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                  className="w-full px-3.5 py-2.5 ios-glass-input text-xs"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setEditUserModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingUserEdit}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>{savingUserEdit ? "Saving..." : "Save Changes"}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* 3. ADD REMINDER FOR USER MODAL */}
-      {/* ======================================================== */}
-      {addReminderModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in">
-          <div className="ios-glass-modal max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <ListTodo className="w-5 h-5 text-amber-500" />
-                <span>Create Reminder for User</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setAddReminderModal(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500">
-              This reminder will be owned and visible to{" "}
-              <span className="text-slate-900 font-semibold">
-                {selectedUser.name || selectedUser.email}
-              </span>
-              .
-            </p>
-
-            <form
-              onSubmit={handleSaveNewReminder}
-              className="space-y-3.5 text-xs"
+            {/* Liquid Glass Modal Card - Centered Dialog */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md rounded-3xl liquid-glass-modal shadow-2xl p-6 sm:p-7 text-slate-800 z-10 space-y-4"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Customer Name *
+              {/* Close button in top-right corner */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!savingUserEdit) setEditUserModal(false);
+                }}
+                disabled={savingUserEdit}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full liquid-glass-pill transition cursor-pointer active:scale-95 disabled:opacity-40"
+                title="Cancel (Esc)"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Centered Indigo Edit Icon Badge */}
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-300/60 text-indigo-600 flex items-center justify-center mx-auto shadow-inner">
+                <Edit2 className="w-7 h-7 stroke-[2.2]" />
+              </div>
+
+              {/* Centered Title & Description */}
+              <div className="space-y-1 text-center">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Edit User Information
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Update contact info for{" "}
+                  <span className="font-semibold text-slate-800">
+                    {selectedUser.email}
+                  </span>
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveUserEdit} className="space-y-3.5 pt-1">
+                <div className="text-left">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Full Name *
                   </label>
                   <input
                     type="text"
                     required
-                    value={newReminderForm.name}
-                    onChange={(e) =>
-                      setNewReminderForm({
-                        ...newReminderForm,
-                        name: e.target.value,
-                      })
-                    }
+                    value={editUserName}
+                    onChange={(e) => setEditUserName(e.target.value)}
                     placeholder="e.g. John Doe"
-                    className="w-full px-3 py-2 ios-glass-input text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium"
                   />
                 </div>
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Customer Phone *
+
+                <div className="text-left">
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Phone Number
                   </label>
                   <input
                     type="tel"
-                    required
-                    value={newReminderForm.phone}
-                    onChange={(e) =>
-                      setNewReminderForm({
-                        ...newReminderForm,
-                        phone: e.target.value,
-                      })
-                    }
+                    value={editUserPhone}
+                    onChange={(e) => setEditUserPhone(e.target.value)}
                     placeholder="+91 98765 43210"
-                    className="w-full px-3 py-2 ios-glass-input text-xs"
+                    className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium"
                   />
                 </div>
+
+                {/* Centered Action Buttons (Balanced 2-Column Grid) */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditUserModal(false)}
+                    disabled={savingUserEdit}
+                    className="w-full py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-white/95 transition active:scale-95 cursor-pointer disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingUserEdit}
+                    className="w-full py-2.5 rounded-full bg-linear-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-bold transition shadow-lg shadow-indigo-600/25 active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    {savingUserEdit ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* ======================================================== */}
+      {/* 3. ADD REMINDER FOR USER MODAL (Centered with Portal) */}
+      {/* ======================================================== */}
+      {addReminderModal && selectedUser && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-9999 flex items-center justify-center p-4 select-none"
+          >
+            {/* Translucent backdrop with click-to-dismiss */}
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+              onClick={() => {
+                if (!savingNewReminder) setAddReminderModal(false);
+              }}
+            />
+
+            {/* Liquid Glass Modal Card - Centered Dialog */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-lg rounded-3xl liquid-glass-modal shadow-2xl p-6 sm:p-7 text-slate-800 z-10 space-y-4"
+            >
+              {/* Close button in top-right corner */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!savingNewReminder) setAddReminderModal(false);
+                }}
+                disabled={savingNewReminder}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full liquid-glass-pill transition cursor-pointer active:scale-95 disabled:opacity-40"
+                title="Cancel (Esc)"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Centered Amber List Icon Badge */}
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-300/60 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
+                <ListTodo className="w-7 h-7 stroke-[2.2]" />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Centered Title & Description */}
+              <div className="space-y-1 text-center">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Create Reminder for User
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Visible to{" "}
+                  <span className="font-semibold text-slate-800">
+                    {selectedUser.name || selectedUser.email}
+                  </span>
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveNewReminder} className="space-y-3.5 pt-1 text-left text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">
+                      Customer Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newReminderForm.name}
+                      onChange={(e) =>
+                        setNewReminderForm({
+                          ...newReminderForm,
+                          name: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. John Doe"
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">
+                      Customer Phone *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={newReminderForm.phone}
+                      onChange={(e) =>
+                        setNewReminderForm({
+                          ...newReminderForm,
+                          phone: e.target.value,
+                        })
+                      }
+                      placeholder="+91 98765 43210"
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">
+                      Customer Email
+                    </label>
+                    <input
+                      type="email"
+                      value={newReminderForm.email}
+                      onChange={(e) =>
+                        setNewReminderForm({
+                          ...newReminderForm,
+                          email: e.target.value,
+                        })
+                      }
+                      placeholder="customer@example.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1.5">
+                      Due Date & Time *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={newReminderForm.dueAt}
+                      onChange={(e) =>
+                        setNewReminderForm({
+                          ...newReminderForm,
+                          dueAt: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium text-slate-800"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Customer Email (Optional)
+                  <label className="block text-slate-700 font-bold mb-1.5">
+                    Follow-up Notes
                   </label>
-                  <input
-                    type="email"
-                    value={newReminderForm.email}
+                  <textarea
+                    rows={2}
+                    value={newReminderForm.note}
                     onChange={(e) =>
                       setNewReminderForm({
                         ...newReminderForm,
-                        email: e.target.value,
+                        note: e.target.value,
                       })
                     }
-                    placeholder="customer@example.com"
-                    className="w-full px-3 py-2 ios-glass-input text-xs"
+                    placeholder="Details about customer requirements, discussion points..."
+                    className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium resize-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-slate-700 font-medium mb-1">
-                    Due Date & Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={newReminderForm.dueAt}
-                    onChange={(e) =>
-                      setNewReminderForm({
-                        ...newReminderForm,
-                        dueAt: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 ios-glass-input text-xs text-slate-700"
-                  />
+
+                {/* Centered Action Buttons (Balanced 2-Column Grid) */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setAddReminderModal(false)}
+                    disabled={savingNewReminder}
+                    className="w-full py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-white/95 transition active:scale-95 cursor-pointer disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingNewReminder}
+                    className="w-full py-2.5 rounded-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold transition shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    {savingNewReminder ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Creating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Create Reminder</span>
+                      </>
+                    )}
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 font-medium mb-1">
-                  Follow-up Notes
-                </label>
-                <textarea
-                  rows={2}
-                  value={newReminderForm.note}
-                  onChange={(e) =>
-                    setNewReminderForm({
-                      ...newReminderForm,
-                      note: e.target.value,
-                    })
-                  }
-                  placeholder="Details about customer requirements, discussion points..."
-                  className="w-full px-3 py-2 ios-glass-input text-xs resize-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setAddReminderModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingNewReminder}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold transition shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>
-                    {savingNewReminder ? "Creating..." : "Create Reminder"}
-                  </span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* ======================================================== */}
-      {/* 4. RESET PASSWORD MODAL */}
+      {/* 4. RESET PASSWORD MODAL (Centered with Portal) */}
       {/* ======================================================== */}
-      {resetPasswordModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in">
-          <div className="ios-glass-modal max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-amber-500" />
-                <span>Reset User Password</span>
-              </h3>
+      {resetPasswordModal && selectedUser && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-9999 flex items-center justify-center p-4 select-none"
+          >
+            {/* Translucent backdrop with click-to-dismiss */}
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+              onClick={() => {
+                if (!resettingPassword) setResetPasswordModal(false);
+              }}
+            />
+
+            {/* Liquid Glass Modal Card - Centered Dialog */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md rounded-3xl liquid-glass-modal shadow-2xl p-6 sm:p-7 text-slate-800 z-10 space-y-4 text-center"
+            >
+              {/* Close button in top-right corner */}
               <button
                 type="button"
-                onClick={() => setResetPasswordModal(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                onClick={() => {
+                  if (!resettingPassword) setResetPasswordModal(false);
+                }}
+                disabled={resettingPassword}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full liquid-glass-pill transition cursor-pointer active:scale-95 disabled:opacity-40"
+                title="Cancel (Esc)"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
-            </div>
 
-            <p className="text-xs text-slate-500">
-              Reset credentials for{" "}
-              <span className="text-slate-900 font-semibold">
-                {selectedUser.name}
-              </span>{" "}
-              ({selectedUser.email}).
-            </p>
+              {/* Centered Amber Key Icon Badge */}
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-300/60 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
+                <KeyRound className="w-7 h-7 stroke-[2.2]" />
+              </div>
 
-            <form onSubmit={handleExecutePasswordReset} className="space-y-4">
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={sendEmailLink}
-                    onChange={(e) => setSendEmailLink(e.target.checked)}
-                    className="rounded border-slate-300 text-amber-500 focus:ring-amber-400/20"
-                  />
-                  <span>
-                    Send reset email link to user instead of manual password
+              {/* Centered Title & Description */}
+              <div className="space-y-1 text-center">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Reset User Password
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Reset credentials for{" "}
+                  <span className="font-semibold text-slate-800">
+                    {selectedUser.name || selectedUser.email}
                   </span>
-                </label>
+                </p>
               </div>
 
-              {!sendEmailLink && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Direct New Password
+              <form onSubmit={handleExecutePasswordReset} className="space-y-3.5 pt-1 text-left">
+                <div className="p-3 rounded-2xl liquid-glass-pill">
+                  <label className="flex items-center gap-2.5 text-xs text-slate-700 font-medium cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sendEmailLink}
+                      onChange={(e) => setSendEmailLink(e.target.checked)}
+                      className="rounded border-slate-300 text-amber-500 focus:ring-amber-400/20 w-4 h-4 cursor-pointer"
+                    />
+                    <span>
+                      Send reset email link to user instead of manual password
+                    </span>
                   </label>
-                  <input
-                    type="text"
-                    required={!sendEmailLink}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password (min 6 characters)"
-                    className="w-full px-3.5 py-2.5 ios-glass-input text-xs"
-                  />
                 </div>
-              )}
 
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setResetPasswordModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={resettingPassword}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition shadow-md shadow-amber-500/20 cursor-pointer disabled:opacity-50"
-                >
-                  {resettingPassword
-                    ? "Processing..."
-                    : sendEmailLink
-                      ? "Dispatch Reset Email"
-                      : "Set Password"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                {!sendEmailLink && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      Direct New Password *
+                    </label>
+                    <input
+                      type="text"
+                      required={!sendEmailLink}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password (min 6 characters)"
+                      className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-input text-xs font-medium"
+                    />
+                  </div>
+                )}
+
+                {/* Centered Action Buttons (Balanced 2-Column Grid) */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setResetPasswordModal(false)}
+                    disabled={resettingPassword}
+                    className="w-full py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-white/95 transition active:scale-95 cursor-pointer disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resettingPassword}
+                    className="w-full py-2.5 rounded-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold transition shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    {resettingPassword ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : sendEmailLink ? (
+                      <span>Dispatch Email</span>
+                    ) : (
+                      <span>Set Password</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {/* ======================================================== */}
-      {/* 5. DELETE USER CONFIRMATION MODAL */}
+      {/* 5. DELETE USER CONFIRMATION MODAL (Centered with Portal) */}
       {/* ======================================================== */}
-      {deleteModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-md animate-in fade-in">
-          <div className="ios-glass-modal border-rose-200/80 max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center mx-auto shadow-sm">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
+      {deleteModal && selectedUser && typeof document !== "undefined" &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-9999 flex items-center justify-center p-4 select-none"
+          >
+            {/* Translucent backdrop with click-to-dismiss */}
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+              onClick={() => {
+                if (!deletingUser) setDeleteModal(false);
+              }}
+            />
 
-            <div className="text-center space-y-2">
-              <h3 className="text-base font-bold text-slate-900">
-                Delete User Account?
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Are you sure you want to delete{" "}
-                <span className="text-slate-900 font-semibold">
-                  {selectedUser.name}
-                </span>{" "}
-                ({selectedUser.email})?
-              </p>
-              <div className="p-3 rounded-xl bg-rose-50/80 border border-rose-100 text-xs text-rose-600 font-medium">
-                ⚠️ This will permanently remove the user, all their customer
-                reminders, and associated audit logs. This cannot be undone.
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2">
+            {/* Liquid Glass Modal Card - Centered Dialog */}
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md rounded-3xl liquid-glass-modal shadow-2xl p-6 sm:p-7 text-slate-800 z-10 text-center space-y-4"
+            >
+              {/* Close button in top-right corner */}
               <button
                 type="button"
-                onClick={() => setDeleteModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
+                onClick={() => {
+                  if (!deletingUser) setDeleteModal(false);
+                }}
                 disabled={deletingUser}
-                onClick={handleExecuteDelete}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition shadow-md shadow-rose-600/20 cursor-pointer disabled:opacity-50"
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full liquid-glass-pill transition cursor-pointer active:scale-95 disabled:opacity-40"
+                title="Cancel (Esc)"
               >
-                {deletingUser ? "Deleting..." : "Yes, Delete Permanently"}
+                <X className="w-4 h-4" />
               </button>
+
+              {/* Centered Crimson Warning Icon */}
+              <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-300/60 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+                <AlertTriangle className="w-7 h-7 stroke-[2.2]" />
+              </div>
+
+              {/* Centered Title & Description */}
+              <div className="space-y-1.5 text-center">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Delete User Account?
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed font-medium px-2">
+                  Are you sure you want to delete{" "}
+                  <span className="font-bold text-slate-900">
+                    {selectedUser.name || "this user"}
+                  </span>{" "}
+                  ({selectedUser.email})?
+                </p>
+              </div>
+
+              {/* Centered Warning Box */}
+              <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-300/60 text-xs text-rose-800 leading-relaxed font-medium text-center space-y-1">
+                <p className="font-bold text-rose-900 flex items-center justify-center gap-1.5">
+                  <span>⚠️ Permanent Action</span>
+                </p>
+                <p className="text-[11.5px] text-rose-700">
+                  This will permanently remove the user, all their customer reminders, and associated audit logs. This cannot be undone.
+                </p>
+              </div>
+
+              {/* Centered Action Buttons (Balanced 2-Column Grid) */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModal(false)}
+                  disabled={deletingUser}
+                  className="w-full py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-white/95 transition active:scale-95 cursor-pointer disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deletingUser}
+                  onClick={handleExecuteDelete}
+                  className="w-full py-2.5 rounded-full bg-linear-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white text-xs font-bold transition shadow-lg shadow-rose-600/25 active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {deletingUser ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <span>Yes, Delete Permanently</span>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
 
       {/* Delete Reminder Confirmation Modal */}
       <DeleteReminderModal

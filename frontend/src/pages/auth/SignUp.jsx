@@ -171,7 +171,7 @@ export default function SignUp() {
       {/* ======================================================== */}
       {/* Compact Liquid Glass Card (Refined Mobile View)          */}
       {/* ======================================================== */}
-      <div className="relative w-full max-w-[340px] sm:max-w-[400px] liquid-glass-compact p-4.5 sm:p-6 rounded-[26px] sm:rounded-3xl shadow-xl transition-all duration-300 z-10 my-3 animate-in fade-in zoom-in-95 duration-400">
+      <div className="relative w-full max-w-85 sm:max-w-100 liquid-glass-compact p-4.5 sm:p-6 rounded-[26px] sm:rounded-3xl shadow-xl transition-all duration-300 z-10 my-3 animate-in fade-in zoom-in-95">
         {/* Header with Official RemindIQ Logo */}
         <div className="text-center space-y-1 mb-3.5 sm:mb-4">
           <div className="flex justify-center mb-1">
@@ -179,7 +179,7 @@ export default function SignUp() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight liquid-heading relative inline-block">
             Register
-            <span className="block w-10 h-0.5 bg-gradient-to-r from-amber-500 to-amber-400 rounded-full mx-auto mt-1" />
+            <span className="block w-10 h-0.5 bg-linear-to-r from-amber-500 to-amber-400 rounded-full mx-auto mt-1" />
           </h1>
           <p className="text-[11px] text-slate-500 font-medium">
             Create your account to start managing reminders

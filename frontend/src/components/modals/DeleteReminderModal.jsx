@@ -32,53 +32,52 @@ export default function DeleteReminderModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-reminder-title"
-      className="fixed inset-0 z-70 flex items-center justify-center p-3 sm:p-4 select-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-9999 flex items-center justify-center p-4 select-none"
     >
       {/* Dark Blur Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/35 backdrop-blur-sm transition-opacity cursor-pointer"
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
         onClick={() => {
           if (!isDeleting) onClose();
         }}
       />
 
-      {/* Compact Modal Dialog Card */}
+      {/* Centered Modal Dialog Card */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-sm rounded-3xl liquid-glass-modal shadow-2xl p-5 text-slate-800 z-10 animate-in zoom-in-95 duration-150"
+        className="relative w-full max-w-sm rounded-3xl liquid-glass-modal shadow-2xl p-6 text-slate-800 z-10 text-center space-y-4"
       >
-        {/* Top Header: Icon + Title + Close */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/10 border border-rose-300/60 flex items-center justify-center text-rose-600 shrink-0">
-              <Trash2 className="w-4 h-4 stroke-[2.2]" />
-            </div>
-            <div>
-              <h3
-                id="delete-reminder-title"
-                className="text-base font-bold text-slate-900 tracking-tight"
-              >
-                Delete Reminder?
-              </h3>
-              <p className="text-xs text-slate-500 font-medium">
-                This action cannot be undone
-              </p>
-            </div>
-          </div>
+        {/* Close Button top-right */}
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isDeleting}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1.5 rounded-full liquid-glass-pill transition cursor-pointer active:scale-95 disabled:opacity-40"
+          title="Cancel"
+        >
+          <X className="w-4 h-4" />
+        </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isDeleting}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-full liquid-glass-pill transition cursor-pointer disabled:opacity-40"
-            title="Cancel"
+        {/* Centered Crimson Icon Badge */}
+        <div className="w-13 h-13 rounded-2xl bg-rose-500/10 border border-rose-300/60 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+          <Trash2 className="w-6 h-6 stroke-[2.2]" />
+        </div>
+
+        {/* Centered Title & Subtitle */}
+        <div className="space-y-1 text-center">
+          <h3
+            id="delete-reminder-title"
+            className="text-base font-bold text-slate-900 tracking-tight"
           >
-            <X className="w-4 h-4" />
-          </button>
+            Delete Reminder?
+          </h3>
+          <p className="text-xs text-slate-500 font-medium">
+            This action cannot be undone.
+          </p>
         </div>
 
         {/* Message with customer name & phone */}
-        <div className="mt-4 py-3 px-3.5 rounded-2xl liquid-glass-pill text-xs text-slate-700 leading-relaxed font-medium">
+        <div className="p-3 rounded-2xl liquid-glass-pill text-xs text-slate-700 leading-relaxed font-medium text-center">
           Delete reminder for{" "}
           <span className="font-bold text-slate-900">
             {reminder.name || "Customer"}
@@ -89,13 +88,13 @@ export default function DeleteReminderModal({
           ?
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-5 flex items-center justify-end gap-2.5">
+        {/* Action Buttons: Balanced 2-Column Grid */}
+        <div className="grid grid-cols-2 gap-3 pt-1">
           <button
             type="button"
             onClick={onClose}
             disabled={isDeleting}
-            className="px-4 py-2 rounded-full liquid-glass-pill text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer active:scale-95 disabled:opacity-40"
+            className="w-full py-2.5 rounded-full liquid-glass-pill text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer active:scale-95 disabled:opacity-40"
           >
             Cancel
           </button>
@@ -104,7 +103,7 @@ export default function DeleteReminderModal({
             type="button"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="px-5 py-2 rounded-full bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/25 cursor-pointer active:scale-95 disabled:opacity-50"
+            className="w-full py-2.5 rounded-full bg-linear-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:bg-rose-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-rose-600/25 cursor-pointer active:scale-95 disabled:opacity-50"
           >
             {isDeleting ? (
               <>
@@ -112,10 +111,7 @@ export default function DeleteReminderModal({
                 <span>Deleting...</span>
               </>
             ) : (
-              <>
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete</span>
-              </>
+              <span>Delete</span>
             )}
           </button>
         </div>

@@ -140,7 +140,7 @@ export default function MobileBottomNav() {
               isActive ||
               location.pathname === "/reminders/add" ||
               location.pathname === "/add-reminder";
-            return `flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30 border-2 border-white active:scale-90 transition-all cursor-pointer ${
+            return `flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-2xl bg-linear-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/30 border-2 border-white active:scale-90 transition-all cursor-pointer ${
               active
                 ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-white"
                 : ""
