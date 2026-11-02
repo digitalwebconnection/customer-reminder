@@ -133,7 +133,7 @@ app.get('/', (req, res, next) => {
 });
 
 // Health Check
-app.get('/api/v1/health', (req, res) => {
+app.get(['/api/v1/health', '/api/health'], (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1;
   res.status(200).json({
     status: 'ok',

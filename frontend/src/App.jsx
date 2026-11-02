@@ -65,7 +65,6 @@ import { LoadingScreen } from "./components/common";
 
 // Background Services
 import { registerServiceWorker } from "./services/pushManager";
-import { initRenderKeepAlive } from "./services/renderKeepAlive";
 
 function Layout({ children }) {
   const navigate = useNavigate();
@@ -154,10 +153,9 @@ function Layout({ children }) {
 }
 
 export default function App() {
-  // Register service worker and start 14-min Render keep-alive on initial load
+  // Register service worker on initial load
   useEffect(() => {
     registerServiceWorker();
-    initRenderKeepAlive();
   }, []);
 
   return (
